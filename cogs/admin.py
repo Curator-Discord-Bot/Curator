@@ -177,7 +177,7 @@ class Admin(commands.Cog):
 
         await ctx.send('\n'.join(f'{status}: `{module}`' for status, module in statuses))
 
-    @commands.command(pass_context=True, hidden=True, name='eval')
+    @commands.command(hidden=True, name='eval')
     async def _eval(self, ctx, *, body: str):
         """Evaluates a code"""
 

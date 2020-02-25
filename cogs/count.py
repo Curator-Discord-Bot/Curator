@@ -3,8 +3,37 @@ import datetime
 import discord
 from discord.ext import commands
 import json
+import re
 from os import path
 from typing import Optional
+import emoji
+
+number_aliases = dict([
+    (':keycap_0:', '0'),
+    (':keycap_1:', '1'),
+    (':keycap_2:', '2'),
+    (':keycap_3:', '3'),
+    (':keycap_4:', '4'),
+    (':keycap_5:', '5'),
+    (':keycap_6:', '6'),
+    (':keycap_7:', '7'),
+    (':keycap_8:', '8'),
+    (':keycap_9:', '9'),
+    (':keycap_10:', '10'),
+    (':OK_hand:', '69'),
+    (':hundred_points:', '100')
+])
+
+
+def parsed(number: str) -> str:
+    s = emoji.demojize(number)
+    for key in number_aliases.keys():
+        s = s.replace(key, number_aliases[key])
+    return s
+
+
+def is_number(number: str, to_check: str) -> bool:
+    return parsed(to_check) == number
 
 
 class Counting:
@@ -22,19 +51,20 @@ class Counting:
         self.duration = None
         self.ruined_user_id = None
 
-    def attempt_count(self, counter: discord.User, count: str):
+    def attempt_count(self, counter: discord.User, count: str) -> bool:
         if self.is_next(count):
             self.last_count = datetime.datetime.utcnow()
-            self.last_counter = counter
-            self.count = self.get_next()
+            self.last_counter = counter.id
+            self.count += 1
+            if counter.id not in self.contributors.keys():
+                self.contributors[counter.id] = 1
+            else:
+                self.contributors[counter.id] += 1
             return True
         return False
 
     def is_next(self, message: str):
-        return message.split()[0] in self.get_next()
-
-    def get_next(self):
-        return [str(self.count+1)]
+        return is_number(str(self.count + 1), message.split()[0])
 
 
 class Count(commands.Cog):
@@ -44,26 +74,27 @@ class Count(commands.Cog):
 
         with open(path.join(path.dirname(path.dirname(path.abspath(__file__))), 'settings.json')) as config_file:
             data = json.load(config_file)
-            guild = self.bot.get_guild(468366604313559040)
+            guild = self.bot.get_guild(681912993621344361)
             self.count_channel = guild.get_channel(data['count_channel'])
 
-    async def check_channel(self, ctx: commands.Context):
+    async def check_channel(self, ctx: commands.Context) -> bool:
         if ctx.channel != self.count_channel:
             await ctx.send(f'Count commands are intended for {self.count_channel.mention}.')
             return False
         return True
 
-    @commands.group(pass_context=True)
+    @commands.group(invoke_without_command=True)
     async def count(self, ctx: commands.Context, count: Optional[str]):
         if not await self.check_channel(ctx):
-            return
-        elif ctx.invoked_subcommand is not None:
             return
         elif count is not None:
             if self.counting is None:
                 await ctx.send(f'There is no ongoing count at the moment. See {ctx.prefix}help count')
             else:
-                self.counting.attempt_count(ctx.author, count)
+                if self.counting.attempt_count(ctx.author, count):
+                    await ctx.send('Count ' + count + ' accepted.')
+                else:
+                    await ctx.send('Count ' + count + ' rejected.')
         else:
             await ctx.send(f'You need to supply a subcommand. Try {ctx.prefix}help count')
 
@@ -71,6 +102,15 @@ class Count(commands.Cog):
     async def start(self, ctx: commands.Context):
         await ctx.send('Count has been started. Good luck!')
         self.counting = Counting(ctx.author)
+
+    @count.command()
+    async def data(self, ctx: commands.Context):
+        await ctx.send(self.counting.__dict__)
+
+    @count.command()
+    async def parse(self, ctx: commands.Context, number: str):
+        parse = parsed(number)
+        await ctx.send(parse)
 
     @count.command()
     async def source(self, ctx: commands.Context):
