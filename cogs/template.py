@@ -5,8 +5,6 @@ from discord.ext import commands
 class Template(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.counting = None
-        self.count_channel = None
 
     @commands.command()
     async def hello(self, ctx: commands.Context):
