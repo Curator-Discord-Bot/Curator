@@ -66,7 +66,10 @@ def run_bot():
         return
 
     description = '''A bot written by Ruukas.'''
-    bot = Curator(description=description)
+    if config.command_prefix is None:
+        bot = Curator(description=description)
+    else:
+        bot = Curator(commands_prefix=config.command_prefix, description=description)
     bot.pool = pool
     bot.run(config.token)
 

@@ -6,28 +6,31 @@ import json
 from os import path
 from typing import Optional
 import emoji
+from itertools import product
 
-number_aliases = dict([
-    (':keycap_0:', '0'),
-    (':keycap_1:', '1'),
-    (':keycap_2:', '2'),
-    (':keycap_3:', '3'),
-    (':keycap_4:', '4'),
-    (':keycap_5:', '5'),
-    (':keycap_6:', '6'),
-    (':keycap_7:', '7'),
-    (':keycap_8:', '8'),
-    (':keycap_9:', '9'),
-    (':keycap_10:', '10'),
-    (':OK_hand:', '69'),
-    (':hundred_points:', '100')
-])
+number_aliases = {
+    ':keycap_0:': ['0'],
+    ':keycap_1:': ['1'],
+    ':keycap_2:': ['2'],
+    ':keycap_3:': ['3'],
+    ':keycap_4:': ['4'],
+    ':keycap_5:': ['5'],
+    ':keycap_6:': ['6'],
+    ':keycap_7:': ['7'],
+    ':keycap_8:': ['8'],
+    ':keycap_9:': ['9'],
+    ':keycap_10:': ['10'],
+    ':OK_hand:': ['69'],
+    ':hundred_points:': ['100', '00']
+}
 
 
 def parsed(number: str) -> str:
-    s = emoji.demojize(number)
+    s = [emoji.demojize(number)]
     for key in number_aliases.keys():
-        s = s.replace(key, number_aliases[key])
+        for alias in number_aliases[key]:
+            for i in range(len(s)):
+                s.append(s[i].replace(key, alias))
     return s
 
 
@@ -51,7 +54,7 @@ class Counting:
         self.ruined_user_id = None
 
     def attempt_count(self, counter: discord.User, count: str) -> bool:
-        if self.is_next(count) and counter != self.last_counter:
+        if self.is_next(count) and counter.id != self.last_counter:
             self.last_count = datetime.datetime.utcnow()
             self.last_counter = counter.id
             self.count += 1
@@ -94,7 +97,7 @@ class Count(commands.Cog):
 
         if not self.counting.attempt_count(message.author, message.content.split()[0]):
             c: Counting = self.counting
-            await message.channel.send('You failed, and you have ruined the count for the ' + str(len(c.contributors.keys())) + ' counters...\nThe count reached ' + str(c.count) + '.')
+            await message.channel.send(message.author.mention + ' failed, and ruined the count for ' + str(len(c.contributors.keys())) + ' counters...\nThe count reached ' + str(c.count) + '.')
             self.counting = None
 
     @commands.group(invoke_without_command=True)
