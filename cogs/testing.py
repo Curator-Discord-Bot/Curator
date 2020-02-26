@@ -18,5 +18,10 @@ class Learning(commands.Cog):
     async def add(self, ctx: commands.Context, first: int, second: int, name: int):
         await ctx.send(str(first) + ' + ' + str(second) + ' + ' + str(name) + ' = ' + str(first + second + name))
 
+    @commands.command()
+    async def greet(self, ctx: commands.Context):
+        await ctx.send('Hey, Ruucas!')
+
+
 def setup(bot: commands.Bot):
     bot.add_cog(Learning(bot))

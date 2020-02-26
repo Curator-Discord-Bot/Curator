@@ -14,6 +14,7 @@ import copy
 import time
 import subprocess
 from typing import Union, Optional
+import random
 
 # to expose to the eval command
 import datetime
@@ -85,7 +86,7 @@ class Admin(commands.Cog):
         except commands.ExtensionError as e:
             await ctx.send(f'{e.__class__.__name__}: {e}')
         else:
-            await ctx.send('\N{OK HAND SIGN}')
+            await ctx.send(':mechanical_arm:')
 
     @commands.command(hidden=True)
     async def unload(self, ctx, *, module):
@@ -95,7 +96,7 @@ class Admin(commands.Cog):
         except commands.ExtensionError as e:
             await ctx.send(f'{e.__class__.__name__}: {e}')
         else:
-            await ctx.send('\N{OK HAND SIGN}')
+            await ctx.send(':flushed:')
 
     @commands.group(name='reload', hidden=True, invoke_without_command=True)
     async def _reload(self, ctx, *, module):
@@ -105,7 +106,7 @@ class Admin(commands.Cog):
         except commands.ExtensionError as e:
             await ctx.send(f'{e.__class__.__name__}: {e}')
         else:
-            await ctx.send('\N{OK HAND SIGN}')
+            await ctx.send(':arrows_counterclockwise:')
 
     _GIT_PULL_REGEX = re.compile(r'\s*(?P<filename>.+?)\s*\|\s*[0-9]+\s*[+-]+')
 
@@ -238,6 +239,7 @@ class Admin(commands.Cog):
 
     @commands.command(hidden=True)
     async def logout(self, ctx: commands.Context):
+        await ctx.send(random.choice([':dizzy_face:', ':head_bandage:', ':dagger:']))
         await ctx.bot.logout()
 
 
