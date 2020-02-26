@@ -26,11 +26,13 @@ number_aliases = {
 
 
 def parsed(number: str) -> str:
-    s = [emoji.demojize(number)]
+    s = emoji.demojize(number)
     for key in number_aliases.keys():
-        for alias in number_aliases[key]:
-            for i in range(len(s)):
-                s.append(s[i].replace(key, alias))
+        for i in range(s.count(key)):
+            s = ', '.join([s.replace(key, alias, 1) for alias in number_aliases[key]])
+    s = ', '.join(set([i for i in s.split(', ') if i.isdigit()]))
+    if len(s) < 1:
+        return 'invalid'
     return s
 
 
