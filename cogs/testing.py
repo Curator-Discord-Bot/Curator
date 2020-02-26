@@ -12,7 +12,7 @@ class Learning(commands.Cog):
 
     @commands.command()
     async def oi(self, ctx: commands.Context):
-        await ctx.send('G\'day, ' + ctx.author.mention + '!')
+        await ctx.send('G\'day, ' + ctx.author.name + '!')
 
     @commands.command()
     async def add(self, ctx: commands.Context, first: int, second: int, name: int):
