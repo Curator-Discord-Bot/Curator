@@ -10,6 +10,7 @@ from cogs.utils import context
 from cogs.utils.db import Table
 
 initial_extensions = (
+    'cogs.profile',
     'cogs.count',
     'cogs.reminder',
     'cogs.admin'

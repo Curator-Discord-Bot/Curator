@@ -14,19 +14,18 @@ except Exception as e:
     exit()
 
 cogs = initial_extensions
-
 for ext in cogs:
     try:
         importlib.import_module(ext)
     except Exception as e:
-        print(f'Could not load {ext}.\n{e}', err=True)
+        print(f'Could not load {ext}.\n{e}')
         exit()
 
 for table in Table.all_tables():
     try:
         created = run(table.create(verbose=True, run_migrations=False))
     except Exception as e:
-        print(f'Could not create {table.__tablename__}.\n{e}', err=True)
+        print(f'Could not create {table.__tablename__}.\n{e}')
     else:
         if created:
             print(f'[{table.__module__}] Created {table.__tablename__}.')

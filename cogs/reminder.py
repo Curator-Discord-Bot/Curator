@@ -155,7 +155,6 @@ class Reminder(commands.Cog):
         --------
         :class:`Timer`
         """
-        print('top')
         when, event, *args = args
 
         try:
@@ -170,7 +169,6 @@ class Reminder(commands.Cog):
 
         timer = Timer.temporary(event=event, args=args, kwargs=kwargs, expires=when, created=now)
         delta = (when - now).total_seconds()
-        print('Before 60')
         if delta <= 60:
             # a shortcut for small timers
             self.bot.loop.create_task(self.short_timer_optimisation(delta, timer))
@@ -180,10 +178,7 @@ class Reminder(commands.Cog):
                    VALUES ($1, $2::jsonb, $3, $4)
                    RETURNING id;
                 """
-        print('before')
         row = await connection.fetchrow(query, event, {'args': args, 'kwargs': kwargs}, when, now)
-        print('after')
-        print(row)
         timer.id = row[0]
 
         # only set the data check if it can be waited on
@@ -212,20 +207,16 @@ class Reminder(commands.Cog):
 
         Times are in UTC.
         """
-        print(when.dt, when.arg)
-
-        try:
-            timer = await self.create_timer(when.dt, 'reminder', ctx.author.id,
+        timer = await self.create_timer(when.dt, 'reminder', ctx.author.id,
                                         ctx.channel.id,
                                         when.arg,
                                         connection=ctx.db,
                                         created=ctx.message.created_at,
                                         message_id=ctx.message.id)
-            delta = time.human_timedelta(when.dt, source=timer.created_at)
-        except Exception as e:
-            print(e)
+        delta = time.human_timedelta(when.dt, source=timer.created_at)
+
         print(delta)
-        await ctx.send(f"Alright {ctx.author.mention}, in {delta}: {when.arg}")
+        await ctx.send(f'Alright {ctx.author.mention}, in {delta}: {when.arg}')
 
     @reminder.command(name='list')
     async def reminder_list(self, ctx):

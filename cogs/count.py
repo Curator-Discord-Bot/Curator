@@ -7,6 +7,21 @@ from os import path
 from typing import Optional
 import emoji
 from itertools import product
+from .utils import db
+
+
+class Counts(db.Table):
+    id = db.PrimaryKeyColumn()
+    time_start = db.Column(db.Datetime, default="now() at time zone 'utc'")
+    initiated_user_id = db.Column(db.ForeignKey(table='profiles', column='id', sql_type=db.Integer(big=True)))
+
+    expires = db.Column(db.Datetime, index=True)
+    contributors = db.Column(db.JSON, default="'{}'::jsonb")
+
+    timed_out = db.Column(db.Boolean, default="FALSE")
+    duration = db.Column(db.Interval)
+    ruined_user_id = db.Column(db.ForeignKey(table='profiles', column='id', sql_type=db.Integer(big=True)))
+
 
 number_aliases = {
     ':keycap_0:': ['0'],
@@ -99,7 +114,8 @@ class Count(commands.Cog):
 
         if not self.counting.attempt_count(message.author, message.content.split()[0]):
             c: Counting = self.counting
-            await message.channel.send(message.author.mention + ' failed, and ruined the count for ' + str(len(c.contributors.keys())) + ' counters...\nThe count reached ' + str(c.count) + '.')
+            await message.channel.send(message.author.mention + ' failed, and ruined the count for ' + str(
+                len(c.contributors.keys())) + ' counters...\nThe count reached ' + str(c.count) + '.')
             self.counting = None
 
     @commands.group(invoke_without_command=True)

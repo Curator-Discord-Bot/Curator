@@ -1,0 +1,121 @@
+{
+    "table": {
+        "name": "counts",
+        "__meta__": "cogs.count.Counts",
+        "columns": [
+            {
+                "column_type": {
+                    "big": false,
+                    "small": false,
+                    "auto_increment": true,
+                    "__meta__": "cogs.utils.db.Integer"
+                },
+                "index": false,
+                "primary_key": true,
+                "nullable": true,
+                "default": null,
+                "unique": false,
+                "name": "id",
+                "index_name": null
+            },
+            {
+                "column_type": {
+                    "timezone": false,
+                    "__meta__": "cogs.utils.db.Datetime"
+                },
+                "index": false,
+                "primary_key": false,
+                "nullable": true,
+                "default": "now() at time zone 'utc'",
+                "unique": false,
+                "name": "time_start",
+                "index_name": null
+            },
+            {
+                "column_type": {
+                    "table": "profiles",
+                    "column": "id",
+                    "on_update": "NO ACTION",
+                    "on_delete": "CASCADE",
+                    "sql_type": "BIGINT",
+                    "__meta__": "cogs.utils.db.ForeignKey"
+                },
+                "index": false,
+                "primary_key": false,
+                "nullable": true,
+                "default": null,
+                "unique": false,
+                "name": "initiated_user_id",
+                "index_name": null
+            },
+            {
+                "column_type": {
+                    "timezone": false,
+                    "__meta__": "cogs.utils.db.Datetime"
+                },
+                "index": true,
+                "primary_key": false,
+                "nullable": true,
+                "default": null,
+                "unique": false,
+                "name": "expires",
+                "index_name": "counts_expires_idx"
+            },
+            {
+                "column_type": {
+                    "__meta__": "cogs.utils.db.JSON"
+                },
+                "index": false,
+                "primary_key": false,
+                "nullable": true,
+                "default": "'{}'::jsonb",
+                "unique": false,
+                "name": "contributors",
+                "index_name": null
+            },
+            {
+                "column_type": {
+                    "__meta__": "cogs.utils.db.Boolean"
+                },
+                "index": false,
+                "primary_key": false,
+                "nullable": true,
+                "default": "FALSE",
+                "unique": false,
+                "name": "timed_out",
+                "index_name": null
+            },
+            {
+                "column_type": {
+                    "field": null,
+                    "__meta__": "cogs.utils.db.Interval"
+                },
+                "index": false,
+                "primary_key": false,
+                "nullable": true,
+                "default": null,
+                "unique": false,
+                "name": "duration",
+                "index_name": null
+            },
+            {
+                "column_type": {
+                    "table": "profiles",
+                    "column": "id",
+                    "on_update": "NO ACTION",
+                    "on_delete": "CASCADE",
+                    "sql_type": "BIGINT",
+                    "__meta__": "cogs.utils.db.ForeignKey"
+                },
+                "index": false,
+                "primary_key": false,
+                "nullable": true,
+                "default": null,
+                "unique": false,
+                "name": "ruined_user_id",
+                "index_name": null
+            }
+        ]
+    },
+    "migrations": []
+}
