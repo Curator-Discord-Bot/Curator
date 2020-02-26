@@ -236,6 +236,10 @@ class Admin(commands.Cog):
         new_ctx._db = ctx._db
         await self.bot.invoke(new_ctx)
 
+    @commands.command(hidden=True)
+    async def logout(self, ctx: commands.Context):
+        await ctx.bot.logout()
+
 
 def setup(bot):
     bot.add_cog(Admin(bot))

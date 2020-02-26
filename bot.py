@@ -1,13 +1,17 @@
 import discord
 from discord.ext import commands
 import asyncio
-import asyncpg
 import config
 import sys
 import traceback
 
+from cogs.count import Count
+from cogs.utils import context
+from cogs.utils.db import Table
+
 initial_extensions = (
     'cogs.count',
+    'cogs.reminder',
     'cogs.admin'
 )
 
@@ -31,14 +35,29 @@ class Curator(commands.Bot):
         print(self.user.id)
         print('------')
 
-    async def on_message(self, message: discord.message):
+    async def on_message(self, message: discord.Message):
+        if 'Count' in self.cogs.keys():
+            print('Cogs counts ok')
+            await self.cogs['Count'].check_count(message)
         await self.process_commands(message)
+
+    async def process_commands(self, message):
+        ctx = await self.get_context(message, cls=context.Context)
+
+        if ctx.command is None:
+            return
+
+        try:
+            await self.invoke(ctx)
+        finally:
+            # Just in case we have any outstanding DB connections
+            await ctx.release()
 
 
 def run_bot():
     loop = asyncio.get_event_loop()
     try:
-        pool = loop.run_until_complete(asyncpg.create_pool(config.postgresql))
+        pool = loop.run_until_complete(Table.create_pool(config.postgresql, command_timeout=60))
     except Exception as e:
         print(e)
         print('Could not set up PostgreSQL. Exiting.')
@@ -50,4 +69,5 @@ def run_bot():
     bot.run(config.token)
 
 
-run_bot()
+if __name__ == "__main__":
+    run_bot()

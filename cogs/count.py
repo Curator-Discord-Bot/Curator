@@ -3,7 +3,6 @@ import datetime
 import discord
 from discord.ext import commands
 import json
-import re
 from os import path
 from typing import Optional
 import emoji
@@ -71,21 +70,41 @@ class Count(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.counting = None
+        self.count_channel = None
 
-        with open(path.join(path.dirname(path.dirname(path.abspath(__file__))), 'settings.json')) as config_file:
-            data = json.load(config_file)
-            guild = self.bot.get_guild(681912993621344361)
-            self.count_channel = guild.get_channel(data['count_channel'])
+    def is_count_channel(self, channel: discord.TextChannel):
+        if self.count_channel is None:
+            with open(path.join(path.dirname(path.dirname(path.abspath(__file__))), 'settings.json')) as config_file:
+                data = json.load(config_file)
+                guild = self.bot.get_guild(681912993621344361)
+                self.count_channel = guild.get_channel(data['count_channel'])
 
-    async def check_channel(self, ctx: commands.Context) -> bool:
-        if ctx.channel != self.count_channel:
-            await ctx.send(f'Count commands are intended for {self.count_channel.mention}.')
+        return channel != self.count_channel
+
+    async def check_channel(self, channel: discord.TextChannel, message=True) -> bool:
+        if self.is_count_channel(channel):
+            if message:
+                await channel.send(f'Count commands are intended for {self.count_channel.mention}.')
             return False
         return True
 
+    async def check_count(self, message: discord.Message):
+        print('Checking count')
+        if not self.is_count_channel(message.channel) or self.counting is None:
+            print(self.is_count_channel(message.channel), self.counting)
+            return
+
+        if not self.counting.attempt_count(message.author, message.content.split()[0]):
+            c: Counting = self.counting
+            message.channel.send('You failed, and you have ruined the count for the ' + str(len(
+                c.contributors.keys)) + ' counters...\nThe count reached ' + str(c.count) + '.')
+            print('Attempt failed')
+        else:
+            print('Attempt succeeded')
+
     @commands.group(invoke_without_command=True)
     async def count(self, ctx: commands.Context, count: Optional[str]):
-        if not await self.check_channel(ctx):
+        if not await self.check_channel(ctx.channel):
             return
         elif count is not None:
             if self.counting is None:
