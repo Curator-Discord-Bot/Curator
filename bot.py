@@ -6,7 +6,6 @@ import sys
 import traceback
 import random
 
-from cogs.count import Count
 from cogs.utils import context
 from cogs.utils.db import Table
 
@@ -43,7 +42,9 @@ class Curator(commands.Bot):
             return
 
         if 'Count' in self.cogs.keys():
-            await self.cogs['Count'].check_count(message)
+            if await self.cogs['Count'].check_count(message):
+                return
+
         await self.process_commands(message)
 
     async def process_commands(self, message):

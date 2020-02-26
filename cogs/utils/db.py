@@ -822,7 +822,6 @@ class Table(metaclass=TableMeta):
             if column.index:
                 fmt = 'CREATE INDEX IF NOT EXISTS {1.index_name} ON {0} ({1.name});'.format(cls.__tablename__, column)
                 statements.append(fmt)
-
         return '\n'.join(statements)
 
     @classmethod

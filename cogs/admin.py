@@ -15,6 +15,7 @@ import time
 import subprocess
 from typing import Union, Optional
 import random
+import bot
 
 # to expose to the eval command
 import datetime
@@ -41,8 +42,8 @@ class GlobalChannel(commands.Converter):
 class Admin(commands.Cog):
     """Admin-only commands that make the bot dynamic."""
 
-    def __init__(self, bot):
-        self.bot = bot
+    def __init__(self, curator: bot.Curator):
+        self.bot: bot.Curator = curator
         self._last_result = None
         self.sessions = set()
 
@@ -243,5 +244,5 @@ class Admin(commands.Cog):
         await ctx.bot.logout()
 
 
-def setup(bot):
-    bot.add_cog(Admin(bot))
+def setup(curator: bot.Curator):
+    curator.add_cog(Admin(curator))

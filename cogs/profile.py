@@ -41,35 +41,38 @@ class UserProfile:
         return hash(self.id)
 
     def __repr__(self):
-        return f'<User created_at={self.created_at} discord_id={self.discord_id}>'
+        return f'<Profile created_at={self.created_at} discord_id={self.discord_id}>'
 
 
 class Profile(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    async def get_profile(self, user: discord.User, connection=None):
+    async def get_profile_with_create(self, discord_id: int) -> UserProfile:
+        return await self.get_profile(discord_id) or await self.create_profile(discord_id)
+
+    async def get_profile(self, discord_id: int, connection=None) -> UserProfile:
         query = "SELECT * FROM profiles WHERE discord_id=$1;"
         con = connection or self.bot.pool
-        record = await con.fetchrow(query, user.id)
+        record = await con.fetchrow(query, discord_id)
         return UserProfile(record=record) if record else None
 
-    async def create_profile(self, user: discord.User):
+    async def create_profile(self, discord_id: int) -> UserProfile:
         connection = self.bot.pool
         now = datetime.datetime.utcnow()
 
-        p = UserProfile.temporary(created_at=now, discord_id=user.id, minecraft_uuid=None)
+        p = UserProfile.temporary(created_at=now, discord_id=discord_id, minecraft_uuid=None)
         query = """INSERT INTO profiles (created_at, discord_id, minecraft_uuid)
                    VALUES ($1, $2, $3)
                    RETURNING id;
                 """
-        row = await connection.fetchrow(query, now, user.id, None)
+        row = await connection.fetchrow(query, now, discord_id, None)
         p.id = row[0]
         return p
 
     @commands.group(invoke_without_command=True)
     async def profile(self, ctx: commands.Context):
-        p: UserProfile = await self.get_profile(ctx.author)
+        p: UserProfile = await self.get_profile(ctx.author.id)
         if p is None:
             await ctx.send('You do not have a profile yet.')
         else:
@@ -78,9 +81,9 @@ class Profile(commands.Cog):
 
     @profile.command()
     async def create(self, ctx: commands.Context):
-        p = await self.get_profile(ctx.author)
+        p = await self.get_profile(ctx.author.id)
         if p is None:
-            await self.create_profile(ctx.author)
+            await self.create_profile(ctx.author.id)
             await ctx.send(f'Created profile with discord id: {ctx.author.id}.')
         else:
             await ctx.send('You already have a profile.')
