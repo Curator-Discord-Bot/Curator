@@ -36,8 +36,10 @@ class Curator(commands.Bot):
         print('------')
 
     async def on_message(self, message: discord.Message):
+        if message.author.bot:
+            return
+
         if 'Count' in self.cogs.keys():
-            print('Cogs counts ok')
             await self.cogs['Count'].check_count(message)
         await self.process_commands(message)
 

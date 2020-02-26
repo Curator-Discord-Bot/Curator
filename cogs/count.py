@@ -51,7 +51,7 @@ class Counting:
         self.ruined_user_id = None
 
     def attempt_count(self, counter: discord.User, count: str) -> bool:
-        if self.is_next(count):
+        if self.is_next(count) and counter != self.last_counter:
             self.last_count = datetime.datetime.utcnow()
             self.last_counter = counter.id
             self.count += 1
@@ -79,7 +79,7 @@ class Count(commands.Cog):
                 guild = self.bot.get_guild(681912993621344361)
                 self.count_channel = guild.get_channel(data['count_channel'])
 
-        return channel != self.count_channel
+        return channel == self.count_channel
 
     async def check_channel(self, channel: discord.TextChannel, message=True) -> bool:
         if self.is_count_channel(channel):
@@ -89,18 +89,13 @@ class Count(commands.Cog):
         return True
 
     async def check_count(self, message: discord.Message):
-        print('Checking count')
         if not self.is_count_channel(message.channel) or self.counting is None:
-            print(self.is_count_channel(message.channel), self.counting)
             return
 
         if not self.counting.attempt_count(message.author, message.content.split()[0]):
             c: Counting = self.counting
-            message.channel.send('You failed, and you have ruined the count for the ' + str(len(
-                c.contributors.keys)) + ' counters...\nThe count reached ' + str(c.count) + '.')
-            print('Attempt failed')
-        else:
-            print('Attempt succeeded')
+            await message.channel.send('You failed, and you have ruined the count for the ' + str(len(c.contributors.keys())) + ' counters...\nThe count reached ' + str(c.count) + '.')
+            self.counting = None
 
     @commands.group(invoke_without_command=True)
     async def count(self, ctx: commands.Context, count: Optional[str]):
