@@ -36,7 +36,8 @@ number_aliases = {
     ':keycap_9:': ['9'],
     ':keycap_10:': ['10'],
     ':OK_hand:': ['69'],
-    ':hundred_points:': ['100', '00']
+    ':hundred_points:': ['100', '00'],
+    ':input_numbers:': ['1234']
 }
 
 
