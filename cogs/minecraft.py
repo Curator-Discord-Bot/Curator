@@ -1,3 +1,6 @@
+import base64
+import json
+
 import discord
 from discord.ext import commands
 from json import dumps
@@ -64,6 +67,30 @@ class Minecraft(commands.Cog):
             if 'list' in players.keys():
                 embed.add_field(name='Players', value=f'{", ".join(players["list"])}', inline=True)
         await ctx.send(embed=embed)
+
+    @minecraft.command()
+    async def skin(self, ctx: commands.Context, uuid):
+        r = requests.get(f'https://sessionserver.mojang.com/session/minecraft/profile/{uuid}')
+        j = r.json()
+
+        base64_message = j['properties'][0]['value']
+        base64_bytes = base64_message.encode('ascii')
+        message_bytes = base64.b64decode(base64_bytes)
+        message = message_bytes.decode('ascii')
+        skin = json.loads(message)['textures']['SKIN']['url']
+        await ctx.send(skin)
+
+    @minecraft.command()
+    async def body(self, ctx: commands.Context, uuid):
+        await ctx.send(f'https://crafatar.com/renders/body/{uuid}?overlay')
+
+    @minecraft.command()
+    async def head(self, ctx: commands.Context, uuid):
+        await ctx.send(f'https://crafatar.com/renders/head/{uuid}?overlay')
+
+    @minecraft.command(aliases=['avatar'])
+    async def face(self, ctx: commands.Context, uuid):
+        await ctx.send(f'https://crafatar.com/avatars/{uuid}?overlay')
 
 
 def setup(bot: commands.Bot):
