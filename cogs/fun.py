@@ -4,7 +4,7 @@ from random import choice
 import requests
 
 
-class Silly(commands.Cog):
+class Fun(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
@@ -28,6 +28,13 @@ class Silly(commands.Cog):
         embed = discord.Embed(title=j['answer'])
         embed.set_image(url=j['image'])
         await ctx.send(embed=embed)
+
+    @commands.command()
+    async def choice(self, ctx: commands.Context, *options):
+        if len(options) < 1:
+            await ctx.send('You gave me nothing to choose from. :weary:')
+        else:
+            await ctx.send(choice(options))
 
     @commands.command(name='8ball', aliases=('8', 'eightball'))
     async def eight_ball(self, ctx: commands.Context):
@@ -58,4 +65,4 @@ class Silly(commands.Cog):
 
 
 def setup(bot: commands.Bot):
-    bot.add_cog(Silly(bot))
+    bot.add_cog(Fun(bot))
