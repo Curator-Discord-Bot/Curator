@@ -36,6 +36,13 @@ class Fun(commands.Cog):
         else:
             await ctx.send(choice(options))
 
+    @commands.command()
+    async def reverse(self, ctx: commands.Context, *options):
+        if len(options) < 1:
+            await ctx.send('Give me something to reverse.')
+        else:
+            await ctx.send(' '.join(options)[::-1])
+
     @commands.command(name='8ball', aliases=('8', 'eightball'))
     async def eight_ball(self, ctx: commands.Context):
         answers = (
