@@ -3,6 +3,7 @@ import datetime
 import discord
 from discord.ext import commands
 from .utils import db
+from .minecraft import get_uuid
 
 
 class Profiles(db.Table):
@@ -87,6 +88,17 @@ class Profile(commands.Cog):
             await ctx.send(f'Created profile with discord id: {ctx.author.id}.')
         else:
             await ctx.send('You already have a profile.')
+
+    @profile.command(aliases=['mc', 'mc_uuid', 'uuid'])
+    async def minecraft(self, ctx: commands.Context, username: str):
+        uuid = get_uuid(username)
+        if uuid:
+            await self.get_profile_with_create(ctx.author.id)
+            update = f'UPDATE profiles SET minecraft_uuid=$1 WHERE discord_id=$2;'
+            await self.bot.pool.execute(update, uuid, ctx.author.id)
+            await ctx.send(f'Assigned uuid {uuid} to your profile.')
+        else:
+            await ctx.send('Could not find uuid from supplied username.')
 
 
 def setup(bot: commands.Bot):

@@ -188,14 +188,18 @@ class Counting:
             c_cog = curator.cogs['Count']
             for key in self.contributors.keys():
                 counter: CounterProfile = await c_cog.get_profile_with_create(key)
-                updates = ['last_count=' + str(self.id), 'total_score=' + str(counter.total_score + self.contributors[key]),
+                contribution = self.contributors[key]
+                print('Contribution', contribution)
+                print('Before', counter.total_score, 'After', counter.total_score + contribution)
+                contribution = self.contributors[key]
+                updates = ['last_count=' + str(self.id), 'total_score=' + str(counter.total_score + contribution),
                            'counts_participated=' + str(counter.counts_participated + 1)]
 
                 if counter.best_count is None:
                     updates.append('best_count=' + str(self.id))
                 else:
                     best_score = await connection.execute(score_query, counter.best_count)
-                    if best_score is None or best_score < self.score:
+                    if best_score is None or int(best_score.split(' ')[1]) < self.score:
                         updates.append('best_count=' + str(self.id))
 
                 if self.started_by == key:
@@ -207,7 +211,7 @@ class Counting:
                         updates.append('best_ruin=' + str(self.id))
                     else:
                         best_ruin_score = await connection.execute(score_query, counter.best_ruin)
-                        if best_ruin_score is None or best_ruin_score < self.score:
+                        if best_ruin_score is None or int(best_ruin_score.split(' ')[1]) < self.score:
                             updates.append('best_ruin=' + str(self.id))
 
                 updates = ', '.join(updates)

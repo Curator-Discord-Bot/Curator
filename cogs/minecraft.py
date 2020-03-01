@@ -15,9 +15,12 @@ color_emoji = {
 
 
 def get_uuid(username):
-    r = requests.get(f'https://api.mojang.com/users/profiles/minecraft/{username}')
-    j = r.json()
-    return j['id']
+    try:
+        r = requests.get(f'https://api.mojang.com/users/profiles/minecraft/{username}')
+        j = r.json()
+        return j['id']
+    except Exception as e:
+        return None
 
 
 class Minecraft(commands.Cog):
@@ -38,7 +41,7 @@ class Minecraft(commands.Cog):
                 statuses.append('**' + key + '**: ' + color_emoji[d[key]])
         await ctx.send('\n\n'.join(statuses))
 
-    @minecraft.command()
+    @minecraft.command(desciption='Gets')
     async def uuid(self, ctx: commands.Context, *names):
         if len(names) > 1:
             r = requests.post('https://api.mojang.com/profiles/minecraft', data=dumps(names))
@@ -74,23 +77,34 @@ class Minecraft(commands.Cog):
                 embed.add_field(name='Players', value=f'{", ".join(players["list"])}', inline=True)
         await ctx.send(embed=embed)
 
-    @minecraft.command()
-    async def skin(self, ctx: commands.Context, username):
-        r = requests.get(f'https://sessionserver.mojang.com/session/minecraft/profile/{get_uuid(username)}')
+    @minecraft.command(aliases=['skin'])
+    async def player(self, ctx: commands.Context, username: str):
+        uuid = get_uuid(username)
+        r = requests.get(f'https://sessionserver.mojang.com/session/minecraft/profile/{uuid}')
         j = r.json()
 
         base64_message = j['properties'][0]['value']
         base64_bytes = base64_message.encode('ascii')
         message_bytes = base64.b64decode(base64_bytes)
         message = message_bytes.decode('ascii')
-        skin = json.loads(message)['textures']['SKIN']['url']
-        await ctx.send(skin)
+        url = json.loads(message)['textures']['SKIN']['url']
+
+        embed = discord.Embed(title=f'{username}\'s Profile', description=f'[Download Skin]({url})', url=f'https://namemc.com/profile/{uuid}')
+        embed.set_image(url=f'https://crafatar.com/renders/body/{uuid}?overlay')
+
+        if 'Profile' in self.bot.cogs:
+            query = "SELECT discord_id FROM profiles WHERE minecraft_uuid=$1;"
+            row = await self.bot.pool.fetchrow(query, uuid)
+            if row:
+                discord_id = row['discord_id']
+                member = await ctx.guild.fetch_member(discord_id)
+                embed.add_field(name='Discord', value=member.mention)
+
+        await ctx.send(embed=embed)
 
     @minecraft.command()
-    async def body(self, ctx: commands.Context, username):
-        embed = discord.Embed(title='Body')
-        embed.set_image(url=f'https://crafatar.com/renders/body/{get_uuid(username)}?overlay')
-        await ctx.send(embed=embed)
+    async def namemc(self, ctx: commands.Context, username):
+        await ctx.send(f'https://namemc.com/search?q={username}')
 
     @minecraft.command()
     async def head(self, ctx: commands.Context, username):
