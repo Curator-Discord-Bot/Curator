@@ -14,6 +14,12 @@ color_emoji = {
 }
 
 
+def get_uuid(username):
+    r = requests.get(f'https://api.mojang.com/users/profiles/minecraft/{name}')
+    j = r.json()
+    return j['id']
+
+
 class Minecraft(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -69,8 +75,8 @@ class Minecraft(commands.Cog):
         await ctx.send(embed=embed)
 
     @minecraft.command()
-    async def skin(self, ctx: commands.Context, uuid):
-        r = requests.get(f'https://sessionserver.mojang.com/session/minecraft/profile/{uuid}')
+    async def skin(self, ctx: commands.Context, username):
+        r = requests.get(f'https://sessionserver.mojang.com/session/minecraft/profile/{get_uuid(username)}')
         j = r.json()
 
         base64_message = j['properties'][0]['value']
@@ -81,16 +87,18 @@ class Minecraft(commands.Cog):
         await ctx.send(skin)
 
     @minecraft.command()
-    async def body(self, ctx: commands.Context, uuid):
-        await ctx.send(f'https://crafatar.com/renders/body/{uuid}?overlay')
+    async def body(self, ctx: commands.Context, username):
+        embed = discord.Embed(title='Body')
+        embed.set_image(url=f'https://crafatar.com/renders/body/{get_uuid(username)}?overlay')
+        await ctx.send(embed=embed)
 
     @minecraft.command()
-    async def head(self, ctx: commands.Context, uuid):
-        await ctx.send(f'https://crafatar.com/renders/head/{uuid}?overlay')
+    async def head(self, ctx: commands.Context, username):
+        await ctx.send(f'https://crafatar.com/renders/head/{get_uuid(username)}?overlay')
 
     @minecraft.command(aliases=['avatar'])
-    async def face(self, ctx: commands.Context, uuid):
-        await ctx.send(f'https://crafatar.com/avatars/{uuid}?overlay')
+    async def face(self, ctx: commands.Context, username):
+        await ctx.send(f'https://crafatar.com/avatars/{get_uuid(username)}?overlay')
 
 
 def setup(bot: commands.Bot):
