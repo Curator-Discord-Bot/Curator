@@ -97,8 +97,9 @@ class Profile(commands.Cog):
 
     @commands.command()
     async def auth(self, ctx: commands.Context, pin: int):
-        query = 'SELECT minecraft_uuid from auths where pin=$1'
+        query = 'DELETE FROM auths WHERE pin=1230 RETURNING minecraft_uuid;'
         row = await self.bot.pool.fetchrow(query, pin)
+        await ctx.send('Test: ' + str(row))
         if row:
             await self.minecraft(ctx, row["minecraft_uuid"])
             await ctx.send(f'You verified minecraft account with UUID {row["minecraft_uuid"]}')
