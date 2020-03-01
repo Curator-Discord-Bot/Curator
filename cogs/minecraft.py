@@ -23,6 +23,7 @@ def get_uuid(username):
         return None
 
 
+
 class Minecraft(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot

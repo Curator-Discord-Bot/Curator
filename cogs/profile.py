@@ -89,7 +89,6 @@ class Profile(commands.Cog):
         else:
             await ctx.send('You already have a profile.')
 
-    @profile.command(aliases=['mc', 'mc_uuid', 'uuid'])
     async def minecraft(self, ctx: commands.Context, username: str):
         uuid = get_uuid(username)
         if uuid:
@@ -99,6 +98,16 @@ class Profile(commands.Cog):
             await ctx.send(f'Assigned uuid {uuid} to your profile.')
         else:
             await ctx.send('Could not find uuid from supplied username.')
+
+    @commands.command()
+    async def auth(self, ctx: commands.Context, pin: int):
+        query = 'SELECT minecraft_uuid from auths where pin=$1'
+        row = await self.bot.pool.fetchrow(query, pin)
+        if row:
+            await self.minecraft(ctx, row["minecraft_uuid"])
+            await ctx.send(f'You verified minecraft account with UUID {row["minecraft_uuid"]}')
+        else:
+            await ctx.send('That pin seems to be invalid.')
 
 
 def setup(bot: commands.Bot):
