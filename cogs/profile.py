@@ -89,15 +89,11 @@ class Profile(commands.Cog):
         else:
             await ctx.send('You already have a profile.')
 
-    async def minecraft(self, ctx: commands.Context, username: str):
-        uuid = get_uuid(username)
+    async def minecraft(self, ctx: commands.Context, uuid: str):
         if uuid:
             await self.get_profile_with_create(ctx.author.id)
             update = f'UPDATE profiles SET minecraft_uuid=$1 WHERE discord_id=$2;'
             await self.bot.pool.execute(update, uuid, ctx.author.id)
-            await ctx.send(f'Assigned uuid {uuid} to your profile.')
-        else:
-            await ctx.send('Could not find uuid from supplied username.')
 
     @commands.command()
     async def auth(self, ctx: commands.Context, pin: int):
