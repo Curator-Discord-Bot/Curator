@@ -97,7 +97,7 @@ class Profile(commands.Cog):
 
     @commands.command()
     async def auth(self, ctx: commands.Context, pin: int):
-        query = 'DELETE FROM auths WHERE pin=1230 RETURNING minecraft_uuid;'
+        query = 'DELETE FROM auths WHERE pin=%s RETURNING minecraft_uuid;'
         row = await self.bot.pool.fetchrow(query, pin)
         await ctx.send('Test: ' + str(row))
         if row:
