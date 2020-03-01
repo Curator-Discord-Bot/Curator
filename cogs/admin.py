@@ -240,7 +240,7 @@ class Admin(commands.Cog):
 
     @commands.command(hidden=True)
     async def logout(self, ctx: commands.Context):
-        await ctx.send(random.choice([':dizzy_face:', ':head_bandage:', ':dagger:']))
+        await ctx.send(random.choice([':dizzy_face:', ':head_bandage:', ':dagger:', f'Et tu, {ctx.author.name}?']))
         await ctx.bot.logout()
 
 
