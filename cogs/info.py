@@ -35,6 +35,8 @@ class Info(commands.Cog):
         plt.axis('equal')
         buf = BytesIO()
         plt.savefig(buf, format="png")
+        buf.seek(0)
+        plt.close()
         await ctx.send(file=discord.File(buf, 'chart.png'))
 
 
