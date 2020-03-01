@@ -2,8 +2,6 @@ import discord
 from discord.ext import commands
 import asyncio
 
-from twisted.internet import asyncioreactor
-
 import config
 import sys
 import traceback
@@ -68,7 +66,6 @@ class Curator(commands.Bot):
 
 def run_bot():
     loop = asyncio.get_event_loop()
-    asyncioreactor.install(asyncio.get_event_loop())
     try:
         pool = loop.run_until_complete(Table.create_pool(config.postgresql, command_timeout=60, min_size=5, max_size=5))
     except Exception as e:
