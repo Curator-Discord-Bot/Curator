@@ -60,7 +60,7 @@ class Profile(commands.Cog):
     async def create_profile(self, discord_id: int) -> UserProfile:
         connection = self.bot.pool
         now = datetime.datetime.utcnow()
-
+        print(f'Registered profile with id {discord_id}')
         p = UserProfile.temporary(created_at=now, discord_id=discord_id, minecraft_uuid=None)
         query = """INSERT INTO profiles (created_at, discord_id, minecraft_uuid)
                    VALUES ($1, $2, $3)

@@ -168,6 +168,11 @@ class Counting:
         self.timed_out = timed_out
         self.ruined_by = ruined_by.id
 
+        if 'Count' in curator.cogs:
+            c_cog = curator.cogs['Count']
+            await c_cog.get_profile_with_create(self.started_by)
+            await c_cog.get_profile_with_create(self.ruined_by)
+
         query = """INSERT INTO counts (started_by, started_at, score, contributors, timed_out, duration, ruined_by )
                    VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7)
                    RETURNING id;
@@ -176,17 +181,33 @@ class Counting:
                                         self.timed_out, datetime.datetime.utcnow() - self.started_at, self.ruined_by)
         self.id = row[0]
 
+        score_query = 'SELECT score FROM counts where id=$1'
+
         if 'Count' in curator.cogs:
             c_cog = curator.cogs['Count']
             for key in self.contributors.keys():
                 counter: CounterProfile = await c_cog.get_profile_with_create(key)
                 updates = ['last_count=' + str(self.id), 'total_score=' + str(counter.total_score + self.contributors[key]),
                            'counts_participated=' + str(counter.counts_participated + 1)]
+
+                if counter.best_count is None:
+                    updates.append('best_count=' + str(self.id))
+                else:
+                    best_score = await connection.execute(score_query, counter.best_count)
+                    if best_score is None or best_score < self.score:
+                        updates.append('best_count=' + str(self.id))
+
                 if self.started_by == key:
                     updates.append('counts_started=' + str(counter.counts_started + 1))
 
                 if self.ruined_by == key:
                     updates.append('counts_ruined=' + str(counter.counts_ruined + 1))
+                    if counter.best_ruin is None:
+                        updates.append('best_ruin=' + str(self.id))
+                    else:
+                        best_ruin_score = await connection.execute(score_query, counter.best_ruin)
+                        if best_ruin_score is None or best_ruin_score < self.score:
+                            updates.append('best_ruin=' + str(self.id))
 
                 updates = ', '.join(updates)
                 counter_query = f'UPDATE counters SET {updates} WHERE user_id=$1;'
@@ -211,7 +232,11 @@ class Count(commands.Cog):
 
     async def create_profile(self, discord_id: int) -> CounterProfile:
         connection = self.bot.pool
-        now = datetime.datetime.utcnow()
+        print(f'Registered counter with id {discord_id}')
+
+        if 'Profile' in self.bot.cogs:
+            p_cog = self.bot.cogs['Profile']
+            await p_cog.get_profile_with_create(discord_id)
 
         p = CounterProfile.temporary()
         query = """INSERT INTO counters (user_id)
@@ -223,18 +248,12 @@ class Count(commands.Cog):
         return p
 
     def is_count_channel(self, channel: discord.TextChannel):
-        if self.count_channel is None:
-            with open(path.join(path.dirname(path.dirname(path.abspath(__file__))), 'settings.json')) as settings:
-                data = json.load(settings)
-                guild = self.bot.get_guild(681912993621344361)
-                self.count_channel = guild.get_channel(data['count_channel'])
+        return 'count' in channel.name.lower()
 
-        return channel == self.count_channel
-
-    async def check_channel(self, channel: discord.TextChannel, message=True) -> bool:
-        if self.is_count_channel(channel):
+    async def check_channel(self, channel: discord.TextChannel, message=False) -> bool:
+        if not self.is_count_channel(channel):
             if message:
-                await channel.send(f'Count commands are intended for {self.count_channel.mention}.')
+                await channel.send('Count commands are intended for use only in channels that contain "count" in the name...')
             return False
         return True
 
@@ -252,15 +271,16 @@ class Count(commands.Cog):
 
     @commands.group(invoke_without_command=True)
     async def count(self, ctx: commands.Context):
-        if not await self.check_channel(ctx.channel):
-            return
-        else:
+        if await self.check_channel(ctx.channel):
             await ctx.send(f'You need to supply a subcommand. Try {ctx.prefix}help count')
 
     @count.command()
     async def start(self, ctx: commands.Context):
-        await ctx.send('Count has been started. Good luck!')
-        self.counting = Counting.temporary(started_by=ctx.author.id)
+        if await self.check_channel(ctx.channel):
+            await ctx.send('Count has been started. Good luck!')
+            self.counting = Counting.temporary(started_by=ctx.author.id)
+        else:
+            await ctx.send("You can't start a count outside of the count channel.")
 
     @count.command()
     async def data(self, ctx: commands.Context):
