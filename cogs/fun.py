@@ -37,11 +37,6 @@ class Fun(commands.Cog):
             await ctx.send(choice(options))
 
     @commands.command()
-    async def roles(self, ctx: commands.Context):
-        roles = [f'{role.name}: {len(role.members)}' for role in await ctx.guild.fetch_roles() if role.name != '@everyone']
-        await ctx.send('\n'.join(roles))
-
-    @commands.command()
     async def reverse(self, ctx: commands.Context, *options):
         if len(options) < 1:
             await ctx.send('Give me something to reverse.')
