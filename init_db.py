@@ -7,7 +7,7 @@ from cogs.utils.db import Table
 
 run = asyncio.get_event_loop().run_until_complete
 try:
-    run(Table.create_pool(config.postgresql))
+    run(Table.create_pool(config.postgresql, min_size=5, max_size=5))
 except Exception as e:
     print(e)
     print('Could not set up PostgreSQL. Exiting.')
