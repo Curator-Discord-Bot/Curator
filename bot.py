@@ -13,6 +13,9 @@ initial_extensions = (
     'cogs.profile',
     'cogs.count',
     'cogs.reminder',
+    'cogs.minecraft',
+    'cogs.fun',
+    'cogs.math',
     'cogs.admin'
 )
 
