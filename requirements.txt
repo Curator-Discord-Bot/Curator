@@ -1,3 +1,5 @@
+twisted
+quarry
 requests
 discord.py
 emoji
