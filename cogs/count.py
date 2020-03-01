@@ -1,4 +1,5 @@
 import datetime
+from typing import Optional
 
 import asyncpg
 import discord
@@ -281,6 +282,24 @@ class Count(commands.Cog):
             self.counting = Counting.temporary(started_by=ctx.author.id)
         else:
             await ctx.send("You can't start a count outside of the count channel.")
+
+    @count.command()
+    async def profile(self, ctx: commands.Context, *, user: Optional[discord.User]):
+        user: discord.User = user or ctx.author
+        counter: CounterProfile = await self.get_profile_with_create(user.id)
+
+        if profile:
+            embed = discord.Embed(title=f'{user.name} - counting profile')
+            embed.add_field(name='Total Score', value=f'{counter.total_score} counts')
+            embed.add_field(name='Contributed in', value=f'{counter.counts_participated} rounds')
+            embed.add_field(name='Rounds Started', value=f'{counter.counts_started} rounds')
+            embed.add_field(name='Rounds Ruined', value=f'{counter.counts_ruined} rounds')
+            embed.add_field(name='Best Round', value=f'Round {counter.best_count}')
+            embed.add_field(name='Worst Fail', value=f'Round {counter.best_ruin}')
+            embed.add_field(name='Last Count', value=f'Round {counter.last_count}')
+            await ctx.send(embed=embed)
+        else:
+            await ctx.send('Could not find your profile.')
 
     @count.command()
     async def data(self, ctx: commands.Context):
