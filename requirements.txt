@@ -1,5 +1,6 @@
 twisted
 quarry
+matplotlib
 requests
 discord.py
 emoji
