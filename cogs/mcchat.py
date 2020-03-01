@@ -3,7 +3,8 @@ import discord
 import asyncio
 from discord.ext import commands
 
-from twisted.internet import asyncioreactor, reactor
+from twisted.internet import asyncioreactor
+asyncioreactor.install(asyncio.get_event_loop())
 from quarry.net.server import ServerFactory, ServerProtocol
 
 
@@ -50,7 +51,6 @@ def main(argv):
 
 
 def setup(bot: commands.Bot):
-    asyncioreactor.install(asyncio.get_event_loop())
     main([])
 
 
