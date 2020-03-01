@@ -15,7 +15,7 @@ color_emoji = {
 
 
 def get_uuid(username):
-    r = requests.get(f'https://api.mojang.com/users/profiles/minecraft/{name}')
+    r = requests.get(f'https://api.mojang.com/users/profiles/minecraft/{username}')
     j = r.json()
     return j['id']
 
@@ -94,11 +94,15 @@ class Minecraft(commands.Cog):
 
     @minecraft.command()
     async def head(self, ctx: commands.Context, username):
-        await ctx.send(f'https://crafatar.com/renders/head/{get_uuid(username)}?overlay')
+        embed = discord.Embed(title='Head')
+        embed.set_image(url=f'https://crafatar.com/renders/head/{get_uuid(username)}?overlay')
+        await ctx.send(embed=embed)
 
     @minecraft.command(aliases=['avatar'])
     async def face(self, ctx: commands.Context, username):
-        await ctx.send(f'https://crafatar.com/avatars/{get_uuid(username)}?overlay')
+        embed = discord.Embed(title='Face')
+        embed.set_image(url=f'https://crafatar.com/avatars/{get_uuid(username)}?overlay')
+        await ctx.send(embed=embed)
 
 
 def setup(bot: commands.Bot):
