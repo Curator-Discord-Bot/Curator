@@ -95,14 +95,13 @@ class Profile(commands.Cog):
             update = f'UPDATE profiles SET minecraft_uuid=$1 WHERE discord_id=$2;'
             await self.bot.pool.execute(update, uuid, ctx.author.id)
 
-    @commands.command()
+    @commands.command(aliases=['verify'])
     async def auth(self, ctx: commands.Context, pin: int):
-        query = 'DELETE FROM auths WHERE pin=%s RETURNING minecraft_uuid;'
-        row = await self.bot.pool.execute(query, pin)
-        await ctx.send('Test: ' + str(row))
-        if row:
-            await self.minecraft(ctx, row["minecraft_uuid"])
-            await ctx.send(f'You verified minecraft account with UUID {row["minecraft_uuid"]}')
+        query = 'DELETE FROM auths WHERE pin=$1 RETURNING minecraft_uuid;'
+        id = await self.bot.pool.fetchval(query, pin)
+        if id:
+            await self.minecraft(ctx, id)
+            await ctx.send(f'You verified minecraft account with UUID {id}')
         else:
             await ctx.send('That pin seems to be invalid.')
 
