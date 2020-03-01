@@ -5,6 +5,7 @@ from discord.ext import commands
 
 from twisted.internet import asyncioreactor
 asyncioreactor.install(asyncio.get_event_loop())
+from twisted.internet import reactor
 from quarry.net.server import ServerFactory, ServerProtocol
 
 
@@ -47,7 +48,7 @@ def main(argv):
 
     # Listen
     factory.listen(args.host, args.port)
-    asyncioreactor.run()
+    reactor.run()
 
 
 def setup(bot: commands.Bot):
@@ -55,4 +56,4 @@ def setup(bot: commands.Bot):
 
 
 def teardown(bot):
-    asyncioreactor.stop()
+    reactor.stop()
