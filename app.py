@@ -1,7 +1,10 @@
 from .bot import run_bot
 
+bot = None
+
 
 def application(env, start_response):
+    global bot
     start_response('200 OK', [('Content-Type', 'text/html')])
-    bot = run_bot()
-    return [str(env), str(start_response), bot.owner_id]
+    bot = bot or run_bot()
+    return [b"Hello World"]
