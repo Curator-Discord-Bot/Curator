@@ -1,3 +1,5 @@
+import signal
+
 from discord.ext import commands
 import asyncio
 import traceback
@@ -16,6 +18,7 @@ import subprocess
 from typing import Union, Optional
 import random
 import bot
+from os import kill
 
 # to expose to the eval command
 import datetime
@@ -284,6 +287,11 @@ class Admin(commands.Cog):
             await pages.paginate()
         except Exception as e:
             await ctx.send(str(e))
+
+    @commands.command(hidden=True)
+    async def oskill(self, ctx, pid: int):
+        kill(pid, signal.SIGKILL)
+        await ctx.send('Sent kill signal.')
 
     @commands.command(hidden=True)
     async def logout(self, ctx: commands.Context):
