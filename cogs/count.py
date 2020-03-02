@@ -134,7 +134,7 @@ class Counting:
         self.ruined_by = None
 
     @classmethod
-    def temporary(cls, *, started_by, started_at=datetime.datetime.utcnow(), score=0, contributors=dict(),
+    def temporary(cls, *, started_by, started_at=datetime.datetime.utcnow(), score=0, contributors=None,
                   last_active_at=datetime.datetime.utcnow(), last_counter=None):
         if contributors is None:
             contributors = {}
@@ -188,9 +188,6 @@ class Counting:
             c_cog = curator.cogs['Count']
             for key in self.contributors.keys():
                 counter: CounterProfile = await c_cog.get_profile_with_create(key)
-                contribution = self.contributors[key]
-                print('Contribution', contribution)
-                print('Before', counter.total_score, 'After', counter.total_score + contribution)
                 contribution = self.contributors[key]
                 updates = ['last_count=' + str(self.id), 'total_score=' + str(counter.total_score + contribution),
                            'counts_participated=' + str(counter.counts_participated + 1)]
@@ -266,12 +263,15 @@ class Count(commands.Cog):
         if not self.is_count_channel(message.channel) or self.counting is None:
             return False
 
-        if not self.counting.attempt_count(message.author, message.content.split()[0]):
-            c: Counting = self.counting
+        c: Counting = self.counting
+
+        if not c.attempt_count(message.author, message.content.split()[0]):
             await message.channel.send(message.author.mention + ' failed, and ruined the count for ' + str(
                 len(c.contributors.keys())) + ' counters...\nThe count reached ' + str(c.score) + '.')
+            await message.channel.send(c.contributors)
             await c.finish(self.bot, False, message.author)
             self.counting = None
+            return False
         return True
 
     @commands.group(invoke_without_command=True)
@@ -308,6 +308,33 @@ class Count(commands.Cog):
     @count.command()
     async def data(self, ctx: commands.Context):
         await ctx.send(self.counting.__dict__)
+
+    @count.command(aliases=['best', 'highscore', 'hiscore', 'top'])
+    async def leaderboard(self, ctx: commands.Context):
+        embed = discord.Embed(title='Count Leaderboard', description='Top 5 Highest Counts :slight_smile:')
+        query = 'SELECT score, contributors FROM counts ORDER BY score DESC LIMIT 5;'
+        rows = await self.bot.pool.fetch(query)
+        users = {
+        }
+        i = 0
+        for row in rows:
+            i += 1
+            contributors = row['contributors']
+            keys = contributors.keys()
+            a = [f'**Score: {row["score"]}**']
+            for user_id in keys:
+                if user_id in users.keys():
+                    name = users[user_id]
+                else:
+                    member = await ctx.guild.fetch_member(user_id)
+                    name = member.name
+                    users[user_id] = name
+
+                a.append(f'**{name}**: {contributors[user_id]}')
+
+            embed.add_field(name=str(i), value='\n'.join(a), inline=False)
+
+        await ctx.send(embed=embed)
 
     @count.command()
     async def parse(self, ctx: commands.Context, number: str):

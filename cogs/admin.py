@@ -239,6 +239,34 @@ class Admin(commands.Cog):
         await self.bot.invoke(new_ctx)
 
     @commands.command(hidden=True)
+    async def sh(self, ctx, *, command):
+        """Runs a shell command."""
+        from cogs.utils.paginator import TextPages
+
+        async with ctx.typing():
+            stdout, stderr = await self.run_process(command)
+
+        if stderr:
+            text = f'stdout:\n{stdout}\nstderr:\n{stderr}'
+        else:
+            text = stdout
+
+        try:
+            pages = TextPages(ctx, text)
+            await pages.paginate()
+        except Exception as e:
+            await ctx.send(str(e))
+
+    @commands.command(hidden=True)
+    async def sql(self, ctx, *, command):
+        """Runs a sql query."""
+        try:
+            res = await self.bot.pool.fetch(command)
+            await ctx.send(str(res))
+        except Exception as e:
+            await ctx.send(str(e))
+
+    @commands.command(hidden=True)
     async def logout(self, ctx: commands.Context):
         await ctx.send(random.choice([':dizzy_face:', ':head_bandage:', ':dagger:', f'Et tu, {ctx.author.name}?']))
         await ctx.bot.logout()

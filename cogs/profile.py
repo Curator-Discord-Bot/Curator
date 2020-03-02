@@ -1,4 +1,5 @@
 import datetime
+from typing import Optional
 
 import discord
 from discord.ext import commands
@@ -72,22 +73,14 @@ class Profile(commands.Cog):
         return p
 
     @commands.group(invoke_without_command=True)
-    async def profile(self, ctx: commands.Context):
-        p: UserProfile = await self.get_profile(ctx.author.id)
+    async def profile(self, ctx: commands.Context, user: Optional[discord.Member]):
+        user = user or ctx.author
+        p: UserProfile = await self.get_profile(user.id)
         if p is None:
             await ctx.send('You do not have a profile yet.')
         else:
             await ctx.send(
                 f'Here is your profile:\n```\nCreated at: {p.created_at}\nDiscord ID: {p.discord_id}\nMinecraft UUID: {p.minecraft_uuid}\n```')
-
-    @profile.command()
-    async def create(self, ctx: commands.Context):
-        p = await self.get_profile(ctx.author.id)
-        if p is None:
-            await self.create_profile(ctx.author.id)
-            await ctx.send(f'Created profile with discord id: {ctx.author.id}.')
-        else:
-            await ctx.send('You already have a profile.')
 
     async def minecraft(self, ctx: commands.Context, uuid: str):
         if uuid:
