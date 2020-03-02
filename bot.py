@@ -17,7 +17,7 @@ initial_extensions = (
     'cogs.minecraft',
     'cogs.fun',
     'cogs.math',
-    'cogs.info'
+    'cogs.info',
     'cogs.admin'
 )
 

@@ -150,6 +150,7 @@ crashlytics-build.properties
 fabric.properties
 
 config.py
+notes.txt
 migrations/*
 
 migrations/
