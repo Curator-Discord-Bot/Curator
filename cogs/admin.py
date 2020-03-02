@@ -271,22 +271,7 @@ class Admin(commands.Cog):
 
     @commands.command(hidden=True)
     async def processes(self, ctx):
-        """Runs a shell command."""
-        from cogs.utils.paginator import TextPages
-
-        async with ctx.typing():
-            stdout, stderr = await self.run_process('ps -A')
-
-        if stderr:
-            text = f'stdout:\n{stdout}\nstderr:\n{stderr}'
-        else:
-            text = stdout
-
-        try:
-            pages = TextPages(ctx, text)
-            await pages.paginate()
-        except Exception as e:
-            await ctx.send(str(e))
+        await self.sh('ps -A')
 
     @commands.command(hidden=True)
     async def oskill(self, ctx, pid: int):
