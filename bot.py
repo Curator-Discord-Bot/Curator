@@ -2,6 +2,8 @@ import discord
 from discord.ext import commands
 import asyncio
 
+from typing import Optional
+
 import config
 import sys
 import traceback
@@ -65,14 +67,14 @@ class Curator(commands.Bot):
             await ctx.release()
 
 
-def run_bot():
+def run_bot() -> Optional[Curator]:
     loop = asyncio.get_event_loop()
     try:
         pool = loop.run_until_complete(Table.create_pool(config.postgresql, command_timeout=60, min_size=3, max_size=3))
     except Exception as e:
         print(e)
         print('Could not set up PostgreSQL. Exiting.')
-        return
+        return None
 
     description = '''A bot written by Ruukas.'''
     if config.command_prefix is None:
@@ -81,6 +83,7 @@ def run_bot():
         bot = Curator(commands_prefix=config.command_prefix, description=description)
     bot.pool = pool
     bot.run(config.token)
+    return bot
 
 
 if __name__ == "__main__":
