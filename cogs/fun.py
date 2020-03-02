@@ -30,45 +30,11 @@ class Fun(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command()
-    async def choice(self, ctx: commands.Context, *options):
-        if len(options) < 1:
-            await ctx.send('You gave me nothing to choose from. :weary:')
-        else:
-            await ctx.send(choice(options))
-
-    @commands.command()
     async def reverse(self, ctx: commands.Context, *options):
         if len(options) < 1:
             await ctx.send('Give me something to reverse.')
         else:
             await ctx.send(' '.join(options)[::-1])
-
-    @commands.command(name='8ball', aliases=('8', 'eightball', '🎱'))
-    async def eight_ball(self, ctx: commands.Context):
-        answers = (
-            'It is certain.',
-            'It is decidedly so.',
-            'Without a doubt.',
-            'Yes - definitely.',
-            'You may rely on it.',
-            'As I see it, yes.',
-            'Most likely.',
-            'Outlook good.',
-            'Yes.',
-            'Signs point to yes.',
-            'Reply hazy, try again.',
-            'Ask again later.',
-            'Better no tell you now.',
-            'Cannot predict now.',
-            'Concentrate and ask again.',
-            'Don\'t count on it.',
-            'My reply is no.',
-            'My sources say no.',
-            'Outlook not so good.',
-            'Very doubtful.'
-        )
-
-        await ctx.send(choice(answers))
 
 
 def setup(bot: commands.Bot):
