@@ -20,6 +20,7 @@ initial_extensions = (
     'cogs.fun',
     'cogs.math',
     'cogs.info',
+    'cogs.random',
     'cogs.admin'
 )
 
