@@ -9,6 +9,15 @@ class RNG(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
+    @commands.group(invoke_without_command=True)
+    async def random(self, ctx: commands.Context):
+        await ctx.send(f'See {ctx.prefix}help random')
+
+    @random.command()
+    async def member(self, ctx: commands.Context):
+        m = random.choice(ctx.guild.members)
+        await ctx.send(str(m))
+
     @commands.command(name='8ball', aliases=('8', 'eightball', '🎱'))
     async def eight_ball(self, ctx: commands.Context):
         answers = (
