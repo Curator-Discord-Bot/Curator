@@ -142,7 +142,7 @@ class Admin(commands.Cog):
         """Reloads all modules, while pulling from git."""
 
         async with ctx.typing():
-            stdout, stderr = await self.run_process('git pull')
+            stdout, stderr = await self.run_process('cd Curator;git pull')
 
         # progress and stuff is redirected to stderr in git pull
         # however, things like "fast forward" and files
