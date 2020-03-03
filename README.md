@@ -11,6 +11,5 @@ It is currently early in development, and we still have many ideas that we want 
  - allow simultaneous counts
  - add timestamp to auths and remove expired auths
  - at auth, remove uuid from any other accounts that might have it
-
-
- RJTimmerman was here
+ 
+ `RJTimmerman was here`

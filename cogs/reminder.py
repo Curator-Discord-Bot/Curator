@@ -193,7 +193,7 @@ class Reminder(commands.Cog):
 
         return timer
 
-    @commands.group(aliases=['timer', 'remind'], usage='<when>', invoke_without_command=True)
+    @commands.group(aliases=['timer', 'remind', 'r'], usage='<when>', invoke_without_command=True)
     async def reminder(self, ctx: commands.Context, *, when: time.UserFriendlyTime(commands.clean_content, default='\u2026')):
         """Reminds you of something after a certain amount of time.
 
@@ -216,7 +216,7 @@ class Reminder(commands.Cog):
         delta = time.human_timedelta(when.dt, source=timer.created_at)
 
         print(delta)
-        await ctx.send(f'Alright {ctx.author.mention}, in {delta}: {when.arg}')
+        await ctx.send(f'Alright {ctx.author.name}, in {delta}: {when.arg}')
 
     @reminder.command(name='list')
     async def reminder_list(self, ctx):
