@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 import matplotlib.pyplot as plt
 from io import BytesIO
+from typing import Optional
 
 
 class Info(commands.Cog):
@@ -14,7 +15,7 @@ class Info(commands.Cog):
         await ctx.send('\n'.join(roles))
 
     @commands.command()
-    async def pie(self, ctx: commands.context, infinity='no', traveller='no'):
+    async def pie(self, ctx: commands.context, infinity: Optional[str], traveller: Optional[str]):
         if infinity == 'iie':
             if ctx.guild.id == '468366604313559040':
                 labels = ['Traveler', 'Citizen', 'Squire', 'Knight', "Lord", 'Hero', 'Legend']
