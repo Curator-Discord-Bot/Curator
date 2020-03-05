@@ -43,13 +43,21 @@ class Counters(db.Table):
 
 number_aliases = {
     ':keycap_0:': ['0'],
+    ':O_button_(blood_type):': ['0']
+    ':hollow_red_circle:': ['0'],
     ':keycap_1:': ['1'],
     ':1st_place_medal:': ['1'],
     ':keycap_2:': ['2'],
     ':2nd_place_medal:': ['2'],
     ':keycap_3:': ['3'],
     ':3rd_place_medal:': ['3'],
+    ':evergreen_tree:': ['3'],
+    ':deciduous_tree:': ['3'],
+    ':palm_tree:': ['3'],
+    ':cactus:': ['3'],
+    ':shamrock:': ['3'],
     ':keycap_4:': ['4'],
+    ':four_leaf_clover:': ['4'],
     ':keycap_5:': ['5'],
     ':keycap_6:': ['6'],
     ':keycap_7:': ['7'],
@@ -58,6 +66,7 @@ number_aliases = {
     ':keycap_10:': ['10'],
     ':pool_8_ball:': ['8'],
     ':OK_hand:': ['69'],
+    ':Cancer:': ['69'],
     ':hundred_points:': ['100', '00'],
     ':input_numbers:': ['1234']
 }
