@@ -54,6 +54,7 @@ number_aliases = {
     ':evergreen_tree:': ['3'],
     ':deciduous_tree:': ['3'],
     ':palm_tree:': ['3'],
+    ':christmas_tree:': ['3'],
     ':cactus:': ['3'],
     ':shamrock:': ['3'],
     ':keycap_4:': ['4'],
@@ -62,11 +63,11 @@ number_aliases = {
     ':keycap_6:': ['6'],
     ':keycap_7:': ['7'],
     ':keycap_8:': ['8'],
+    ':pool_8_ball:': ['8'],
     ':keycap_9:': ['9'],
     ':keycap_10:': ['10'],
-    ':pool_8_ball:': ['8'],
-    ':OK_hand:': ['69'],
-    ':Cancer:': ['69'],
+    ':ok_hand:': ['69'],
+    ':cancer:': ['69'],
     ':hundred_points:': ['100', '00'],
     ':input_numbers:': ['1234']
 }
