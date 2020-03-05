@@ -44,8 +44,11 @@ class Counters(db.Table):
 number_aliases = {
     ':keycap_0:': ['0'],
     ':keycap_1:': ['1'],
+    ':1st_place_medal:': ['1'],
     ':keycap_2:': ['2'],
+    ':2nd_place_medal:': ['1'],
     ':keycap_3:': ['3'],
+    ':3rd_place_medal:': ['1'],
     ':keycap_4:': ['4'],
     ':keycap_5:': ['5'],
     ':keycap_6:': ['6'],
