@@ -24,6 +24,8 @@ from os import kill
 import datetime
 from collections import Counter
 
+import .cogs.utils.messages
+
 
 class GlobalChannel(commands.Converter):
     async def convert(self, ctx, argument):
@@ -90,7 +92,7 @@ class Admin(commands.Cog):
         except commands.ExtensionError as e:
             await ctx.send(f'{e.__class__.__name__}: {e}')
         else:
-            await ctx.send(':mechanical_arm:')
+            await ctx.send(random.choice(messages.load_msg))
 
     @commands.command(hidden=True)
     async def unload(self, ctx, *, module):
@@ -100,7 +102,7 @@ class Admin(commands.Cog):
         except commands.ExtensionError as e:
             await ctx.send(f'{e.__class__.__name__}: {e}')
         else:
-            await ctx.send(':flushed:')
+            await ctx.send(random.choice(messages.unload_msg))
 
     @commands.group(name='reload', hidden=True, invoke_without_command=True)
     async def _reload(self, ctx, *, module):
@@ -110,7 +112,7 @@ class Admin(commands.Cog):
         except commands.ExtensionError as e:
             await ctx.send(f'{e.__class__.__name__}: {e}')
         else:
-            await ctx.send(':arrows_counterclockwise:')
+            await ctx.send(random.choice(messages.reload))
 
     _GIT_PULL_REGEX = re.compile(r'\s*(?P<filename>.+?)\s*\|\s*[0-9]+\s*[+-]+')
 
