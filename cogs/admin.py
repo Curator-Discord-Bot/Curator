@@ -24,7 +24,7 @@ from os import kill
 import datetime
 from collections import Counter
 
-import .cogs.utils.messages
+from .cogs.utils import messages
 
 
 class GlobalChannel(commands.Converter):
