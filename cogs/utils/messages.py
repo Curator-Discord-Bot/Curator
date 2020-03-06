@@ -1,0 +1,5 @@
+on_ready_msg = ['Hey there:smirk:', 'Hey!:smiley:', 'G\'day people:wave:', 'Hi, I\'m alive!', 'Hi, how are ya?', 'Thanks for giving me life!:smiling_face_with_3_hearts:', 'Feels good to be back!']
+load_msg = [':mechanical_arm:']
+reload_msg = [':arrows_counterclockwise:']
+unload_msg = [':flushed:', 'Ouch!']
+logout_msg = [':dizzy_face:', ':head_bandage:', ':dagger:', f'Et tu, {ctx.author.name}?']
