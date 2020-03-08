@@ -69,12 +69,7 @@ class Curator(commands.Bot):
             # Just in case we have any outstanding DB connections
             await ctx.release()
 
-
-instance: Curator
-
-
 def run_bot():
-    global instance
     loop = asyncio.get_event_loop()
     try:
         pool = loop.run_until_complete(Table.create_pool(config.postgresql, command_timeout=60, min_size=3, max_size=3))
@@ -84,10 +79,10 @@ def run_bot():
         return None
 
     description = '''A bot written by Ruukas.'''
-    instance = Curator(description=description) if config.command_prefix is None else Curator(
+    bot = Curator(description=description) if config.command_prefix is None else Curator(
         commands_prefix=config.command_prefix, description=description)
-    instance.pool = pool
-    instance.run(config.token)
+    bot.pool = pool
+    bot.run(config.token)
 
 
 if __name__ == "__main__":

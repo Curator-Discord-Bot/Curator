@@ -7,7 +7,6 @@ from discord.ext import commands
 import emoji
 
 import bot
-from . import profile
 from .utils import db
 
 
@@ -84,6 +83,25 @@ def is_number(number: str, to_check: str) -> bool:
     return parsed(to_check) == number
 
 
+async def fetch_counter_record(discord_id, connection) -> asyncpg.Record:
+    return await connection.fetchrow(
+        'INSERT INTO counters (user_id) VALUES ($1) ON CONFLICT (user_id) DO UPDATE SET user_id = counters.user_id RETURNING *',
+        discord_id)
+
+
+def is_count_channel(channel: discord.TextChannel):
+    return 'count' in channel.name.lower()
+
+
+async def check_channel(channel: discord.TextChannel, message=False) -> bool:
+    if not is_count_channel(channel):
+        if message:
+            await channel.send(
+                'Count commands are intended for use only in channels that contain "count" in the name...')
+        return False
+    return True
+
+
 class CounterProfile:
     __slots__ = (
         'user_id', 'last_count', 'best_count', 'best_ruin', 'total_score', 'counts_participated', 'counts_ruined',
@@ -101,36 +119,32 @@ class CounterProfile:
 
 
 class Counter:
-    __slots__ = ('original', 'current')
+    __slots__ = ('original', 'current', 'connection')
     original: CounterProfile
     current: CounterProfile
+    connection: asyncpg.pool.Pool
 
-    def __init__(self, *, record):
+    def __init__(self, record, connection):
         self.original = CounterProfile(d=db.dict_from_record(record))
         self.current = CounterProfile(d=db.dict_from_record(record))
+        self.connection = connection
 
-    @classmethod
-    async def load(cls, discord_id, *, connection=bot.instance.pool):
-        return cls(record=await connection.fetchrow(
-            'INSERT INTO counters (user_id) VALUES ($1) ON CONFLICT (discord_id) DO UPDATE SET user_id = counters.user_id RETURNING *',
-            discord_id))
-
-    async def save(self, *, connection=bot.instance.pool):
+    async def save(self):
         original_keys = self.original.__dict__.keys()
         updates = [(key, value) for key, value in self.current.__dict__.items() if
-                   key not in original_keys or value != self.original[key]]
+                   key not in original_keys or value != self.original.__dict__[key]]
         if updates:
-            await connection.execute(
+            await self.connection.execute(
                 f'UPDATE SET {", ".join([str(key) + " = " + str(value) for key, value in updates])} RETURNING *;')
 
-    def __enter__(self) -> CounterProfile:
+    async def __aenter__(self) -> CounterProfile:
         return self.current
 
-    def __exit__(self):
-        self.save()
+    async def __aexit__(self, typ, value, traceback):
+        await self.save()
 
     def __repr__(self):
-        return f'<Counter discord_id={self.original["discord_id"]}>'
+        return f'<Counter discord_id={self.original.user_id}>'
 
 
 class Counting:
@@ -186,10 +200,10 @@ class Counting:
         self.timed_out = timed_out
         self.ruined_by = ruined_by.id
 
-        with Counter.load(discord_id=self.started_by) as counter:
+        async with Counter(await fetch_counter_record(discord_id=self.started_by, connection=connection), connection=connection) as counter:
             counter.counts_started += 1
 
-        with Counter.load(discord_id=self.ruined_by) as counter:
+        async with Counter(await fetch_counter_record(discord_id=self.ruined_by, connection=connection), connection=connection) as counter:
             counter.counts_ruined += 1
 
         query = """INSERT INTO counts (started_by, started_at, score, contributors, timed_out, duration, ruined_by )
@@ -203,7 +217,7 @@ class Counting:
         score_query = 'SELECT score FROM counts where id=$1'
 
         for discord_id, contribution in self.contributors.items():
-            with Counter.load(discord_id=discord_id) as counter:
+            async with Counter(await fetch_counter_record(discord_id, connection), connection) as counter:
                 counter.last_count = self.id
                 counter.total_score += contribution
                 counter.counts_participated += 1
@@ -226,6 +240,7 @@ class Counting:
                         best_ruin_score = await connection.fetchval(score_query, counter.best_ruin)
                         if not best_ruin_score or best_ruin_score < self.score:
                             counter.best_ruin = self.id
+        del self
 
 
 class Count(commands.Cog):
@@ -234,39 +249,33 @@ class Count(commands.Cog):
         self.counting = None
         self.count_channel = None
 
-    def is_count_channel(self, channel: discord.TextChannel):
-        return 'count' in channel.name.lower()
-
-    async def check_channel(self, channel: discord.TextChannel, message=False) -> bool:
-        if not self.is_count_channel(channel):
-            if message:
-                await channel.send(
-                    'Count commands are intended for use only in channels that contain "count" in the name...')
-            return False
-        return True
-
     async def check_count(self, message: discord.Message) -> bool:
-        if not self.is_count_channel(message.channel) or self.counting is None:
+        if is_count_channel(message.channel):
+            if 'check' in message.content:
+                await message.add_reaction('\u2705' if self.counting else '\u274c')
+            if not self.counting:
+                return False
+        else:
             return False
 
         c: Counting = self.counting
 
         if not c.attempt_count(message.author, message.content.split()[0]):
+            self.counting = None
             await message.channel.send(message.author.mention + ' failed, and ruined the count for ' + str(
                 len(c.contributors.keys())) + ' counters...\nThe count reached ' + str(c.score) + '.')
             await c.finish(self.bot, False, message.author)
-            self.counting = None
             return False
         return True
 
     @commands.group(invoke_without_command=True)
     async def count(self, ctx: commands.Context):
-        if await self.check_channel(ctx.channel):
+        if await check_channel(ctx.channel):
             await ctx.send(f'You need to supply a subcommand. Try {ctx.prefix}help count')
 
     @count.command()
     async def start(self, ctx: commands.Context):
-        if await self.check_channel(ctx.channel):
+        if await check_channel(ctx.channel):
             await ctx.send('Count has been started. Good luck!')
             self.counting = Counting.temporary(started_by=ctx.author.id)
         else:
@@ -275,9 +284,7 @@ class Count(commands.Cog):
     @count.command()
     async def profile(self, ctx: commands.Context, *, user: Optional[discord.User]):
         user: discord.User = user or ctx.author
-        counter: CounterProfile = await self.get_profile_with_create(user.id)
-
-        if profile:
+        async with Counter(await fetch_counter_record(user.id, self.bot.pool), self.bot.pool) as counter:
             embed = discord.Embed(title=f'{user.name} - counting profile')
             embed.add_field(name='Total Score', value=f'{counter.total_score} counts')
             embed.add_field(name='Contributed in', value=f'{counter.counts_participated} rounds')
@@ -287,13 +294,12 @@ class Count(commands.Cog):
             embed.add_field(name='Worst Fail', value=f'Round {counter.best_ruin}')
             embed.add_field(name='Last Count', value=f'Round {counter.last_count}')
             await ctx.send(embed=embed)
-        else:
-            await ctx.send('Could not find your profile.')
 
     @count.command()
-    async def data(self, ctx: commands.Context):
+    async def check(self, ctx: commands.Context):
+        print('Count check')
         if self.counting:
-            await ctx.send(self.counting.__dict__)
+            await ctx.send('A count is running.')
         else:
             await ctx.send('No count is running.')
 
