@@ -4,8 +4,6 @@ from typing import Optional
 import asyncpg
 import discord
 from discord.ext import commands
-import json
-from os import path
 import emoji
 
 import bot
@@ -79,9 +77,7 @@ def parsed(number: str) -> str:
         for i in range(s.count(key)):
             s = ', '.join([s.replace(key, alias, 1) for alias in number_aliases[key]])
     s = ', '.join(set([i for i in s.split(', ') if i.isdigit()]))
-    if len(s) < 1:
-        return 'invalid'
-    return s
+    return s or 'invalid'
 
 
 def is_number(number: str, to_check: str) -> bool:
@@ -93,47 +89,55 @@ class CounterProfile:
         'user_id', 'last_count', 'best_count', 'best_ruin', 'total_score', 'counts_participated', 'counts_ruined',
         'counts_started')
 
+    def __init__(self, *, d: dict):
+        self.user_id = d['user_id']
+        self.last_count = d['last_count']
+        self.best_count = d['best_count']
+        self.best_ruin = d['best_ruin']
+        self.total_score = d['total_score']
+        self.counts_participated = d['counts_participated']
+        self.counts_ruined = d['counts_ruined']
+        self.counts_started = d['counts_started']
+
+
+class Counter:
+    __slots__ = ('original', 'current')
+    original: CounterProfile
+    current: CounterProfile
+
     def __init__(self, *, record):
-        self.user_id = record['user_id']
-        self.last_count = record['last_count']
-        self.best_count = record['best_count']
-        self.best_ruin = record['best_ruin']
-        self.total_score = record['total_score']
-        self.counts_participated = record['counts_participated']
-        self.counts_ruined = record['counts_ruined']
-        self.counts_started = record['counts_started']
+        self.original = CounterProfile(d=db.dict_from_record(record))
+        self.current = CounterProfile(d=db.dict_from_record(record))
 
     @classmethod
-    def temporary(cls):
-        pseudo = {
-            'user_id': None,
-            'last_count': None,
-            'best_count': None,
-            'best_ruin': None,
-            'total_score': 0,
-            'counts_participated': 0,
-            'counts_ruined': 0,
-            'counts_started': 0
-        }
-        return cls(record=pseudo)
+    async def load(cls, discord_id, *, connection=bot.instance.pool):
+        return cls(record=await connection.fetchrow(
+            'INSERT INTO counters (user_id) VALUES ($1) ON CONFLICT (discord_id) DO UPDATE SET user_id = counters.user_id RETURNING *',
+            discord_id))
 
-    def __eq__(self, other):
-        try:
-            return self.user_id == other.user_id
-        except AttributeError:
-            return False
+    async def save(self, *, connection=bot.instance.pool):
+        original_keys = self.original.__dict__.keys()
+        updates = [(key, value) for key, value in self.current.__dict__.items() if
+                   key not in original_keys or value != self.original[key]]
+        if updates:
+            await connection.execute(
+                f'UPDATE SET {", ".join([str(key) + " = " + str(value) for key, value in updates])} RETURNING *;')
 
-    def __hash__(self):
-        return hash(self.user_id)
+    def __enter__(self) -> CounterProfile:
+        return self.current
+
+    def __exit__(self):
+        self.save()
 
     def __repr__(self):
-        return f'<CounterProfile discord_id={self.user_id}>'
+        return f'<Counter discord_id={self.original["discord_id"]}>'
 
 
 class Counting:
     __slots__ = (
         'id', 'started_by', 'started_at', 'score', 'contributors', 'last_active_at', 'last_counter', 'timed_out',
         'duration', 'ruined_by')
+    contributors: dict
 
     def __init__(self, *, record):
         self.id = record['id']
@@ -182,52 +186,46 @@ class Counting:
         self.timed_out = timed_out
         self.ruined_by = ruined_by.id
 
-        if 'Count' in curator.cogs:
-            c_cog = curator.cogs['Count']
-            await c_cog.get_profile_with_create(self.started_by)
-            await c_cog.get_profile_with_create(self.ruined_by)
+        with Counter.load(discord_id=self.started_by) as counter:
+            counter.counts_started += 1
+
+        with Counter.load(discord_id=self.ruined_by) as counter:
+            counter.counts_ruined += 1
 
         query = """INSERT INTO counts (started_by, started_at, score, contributors, timed_out, duration, ruined_by )
                    VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7)
                    RETURNING id;
                 """
-        row = await connection.fetchrow(query, self.started_by, self.started_at, self.score, self.contributors,
-                                        self.timed_out, datetime.datetime.utcnow() - self.started_at, self.ruined_by)
-        self.id = row[0]
+        self.id = await connection.fetchval(query, self.started_by, self.started_at, self.score, self.contributors,
+                                            self.timed_out, datetime.datetime.utcnow() - self.started_at,
+                                            self.ruined_by)
 
         score_query = 'SELECT score FROM counts where id=$1'
 
-        if 'Count' in curator.cogs:
-            c_cog = curator.cogs['Count']
-            for key in self.contributors.keys():
-                counter: CounterProfile = await c_cog.get_profile_with_create(key)
-                contribution = self.contributors[key]
-                updates = ['last_count=' + str(self.id), 'total_score=' + str(counter.total_score + contribution),
-                           'counts_participated=' + str(counter.counts_participated + 1)]
+        for discord_id, contribution in self.contributors.items():
+            with Counter.load(discord_id=discord_id) as counter:
+                counter.last_count = self.id
+                counter.total_score += contribution
+                counter.counts_participated += 1
 
                 if counter.best_count is None:
-                    updates.append('best_count=' + str(self.id))
+                    counter.best_count = self.id
                 else:
-                    best_score = await connection.execute(score_query, counter.best_count)
-                    if best_score is None or int(best_score.split(' ')[1]) < self.score:
-                        updates.append('best_count=' + str(self.id))
+                    best_score = await connection.fetchval(score_query, counter.best_count)
+                    if not best_score or best_score < self.score:
+                        counter.best_count = self.id
 
-                if self.started_by == key:
-                    updates.append('counts_started=' + str(counter.counts_started + 1))
+                if counter.user_id == self.started_by:
+                    counter.counts_started += 1
 
-                if self.ruined_by == key:
-                    updates.append('counts_ruined=' + str(counter.counts_ruined + 1))
+                if counter.user_id == self.ruined_by:
+                    counter.counts_ruined += 1
                     if counter.best_ruin is None:
-                        updates.append('best_ruin=' + str(self.id))
+                        counter.best_ruin = self.id
                     else:
-                        best_ruin_score = await connection.execute(score_query, counter.best_ruin)
-                        if best_ruin_score is None or int(best_ruin_score.split(' ')[1]) < self.score:
-                            updates.append('best_ruin=' + str(self.id))
-
-                updates = ', '.join(updates)
-                counter_query = f'UPDATE counters SET {updates} WHERE user_id=$1;'
-
-                await connection.execute(counter_query, key)
+                        best_ruin_score = await connection.fetchval(score_query, counter.best_ruin)
+                        if not best_ruin_score or best_ruin_score < self.score:
+                            counter.best_ruin = self.id
 
 
 class Count(commands.Cog):
@@ -236,39 +234,14 @@ class Count(commands.Cog):
         self.counting = None
         self.count_channel = None
 
-    async def get_profile_with_create(self, discord_id: int) -> CounterProfile:
-        return await self.get_profile(discord_id) or await self.create_profile(discord_id)
-
-    async def get_profile(self, discord_id: int, connection=None) -> CounterProfile:
-        query = "SELECT * FROM counters WHERE user_id=$1;"
-        con = connection or self.bot.pool
-        record = await con.fetchrow(query, discord_id)
-        return CounterProfile(record=record) if record else None
-
-    async def create_profile(self, discord_id: int) -> CounterProfile:
-        connection = self.bot.pool
-        print(f'Registered counter with id {discord_id}')
-
-        if 'Profile' in self.bot.cogs:
-            p_cog = self.bot.cogs['Profile']
-            await p_cog.get_profile_with_create(discord_id)
-
-        p = CounterProfile.temporary()
-        query = """INSERT INTO counters (user_id)
-                   VALUES ($1)
-                   RETURNING user_id;
-                """
-        row = await connection.fetchrow(query, discord_id)
-        p.user_id = row[0]
-        return p
-
     def is_count_channel(self, channel: discord.TextChannel):
         return 'count' in channel.name.lower()
 
     async def check_channel(self, channel: discord.TextChannel, message=False) -> bool:
         if not self.is_count_channel(channel):
             if message:
-                await channel.send('Count commands are intended for use only in channels that contain "count" in the name...')
+                await channel.send(
+                    'Count commands are intended for use only in channels that contain "count" in the name...')
             return False
         return True
 
@@ -320,7 +293,10 @@ class Count(commands.Cog):
 
     @count.command()
     async def data(self, ctx: commands.Context):
-        await ctx.send(self.counting.__dict__)
+        if self.counting:
+            await ctx.send(self.counting.__dict__)
+        else:
+            await ctx.send('No count is running.')
 
     @count.command(aliases=['best', 'highscore', 'hiscore', 'top'])
     async def leaderboard(self, ctx: commands.Context):

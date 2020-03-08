@@ -1049,3 +1049,7 @@ def create_tables(*tables, verbose=True, loop=None):
         loop = asyncio.get_event_loop()
 
     loop.create_task(_table_creator(tables, verbose=verbose))
+
+
+def dict_from_record(record: asyncpg.Record) -> dict:
+    return dict([pair for pair in record.items()])

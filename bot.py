@@ -2,12 +2,11 @@ import discord
 from discord.ext import commands
 import asyncio
 
-from typing import Optional
-
 import config
 import sys
 import traceback
-import random
+
+from asyncpg.pool import Pool
 
 from cogs.utils import context
 from cogs.utils.db import Table
@@ -27,6 +26,8 @@ initial_extensions = (
 
 
 class Curator(commands.Bot):
+    pool: Pool
+
     def __init__(self, commands_prefix=',', description=''):
         super().__init__(command_prefix=commands_prefix, description=description)
 
@@ -69,7 +70,11 @@ class Curator(commands.Bot):
             await ctx.release()
 
 
-def run_bot() -> Optional[Curator]:
+instance: Curator
+
+
+def run_bot():
+    global instance
     loop = asyncio.get_event_loop()
     try:
         pool = loop.run_until_complete(Table.create_pool(config.postgresql, command_timeout=60, min_size=3, max_size=3))
@@ -79,14 +84,12 @@ def run_bot() -> Optional[Curator]:
         return None
 
     description = '''A bot written by Ruukas.'''
-    if config.command_prefix is None:
-        bot = Curator(description=description)
-    else:
-        bot = Curator(commands_prefix=config.command_prefix, description=description)
-    bot.pool = pool
-    bot.run(config.token)
-    return bot
+    instance = Curator(description=description) if config.command_prefix is None else Curator(
+        commands_prefix=config.command_prefix, description=description)
+    instance.pool = pool
+    instance.run(config.token)
 
 
 if __name__ == "__main__":
     run_bot()
+    print('Bot loop ended')
