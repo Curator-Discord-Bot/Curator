@@ -42,7 +42,7 @@ class Counters(db.Table):
 number_aliases = {
     ':keycap_0:': ['0'],
     ':O_button_(blood_type):': ['0'],
-    ':hollow_red_circle:': ['0'],
+    ':heavy_large_circle:': ['0'],
     ':keycap_1:': ['1'],
     ':1st_place_medal:': ['1'],
     ':keycap_2:': ['2'],
@@ -64,6 +64,7 @@ number_aliases = {
     ':pool_8_ball:': ['8'],
     ':keycap_9:': ['9'],
     ':keycap_10:': ['10'],
+    ':ringed_planet:': ['42'],
     ':ok_hand:': ['69'],
     ':cancer:': ['69'],
     ':hundred_points:': ['100', '00'],
@@ -104,10 +105,9 @@ async def check_channel(channel: discord.TextChannel, message=False) -> bool:
 
 
 class CounterProfile:
-    #__slots__ = (
+    # __slots__ = (
     #    'user_id', 'last_count', 'best_count', 'best_ruin', 'total_score', 'counts_participated', 'counts_ruined',
     #    'counts_started')
-
 
     def __init__(self, *, d: dict):
         self.user_id = d['user_id']
@@ -202,10 +202,12 @@ class Counting:
         self.timed_out = timed_out
         self.ruined_by = ruined_by.id
 
-        async with Counter(await fetch_counter_record(discord_id=self.started_by, connection=connection), connection=connection) as counter:
+        async with Counter(await fetch_counter_record(discord_id=self.started_by, connection=connection),
+                           connection=connection) as counter:
             counter.counts_started += 1
 
-        async with Counter(await fetch_counter_record(discord_id=self.ruined_by, connection=connection), connection=connection) as counter:
+        async with Counter(await fetch_counter_record(discord_id=self.ruined_by, connection=connection),
+                           connection=connection) as counter:
             counter.counts_ruined += 1
 
         query = """INSERT INTO counts (started_by, started_at, score, contributors, timed_out, duration, ruined_by )
@@ -266,13 +268,14 @@ class Count(commands.Cog):
         if not c.attempt_count(message.author, message.content.split()[0]):
             self.counting = None
             self.top.append(c.score)
-            self.top = self.top[sorted(self.top[:-1])]
-            await message.channel.send(f'{message.author.mention} failed, and ruined the count for {len(c.contributors.keys())} counters...\nThe count reached {c.score}.')
+            self.top = sorted(self.top)[:-1]
+            await message.channel.send(
+                f'{message.author.mention} failed, and ruined the count for {len(c.contributors.keys())} counters...\nThe count reached {c.score}.')
             await c.finish(self.bot, False, message.author)
 
             return False
         for i, v in enumerate(self.top):
-            if c.score == v+1:
+            if c.score == v + 1:
                 await message.add_reaction(('\U0001F947', '\U0001F948', '\U0001F949')[i])
                 break
         return True
@@ -288,7 +291,8 @@ class Count(commands.Cog):
                 query = 'SELECT score FROM counts ORDER BY score DESC LIMIT 3;'
                 self.top = [count['score'] for count in await self.bot.pool.fetch(query)]
             self.counting = Counting.temporary(started_by=ctx.author.id)
-            await ctx.send(f'Count has been started. Try for top three: {formats.human_join([str(i) for i in self.top]) if self.top and len(self.top) == 3 else "good luck"}!')
+            await ctx.send(
+                f'Count has been started. Try for top three: {formats.human_join([str(i) for i in self.top]) if self.top and len(self.top) == 3 else "good luck"}!')
         else:
             await ctx.send("You can't start a count outside of the count channel.")
 
@@ -308,11 +312,14 @@ class Count(commands.Cog):
 
     @count.command()
     async def check(self, ctx: commands.Context):
-        print('Count check')
         if self.counting:
             await ctx.send('A count is running.')
         else:
             await ctx.send('No count is running.')
+
+    @count.command()
+    async def aliases(self, ctx: commands.Context):
+        await ctx.send('\n'.join(f'{emoji.emojize(key, use_aliases=True)}: {formats.human_join(value)}' for key, value in number_aliases.items()))
 
     @count.command(aliases=['best', 'highscore', 'hiscore', 'top'])
     async def leaderboard(self, ctx: commands.Context):
