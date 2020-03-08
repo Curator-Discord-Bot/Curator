@@ -8,6 +8,7 @@ import emoji
 
 import bot
 from .utils import db
+from .utils import formats
 
 
 class Counts(db.Table):
@@ -103,9 +104,10 @@ async def check_channel(channel: discord.TextChannel, message=False) -> bool:
 
 
 class CounterProfile:
-    __slots__ = (
-        'user_id', 'last_count', 'best_count', 'best_ruin', 'total_score', 'counts_participated', 'counts_ruined',
-        'counts_started')
+    #__slots__ = (
+    #    'user_id', 'last_count', 'best_count', 'best_ruin', 'total_score', 'counts_participated', 'counts_ruined',
+    #    'counts_started')
+
 
     def __init__(self, *, d: dict):
         self.user_id = d['user_id']
@@ -134,8 +136,9 @@ class Counter:
         updates = [(key, value) for key, value in self.current.__dict__.items() if
                    key not in original_keys or value != self.original.__dict__[key]]
         if updates:
-            await self.connection.execute(
-                f'UPDATE SET {", ".join([str(key) + " = " + str(value) for key, value in updates])} RETURNING *;')
+            query = f'UPDATE counters SET {", ".join([str(key) + " = " + str(value) for key, value in updates])} RETURNING *;'
+            print(query)
+            await self.connection.execute(query)
 
     async def __aenter__(self) -> CounterProfile:
         return self.current
@@ -151,7 +154,6 @@ class Counting:
     __slots__ = (
         'id', 'started_by', 'started_at', 'score', 'contributors', 'last_active_at', 'last_counter', 'timed_out',
         'duration', 'ruined_by')
-    contributors: dict
 
     def __init__(self, *, record):
         self.id = record['id']
@@ -248,6 +250,7 @@ class Count(commands.Cog):
         self.bot = curator
         self.counting = None
         self.count_channel = None
+        self.top = []
 
     async def check_count(self, message: discord.Message) -> bool:
         if is_count_channel(message.channel):
@@ -262,22 +265,30 @@ class Count(commands.Cog):
 
         if not c.attempt_count(message.author, message.content.split()[0]):
             self.counting = None
-            await message.channel.send(message.author.mention + ' failed, and ruined the count for ' + str(
-                len(c.contributors.keys())) + ' counters...\nThe count reached ' + str(c.score) + '.')
+            self.top.append(c.score)
+            self.top = self.top[sorted(self.top[:-1])]
+            await message.channel.send(f'{message.author.mention} failed, and ruined the count for {len(c.contributors.keys())} counters...\nThe count reached {c.score}.')
             await c.finish(self.bot, False, message.author)
+
             return False
+        for i, v in enumerate(self.top):
+            if c.score == v+1:
+                await message.add_reaction(('\U0001F947', '\U0001F948', '\U0001F949')[i])
+                break
         return True
 
     @commands.group(invoke_without_command=True)
     async def count(self, ctx: commands.Context):
-        if await check_channel(ctx.channel):
-            await ctx.send(f'You need to supply a subcommand. Try {ctx.prefix}help count')
+        await ctx.send(f'You need to supply a subcommand. Try {ctx.prefix}help count')
 
     @count.command()
     async def start(self, ctx: commands.Context):
-        if await check_channel(ctx.channel):
-            await ctx.send('Count has been started. Good luck!')
+        if is_count_channel(ctx.channel):
+            if not self.top or len(self.top) < 3:
+                query = 'SELECT score FROM counts ORDER BY score DESC LIMIT 3;'
+                self.top = [count['score'] for count in await self.bot.pool.fetch(query)]
             self.counting = Counting.temporary(started_by=ctx.author.id)
+            await ctx.send(f'Count has been started. Try for top three: {formats.human_join([str(i) for i in self.top]) if self.top and len(self.top) == 3 else "good luck"}!')
         else:
             await ctx.send("You can't start a count outside of the count channel.")
 
