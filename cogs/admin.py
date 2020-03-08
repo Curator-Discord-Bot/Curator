@@ -19,6 +19,7 @@ from typing import Union, Optional
 import random
 import bot
 from os import kill
+from .utils.messages import on_load, on_unload, on_reload
 
 # to expose to the eval command
 import datetime
@@ -92,7 +93,7 @@ class Admin(commands.Cog):
         except commands.ExtensionError as e:
             await ctx.send(f'{e.__class__.__name__}: {e}')
         else:
-            await ctx.send(random.choice(messages.load_msg))
+            await ctx.send(on_load(ctx))
 
     @commands.command(hidden=True)
     async def unload(self, ctx, *, module):
@@ -102,7 +103,7 @@ class Admin(commands.Cog):
         except commands.ExtensionError as e:
             await ctx.send(f'{e.__class__.__name__}: {e}')
         else:
-            await ctx.send(random.choice(messages.unload_msg))
+            await ctx.send(on_unload(ctx))
 
     @commands.group(name='reload', hidden=True, invoke_without_command=True)
     async def _reload(self, ctx, *, module):
@@ -112,7 +113,7 @@ class Admin(commands.Cog):
         except commands.ExtensionError as e:
             await ctx.send(f'{e.__class__.__name__}: {e}')
         else:
-            await ctx.send(random.choice(messages.reload_msg))
+            await ctx.send(on_reload(ctx))
 
     _GIT_PULL_REGEX = re.compile(r'\s*(?P<filename>.+?)\s*\|\s*[0-9]+\s*[+-]+')
 

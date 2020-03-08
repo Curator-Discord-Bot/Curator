@@ -11,6 +11,7 @@ import random
 
 from cogs.utils import context
 from cogs.utils.db import Table
+from cogs.utils.messages import on_ready
 
 initial_extensions = (
     'cogs.profile',
@@ -43,7 +44,7 @@ class Curator(commands.Bot):
         print(self.user.name)
         print(self.user.id)
         print('------')
-        await self.get_guild(681912993621344361).get_channel(681914163974766637).send(random.choice(['Hey there:smirk:', 'Hey!:smiley:', 'G\'day people:wave:', 'Hi, I\'m alive!', 'Hi, how are ya?', 'Thanks for giving me life!:smiling_face_with_3_hearts:', 'Feels good to be back!']))
+        await self.get_guild(681912993621344361).get_channel(681914163974766637).send(on_ready())
 
     async def on_message(self, message: discord.Message):
         if message.author.bot:
