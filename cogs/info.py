@@ -15,42 +15,34 @@ class Info(commands.Cog):
         await ctx.send('\n'.join(roles))
 
     @commands.command()
-    async def pie(self, ctx: commands.context, infinity: Optional[str], traveller: Optional[str]):
+    async def pie(self, ctx: commands.context, infinity: Optional[str], *ignore):
         if infinity == 'iie':
-            if ctx.guild.id == '468366604313559040':
-                labels = ['Traveler', 'Citizen', 'Squire', 'Knight', "Lord", 'Hero', 'Legend']
-                sizes = []
-                colors = []
-                members = []
-                for role in labels:
-                    count = 0
-                    for member in role.members:
-                        if member.id in members:
-                            continue
-                        members.append(member.id)
-                        count += 1
-                    sizes.append(count)
-                    colors.append(str(role.color))
+            if ctx.guild.id == 468366604313559040:
+                iie_roles = ['Traveler', 'Citizen', 'Squire', 'Knight', 'Lord', 'Hero', 'Legend']
+                roles = sorted([role for role in await ctx.guild.fetch_roles() if role.name != '@everyone' and role.name in iie_roles], reverse=True)
             else:
-                ctx.send('This isn\'t the official Inifnity Item Editor Discord server.')
-        #   I could also combine this if and else to get less code lines, it will take more computing power tho
+                await ctx.send('This is not the official Infinity Item Editor Discord server.')
+                return
         else:
-            roles = [role for role in await ctx.guild.fetch_roles() if role.name != '@everyone']
-            labels = []
-            sizes = []
-            colors = []
-            members = []
-            for role in roles:
-                count = 0
-                for member in role.members:
-                    if member.id in members:
-                        continue
-                    members.append(member.id)
-                    count += 1
-                if count > 0:
-                    labels.append(role.name)
-                    sizes.append(count)
-                    colors.append(str(role.color))
+            roles = sorted([role for role in await ctx.guild.fetch_roles() if role.name != '@everyone'], reverse=True)
+        for role in roles:
+            if role.name in ignore:
+                roles.remove(role)
+        labels = []
+        sizes = []
+        colors = []
+        members = []
+        for role in roles:
+            count = 0
+            for member in role.members:
+                if member.id in members:
+                    continue
+                members.append(member.id)
+                count += 1
+            if count > 0:
+                labels.append(role.name)
+                sizes.append(count)
+                colors.append(str(role.color))
         plt.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%')
         plt.axis('equal')
         buf = BytesIO()
