@@ -31,6 +31,7 @@ class Curator(commands.Bot):
         super().__init__(command_prefix=commands_prefix, description=description)
 
         self.client_id = config.client_id
+        self.logchannel = None
 
         for extension in initial_extensions:
             try:
@@ -56,11 +57,24 @@ class Curator(commands.Bot):
 
         await self.process_commands(message)
 
+    async def on_message_delete(self, message: discord.Message):
+        if not self.logchannel:
+            self.logchannel = await self.get_guild(468366604313559040).get_channel(474922467626975233)
+
+        if self.logchannel:
+            await self.logchannel.send(f'A message by {message.author} was deleted in {message.channel} on {message.guild}.')
+
     async def process_commands(self, message):
-        ctx = await self.get_context(message, cls=context.Context)
+        ctx: context.Context = await self.get_context(message, cls=context.Context)
 
         if ctx.command is None:
             return
+
+        if not self.logchannel:
+            self.logchannel = await self.get_guild(468366604313559040).get_channel(474922467626975233)
+
+        if self.logchannel:
+            await self.logchannel.send(f'{message.author} used command: {ctx.message}')
 
         try:
             await self.invoke(ctx)
