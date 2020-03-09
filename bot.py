@@ -77,7 +77,7 @@ class Curator(commands.Bot):
             self.logchannel = self.get_guild(468366604313559040).get_channel(474922467626975233)
 
         if self.logchannel:
-            await self.logchannel.send(f'{message.author} used command: {ctx.message.content.replace("@", "\"ATSYMBOL\"")}')
+            await self.logchannel.send(f'{message.author} used command: {ctx.message.content.replace("@", "ATSYMBOL")}')
 
         try:
             await self.invoke(ctx)
