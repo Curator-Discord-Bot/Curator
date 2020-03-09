@@ -58,8 +58,11 @@ class Curator(commands.Bot):
         await self.process_commands(message)
 
     async def on_message_delete(self, message: discord.Message):
+        if message.author.bot:
+            return
+
         if not self.logchannel:
-            self.logchannel = await self.get_guild(468366604313559040).get_channel(474922467626975233)
+            self.logchannel = self.get_guild(468366604313559040).get_channel(474922467626975233)
 
         if self.logchannel:
             await self.logchannel.send(f'A message by {message.author} was deleted in {message.channel} on {message.guild}.')
@@ -71,10 +74,10 @@ class Curator(commands.Bot):
             return
 
         if not self.logchannel:
-            self.logchannel = await self.get_guild(468366604313559040).get_channel(474922467626975233)
+            self.logchannel = self.get_guild(468366604313559040).get_channel(474922467626975233)
 
         if self.logchannel:
-            await self.logchannel.send(f'{message.author} used command: {ctx.message}')
+            await self.logchannel.send(f'{message.author} used command: {ctx.message.content.replace("@", "\"ATSYMBOL\"")}')
 
         try:
             await self.invoke(ctx)
