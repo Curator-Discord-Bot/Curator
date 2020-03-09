@@ -5,6 +5,7 @@ from .formats import plural, human_join
 from discord.ext import commands
 import re
 
+
 class ShortTime:
     compiled = re.compile("""(?:(?P<years>[0-9])(?:years?|y))?             # e.g. 2y
                              (?:(?P<months>[0-9]{1,2})(?:months?|mo))?     # e.g. 2months
@@ -20,13 +21,14 @@ class ShortTime:
         if match is None or not match.group(0):
             raise commands.BadArgument('invalid time provided')
 
-        data = { k: int(v) for k, v in match.groupdict(default=0).items() }
+        data = {k: int(v) for k, v in match.groupdict(default=0).items()}
         now = now or datetime.datetime.utcnow()
         self.dt = now + relativedelta(**data)
 
     @classmethod
     async def convert(cls, ctx, argument):
         return cls(argument, now=ctx.message.created_at)
+
 
 class HumanTime:
     calendar = pdt.Calendar(version=pdt.VERSION_CONTEXT_STYLE)
@@ -48,6 +50,7 @@ class HumanTime:
     async def convert(cls, ctx, argument):
         return cls(argument, now=ctx.message.created_at)
 
+
 class Time(HumanTime):
     def __init__(self, argument, *, now=None):
         try:
@@ -58,6 +61,7 @@ class Time(HumanTime):
             self.dt = o.dt
             self._past = False
 
+
 class FutureTime(Time):
     def __init__(self, argument, *, now=None):
         super().__init__(argument, now=now)
@@ -65,8 +69,10 @@ class FutureTime(Time):
         if self._past:
             raise commands.BadArgument('this time is in the past')
 
+
 class UserFriendlyTime(commands.Converter):
     """That way quotes aren't absolutely necessary."""
+
     def __init__(self, converter=None, *, default=None):
         if isinstance(converter, type) and issubclass(converter, commands.Converter):
             converter = converter()
@@ -100,11 +106,10 @@ class UserFriendlyTime(commands.Converter):
 
             match = regex.match(argument)
             if match is not None and match.group(0):
-                data = { k: int(v) for k, v in match.groupdict(default=0).items() }
+                data = {k: int(v) for k, v in match.groupdict(default=0).items()}
                 remaining = argument[match.end():].strip()
                 self.dt = now + relativedelta(**data)
                 return await self.check_constraints(ctx, now, remaining)
-
 
             # apparently nlp does not like "from now"
             # it likes "from x" in other cases though so let me handle the 'now' case
@@ -144,7 +149,7 @@ class UserFriendlyTime(commands.Converter):
             if status.accuracy == pdt.pdtContext.ACU_HALFDAY:
                 dt = dt.replace(day=now.day + 1)
 
-            self.dt =  dt
+            self.dt = dt
 
             if begin in (0, 1):
                 if begin == 1:
@@ -166,6 +171,7 @@ class UserFriendlyTime(commands.Converter):
             import traceback
             traceback.print_exc()
             raise
+
 
 def human_timedelta(dt, *, source=None, accuracy=3, brief=False, suffix=True):
     now = source or datetime.datetime.utcnow()

@@ -55,6 +55,10 @@ class Curator(commands.Bot):
             if await self.cogs['Count'].check_count(message):
                 return
 
+        if 'Reminder' in self.cogs.keys():
+            if await self.cogs['Reminder'].check_idlerpg(message):
+                return
+
         await self.process_commands(message)
 
     async def on_message_delete(self, message: discord.Message):

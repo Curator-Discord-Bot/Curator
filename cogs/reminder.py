@@ -1,3 +1,5 @@
+import copy
+
 from .utils import checks, db, time, formats
 from discord.ext import commands
 import discord
@@ -193,6 +195,25 @@ class Reminder(commands.Cog):
 
         return timer
 
+    async def check_count(self, message: discord.Message) -> bool:
+        m = message.content
+        if not m.startswith('$') or not m.endswith(' r'):
+            return False
+
+        elif m == '$steal r':
+            await self.sudo(message, ',r 1h steal')
+        elif m == '$daily r':
+            await self.sudo(message, ',r 24h daily')
+        else:
+            return False
+
+        return True
+
+    async def sudo(self, message: discord.Message, command: str):
+        msg = copy.copy(message)
+        msg.content = command
+        await self.bot.process_commands(message)
+
     @commands.group(aliases=['timer', 'remind', 'r'], usage='<when>', invoke_without_command=True)
     async def reminder(self, ctx: commands.Context, *, when: time.UserFriendlyTime(commands.clean_content, default='\u2026')):
         """Reminds you of something after a certain amount of time.
@@ -214,8 +235,6 @@ class Reminder(commands.Cog):
                                         created=ctx.message.created_at,
                                         message_id=ctx.message.id)
         delta = time.human_timedelta(when.dt, source=timer.created_at)
-
-        print(delta)
         await ctx.send(f'Alright {ctx.author.name}, in {delta}: {when.arg}')
 
     @reminder.command(name='list')

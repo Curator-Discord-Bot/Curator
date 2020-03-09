@@ -274,10 +274,12 @@ class Count(commands.Cog):
             await c.finish(self.bot, False, message.author)
 
             return False
+
         for i, v in enumerate(self.top):
             if c.score == v + 1:
                 await message.add_reaction(('\U0001F947', '\U0001F948', '\U0001F949')[i])
                 break
+
         return True
 
     @commands.group(invoke_without_command=True)

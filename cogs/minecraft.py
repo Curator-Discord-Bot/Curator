@@ -23,7 +23,6 @@ def get_uuid(username):
         return None
 
 
-
 class Minecraft(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -90,7 +89,8 @@ class Minecraft(commands.Cog):
         message = message_bytes.decode('ascii')
         url = json.loads(message)['textures']['SKIN']['url']
 
-        embed = discord.Embed(title=f'{username}\'s Profile', description=f'[Download Skin]({url})', url=f'https://namemc.com/profile/{uuid}')
+        embed = discord.Embed(title=f'{username}\'s Profile', description=f'[Download Skin]({url})',
+                              url=f'https://namemc.com/profile/{uuid}')
         embed.set_image(url=f'https://crafatar.com/renders/body/{uuid}?overlay')
 
         if 'Profile' in self.bot.cogs:
