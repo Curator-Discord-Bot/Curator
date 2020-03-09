@@ -195,7 +195,7 @@ class Reminder(commands.Cog):
 
         return timer
 
-    async def check_count(self, message: discord.Message) -> bool:
+    async def check_idlerpg(self, message: discord.Message) -> bool:
         m = message.content
         if not m.startswith('$') or not m.endswith(' r'):
             return False
@@ -212,7 +212,7 @@ class Reminder(commands.Cog):
     async def sudo(self, message: discord.Message, command: str):
         msg = copy.copy(message)
         msg.content = command
-        await self.bot.process_commands(message)
+        await self.bot.process_commands(msg)
 
     @commands.group(aliases=['timer', 'remind', 'r'], usage='<when>', invoke_without_command=True)
     async def reminder(self, ctx: commands.Context, *, when: time.UserFriendlyTime(commands.clean_content, default='\u2026')):
