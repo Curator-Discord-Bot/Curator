@@ -28,7 +28,7 @@ class Fun(commands.Cog):
         if len(options) < 1:
             await ctx.send('Give me something to reverse.')
         else:
-            await ctx.send(f"{ctx.author}: {' '.join(options)[::-1]}")
+            await ctx.send(f"{ctx.author}: {' '.join(options)[::-1].replace('@','AT')}")
 
 
 def setup(bot: commands.Bot):
