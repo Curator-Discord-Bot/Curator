@@ -286,6 +286,12 @@ class Admin(commands.Cog):
         await ctx.send(random.choice([':dizzy_face:', ':head_bandage:', ':dagger:', f'Et tu, {ctx.author.name}?']))
         await ctx.bot.logout()
 
+    @commands.command(hidden=True)
+    async def echo(self, ctx: commands.Context, *, message):
+        m: discord.Message = ctx.message
+        await m.delete()
+        await ctx.send(message)
+
 
 def setup(curator: bot.Curator):
     curator.add_cog(Admin(curator))

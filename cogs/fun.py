@@ -16,12 +16,6 @@ class Fun(commands.Cog):
             choice(('Hey', 'Hello', 'Hi', 'Ey', 'Yo', 'Sup', ':wave:', 'Good to see you', 'Greetings', 'Peace')) + ', ' + choice((ctx.author.name, 'dude', 'buddy', 'mate', choice(('bro', 'brother')), 'man', 'there', 'silly', 'you', 'master', 'traveler', 'fancypants', 'human', (role if len(role) > 0 else 'nobody'))) + '!')
 
     @commands.command()
-    async def echo(self, ctx: commands.Context, *, message):
-        m: discord.Message = ctx.message
-        await m.delete()
-        await ctx.send(message)
-
-    @commands.command()
     async def yesno(self, ctx: commands.Context):
         r = requests.get('https://yesno.wtf/api')
         j = r.json()
@@ -34,7 +28,7 @@ class Fun(commands.Cog):
         if len(options) < 1:
             await ctx.send('Give me something to reverse.')
         else:
-            await ctx.send(' '.join(options)[::-1])
+            await ctx.send(f"{ctx.author}: {' '.join(options)[::-1]}")
 
 
 def setup(bot: commands.Bot):
