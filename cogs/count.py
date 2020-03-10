@@ -72,17 +72,17 @@ number_aliases = {
 }
 
 
-def parsed(number: str) -> str:
+def parsed(number: str) -> list:
     s = emoji.demojize(number)
     for key in number_aliases.keys():
         for i in range(s.count(key)):
             s = ', '.join([s.replace(key, alias, 1) for alias in number_aliases[key]])
-    s = ', '.join(set([i for i in s.split(', ') if i.isdigit()]))
-    return s or 'invalid'
+    s = [digit for digit in set([i for i in s.split(', ') if i.isdigit()])]
+    return s
 
 
 def is_number(number: str, to_check: str) -> bool:
-    return parsed(to_check) == number
+    return number in parsed(to_check)
 
 
 async def fetch_counter_record(discord_id, connection) -> asyncpg.Record:
@@ -353,7 +353,10 @@ class Count(commands.Cog):
     @count.command()
     async def parse(self, ctx: commands.Context, number: str):
         parse = parsed(number)
-        await ctx.send(parse)
+        if parse:
+            await ctx.send(parse)
+        else:
+            await ctx.send("Could not parse that.")
 
 
 def setup(curator: bot.Curator):
