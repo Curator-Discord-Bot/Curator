@@ -292,6 +292,11 @@ class Admin(commands.Cog):
         await m.delete()
         await ctx.send(message)
 
+    @commands.command(hidden=True)
+    async def findmember(self, ctx: commands.Context, filter: str):
+        members = [m.mention for m in ctx.guild.members if filter in str(m)]
+        await ctx.send('\n'.join(members))
+
 
 def setup(curator: bot.Curator):
     curator.add_cog(Admin(curator))
