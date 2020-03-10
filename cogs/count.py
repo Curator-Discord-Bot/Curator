@@ -1,4 +1,5 @@
 import datetime
+import itertools
 from typing import Optional
 
 import asyncpg
@@ -73,12 +74,13 @@ number_aliases = {
 
 
 def parsed(number: str) -> list:
-    s = emoji.demojize(number)
-    for key in number_aliases.keys():
-        for i in range(s.count(key)):
-            s = ', '.join([s.replace(key, alias, 1) for alias in number_aliases[key]])
-    s = [digit for digit in set([i for i in s.split(', ') if i.isdigit()])]
-    return s
+    number = emoji.emojize(number)
+    plist = [c for c in number]
+    emojis = [(i['emoji'], i['location']) for i in emoji.emoji_lis(number)]
+    for e, i in emojis:
+        plist[i] = number_aliases[emoji.demojize(e)]
+
+    return [''.join(i) for i in itertools.product(*plist)]
 
 
 def is_number(number: str, to_check: str) -> bool:
