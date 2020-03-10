@@ -294,8 +294,12 @@ class Admin(commands.Cog):
 
     @commands.command(hidden=True)
     async def findmember(self, ctx: commands.Context, filter: str):
-        members = [m.mention for m in ctx.guild.members if filter in str(m)]
-        await ctx.send('\n'.join(members))
+        all = ctx.guild.members
+        members = [m.mention for m in all if filter in str(m).lower()]
+        if members:
+            await ctx.send('\n'.join(members))
+        else:
+            await ctx.send('No members found.')
 
 
 def setup(curator: bot.Curator):
