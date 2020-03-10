@@ -42,9 +42,11 @@ class Counters(db.Table):
 
 number_aliases = {
     ':keycap_0:': ['0'],
+    ':regional_indicator_o:': ['0'],
     ':O_button_(blood_type):': ['0'],
     ':heavy_large_circle:': ['0'],
     ':keycap_1:': ['1'],
+    ':regional_indicator_i:': ['1'],
     ':1st_place_medal:': ['1'],
     ':keycap_2:': ['2'],
     ':2nd_place_medal:': ['2'],
