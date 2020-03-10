@@ -70,7 +70,8 @@ class Curator(commands.Bot):
             self.logchannel = self.get_guild(468366604313559040).get_channel(474922467626975233)
 
         if self.logchannel:
-            await self.logchannel.send(f'A message by {message.author} was deleted in {message.channel} on {message.guild}.')
+            await self.logchannel.send(
+                f'A message by {message.author} was deleted in {message.channel} on {message.guild}.')
 
     async def process_commands(self, message):
         ctx: context.Context = await self.get_context(message, cls=context.Context)
@@ -89,6 +90,7 @@ class Curator(commands.Bot):
         finally:
             # Just in case we have any outstanding DB connections
             await ctx.release()
+
 
 def run_bot():
     loop = asyncio.get_event_loop()
