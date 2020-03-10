@@ -65,7 +65,7 @@ number_aliases = {
     ':keycap_9:': ['9'],
     ':keycap_10:': ['10'],
     ':ringed_planet:': ['42'],
-    ':ok_hand:': ['69'],
+    ':OK_hand:': ['69'],
     ':cancer:': ['69'],
     ':hundred_points:': ['100', '00'],
     ':input_numbers:': ['1234']
