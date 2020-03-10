@@ -268,7 +268,7 @@ class Count(commands.Cog):
         if not c.attempt_count(message.author, message.content.split()[0]):
             self.counting = None
             self.top.append(c.score)
-            self.top = sorted(self.top)[1:]
+            self.top = sorted(self.top)[3:0:-1]
             await message.channel.send(
                 f'{message.author.mention} failed, and ruined the count for {len(c.contributors.keys())} counters...\nThe count reached {c.score}.')
             await c.finish(self.bot, False, message.author)
