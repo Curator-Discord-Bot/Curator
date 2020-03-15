@@ -283,8 +283,11 @@ class Admin(commands.Cog):
 
     @commands.command(hidden=True)
     async def logout(self, ctx: commands.Context):
-        await ctx.send(random.choice([':dizzy_face:', ':head_bandage:', ':dagger:', f'Et tu, {ctx.author.name}?']))
-        await ctx.bot.logout()
+        if random.randint(1, 5) == 1:
+            await ctx.send('No!:diamond_sword:')
+        else:
+            await ctx.send(random.choice([':dizzy_face:', ':head_bandage:', ':dagger:', f'Et tu, {ctx.author.name}?']))
+            await ctx.bot.logout()
 
     @commands.command(hidden=True)
     async def echo(self, ctx: commands.Context, *, message):
