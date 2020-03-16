@@ -71,7 +71,7 @@ class Curator(commands.Bot):
 
         if self.logchannel:
             await self.logchannel.send(
-                f'A message by {message.author} was deleted in {message.channel} on {message.guild}.')
+                f'A message by {message.author} was deleted in {message.channel} on {message.guild}:\n`--------------------------------------------------`\n{message.content}\n`--------------------------------------------------`')
 
     async def process_commands(self, message):
         ctx: context.Context = await self.get_context(message, cls=context.Context)
