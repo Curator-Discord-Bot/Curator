@@ -287,7 +287,7 @@ class Admin(commands.Cog):
             await ctx.send(refuse_logout())
         else:
             await ctx.send(on_logout(ctx))
-            await self.get_guild(468366604313559040).get_channel(474922467626975233).send(logout_log())
+            await self.bot.get_guild(468366604313559040).get_channel(474922467626975233).send(logout_log())
             await ctx.bot.logout()
 
     @commands.command(hidden=True)
