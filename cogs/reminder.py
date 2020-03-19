@@ -204,6 +204,11 @@ class Reminder(commands.Cog):
             await self.sudo(message, ',r 1h steal')
         elif m == '$daily r':
             await self.sudo(message, ',r 24h daily')
+        elif (m[0:3] == '$a ' or m[0:11] == '$adventure ') and m[-1] == 'r':
+            print("check")
+            print(str(int(m[-4:-2])))
+            print(f',r {str(int(m[-4:-2]))}h adventure')
+            await self.sudo(message, f',r {str(int(m[-4:-2]))}h adventure')
         else:
             return False
 
