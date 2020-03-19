@@ -19,7 +19,7 @@ from typing import Union, Optional
 import random
 import bot
 from os import kill
-from .utils.messages import on_load, on_unload, on_reload
+from .utils.messages import on_load, on_unload, on_reload, refuse_logout, on_logout, logout_log
 
 # to expose to the eval command
 import datetime
@@ -93,7 +93,7 @@ class Admin(commands.Cog):
         except commands.ExtensionError as e:
             await ctx.send(f'{e.__class__.__name__}: {e}')
         else:
-            await ctx.send(on_load(ctx))
+            await ctx.send(on_load())
 
     @commands.command(hidden=True)
     async def unload(self, ctx, *, module):
@@ -103,7 +103,7 @@ class Admin(commands.Cog):
         except commands.ExtensionError as e:
             await ctx.send(f'{e.__class__.__name__}: {e}')
         else:
-            await ctx.send(on_unload(ctx))
+            await ctx.send(on_unload())
 
     @commands.group(name='reload', hidden=True, invoke_without_command=True)
     async def _reload(self, ctx, *, module):
@@ -113,7 +113,7 @@ class Admin(commands.Cog):
         except commands.ExtensionError as e:
             await ctx.send(f'{e.__class__.__name__}: {e}')
         else:
-            await ctx.send(on_reload(ctx))
+            await ctx.send(on_reload())
 
     _GIT_PULL_REGEX = re.compile(r'\s*(?P<filename>.+?)\s*\|\s*[0-9]+\s*[+-]+')
 
@@ -284,9 +284,10 @@ class Admin(commands.Cog):
     @commands.command(hidden=True)
     async def logout(self, ctx: commands.Context):
         if random.randint(1, 5) == 1:
-            await ctx.send('No!:diamond_sword:')
+            await ctx.send(refuse_logout())
         else:
-            await ctx.send(random.choice([':dizzy_face:', ':head_bandage:', ':dagger:', f'Et tu, {ctx.author.name}?']))
+            await ctx.send(on_logout(ctx))
+            await self.get_guild(468366604313559040).get_channel(474922467626975233).send(logout_log())
             await ctx.bot.logout()
 
     @commands.command(hidden=True)
