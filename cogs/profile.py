@@ -1,6 +1,8 @@
 import datetime
 from typing import Optional
+from uuid import UUID
 
+import asyncpg
 import discord
 from discord.ext import commands
 from .utils import db
@@ -15,85 +17,71 @@ class Profiles(db.Table):
 
 
 class UserProfile:
-    __slots__ = ('id', 'created_at', 'discord_id', 'minecraft_uuid')
+    def __init__(self, *, d: dict):
+        self.id = d['id']
+        self.created_at = d['created_at']
+        self.discord_id = d['discord_id']
+        self.minecraft_uuid = d['minecraft_uuid']
 
-    def __init__(self, *, record):
-        self.id = record['id']
-        self.created_at = record['created_at']
-        self.discord_id = record['discord_id']
-        self.minecraft_uuid = record['minecraft_uuid']
 
-    @classmethod
-    def temporary(cls, *, created_at, discord_id, minecraft_uuid):
-        pseudo = {
-            'id': None,
-            'created_at': created_at,
-            'discord_id': discord_id,
-            'minecraft_uuid': minecraft_uuid
-        }
-        return cls(record=pseudo)
+class UserConnection:
+    __slots__ = ('original', 'current', 'connection')
+    original: UserProfile
+    current: UserProfile
+    connection: asyncpg.pool.Pool
 
-    def __eq__(self, other):
-        try:
-            return self.id == other.id
-        except AttributeError:
-            return False
+    def __init__(self, record, connection):
+        self.original = UserProfile(d=db.dict_from_record(record))
+        self.current = UserProfile(d=db.dict_from_record(record))
+        self.connection = connection
 
-    def __hash__(self):
-        return hash(self.id)
+    async def save(self):
+        original_keys = self.original.__dict__.keys()
+        updates = [(key, value) for key, value in self.current.__dict__.items() if
+                   key not in original_keys or value != self.original.__dict__[key]]
+        if updates:
+            updatestr = ", ".join([str(key) + " = " + (str(value) if type(value) is not UUID else f"'{value.hex}'") for key, value in updates])
+            query = f'UPDATE profiles SET {updatestr} WHERE discord_id={self.original.discord_id} RETURNING *;'
+            print(query)
+            await self.connection.execute(query)
+
+    async def __aenter__(self) -> UserProfile:
+        return self.current
+
+    async def __aexit__(self, typ, value, traceback):
+        await self.save()
 
     def __repr__(self):
-        return f'<Profile created_at={self.created_at} discord_id={self.discord_id}>'
+        return f'<User id={self.current.id}, discord_id={self.current.discord_id}, minecraft_uuid={self.current.minecraft_uuid}>'
+
+
+async def fetch_user_record(discord_id, connection) -> asyncpg.Record:
+    return await connection.fetchrow(
+        'INSERT INTO profiles (discord_id) VALUES ($1) ON CONFLICT (discord_id) DO UPDATE SET discord_id = profiles.discord_id RETURNING *',
+        discord_id)
 
 
 class Profile(commands.Cog):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot):
         self.bot = bot
 
-    async def get_profile_with_create(self, discord_id: int) -> UserProfile:
-        return await self.get_profile(discord_id) or await self.create_profile(discord_id)
-
-    async def get_profile(self, discord_id: int, connection=None) -> UserProfile:
-        query = "SELECT * FROM profiles WHERE discord_id=$1;"
-        con = connection or self.bot.pool
-        record = await con.fetchrow(query, discord_id)
-        return UserProfile(record=record) if record else None
-
-    async def create_profile(self, discord_id: int) -> UserProfile:
-        connection = self.bot.pool
-        now = datetime.datetime.utcnow()
-        print(f'Registered profile with id {discord_id}')
-        p = UserProfile.temporary(created_at=now, discord_id=discord_id, minecraft_uuid=None)
-        query = """INSERT INTO profiles (created_at, discord_id, minecraft_uuid)
-                   VALUES ($1, $2, $3)
-                   RETURNING id;
-                """
-        row = await connection.fetchrow(query, now, discord_id, None)
-        p.id = row[0]
-        return p
-
     @commands.group(invoke_without_command=True)
-    async def profile(self, ctx: commands.Context, user: Optional[discord.Member]):
-        user = user or ctx.author
-        p: UserProfile = await self.get_profile(user.id)
-        if p is None:
-            await ctx.send('You do not have a profile yet.')
-        else:
-            await ctx.send(
-                f'Here is your profile:\n```\nCreated at: {p.created_at}\nDiscord ID: {p.discord_id}\nMinecraft UUID: {p.minecraft_uuid}\n```')
-
-    async def minecraft(self, ctx: commands.Context, uuid: str):
-        if uuid:
-            await self.get_profile_with_create(ctx.author.id)
-            update = f'UPDATE profiles SET minecraft_uuid=$1 WHERE discord_id=$2;'
-            await self.bot.pool.execute(update, uuid, ctx.author.id)
+    async def profile(self, ctx: commands.Context, target: Optional[discord.Member]):
+        id = target.id if target else ctx.author.id
+        async with UserConnection(await fetch_user_record(discord_id=id, connection=self.bot.pool),
+                                  connection=self.bot.pool) as user:
+            if user:
+                await ctx.send(
+                    f'Here is your profile:\n```\nCreated at: {user.created_at}\nDiscord ID: {user.discord_id}\nMinecraft UUID: {user.minecraft_uuid}\n```')
+            else:
+                await ctx.send('Could not load your profile.')
 
     @commands.command(aliases=['verify'])
     async def auth(self, ctx: commands.Context, pin: int):
         query = 'DELETE FROM auths WHERE pin=$1 RETURNING minecraft_uuid;'
         id = await self.bot.pool.fetchval(query, pin)
         if id:
-            await self.minecraft(ctx, id)
+            #TOOD save uuid
             await ctx.send(f'You verified minecraft account with UUID {id}')
         else:
             await ctx.send('That pin seems to be invalid.')

@@ -1,5 +1,7 @@
 import base64
 import json
+from typing import Union
+from uuid import UUID
 
 import discord
 from discord.ext import commands
@@ -77,10 +79,15 @@ class Minecraft(commands.Cog):
                 embed.add_field(name='Players', value=f'{", ".join(players["list"])}', inline=True)
         await ctx.send(embed=embed)
 
-    @minecraft.command(aliases=['skin'])
-    async def player(self, ctx: commands.Context, username: str):
-        uuid = get_uuid(username)
-        r = requests.get(f'https://sessionserver.mojang.com/session/minecraft/profile/{uuid}')
+    @minecraft.command(aliases=['skin', 'profile'])
+    async def player(self, ctx: commands.Context, user: Union[UUID, discord.User]):
+        minecraft_uuid = None
+
+        if type(user) is discord.User:
+            minecraft_uuid = str(await self.bot.pool.fetchval('SELECT minecraft_uuid FROM profiles WHERE discord_id=$1', user.id))
+        print(1, f'https://sessionserver.mojang.com/session/minecraft/profile/{minecraft_uuid}')
+        minecraft_uuid = minecraft_uuid or user
+        r = requests.get(f'https://sessionserver.mojang.com/session/minecraft/profile/{minecraft_uuid}')
         j = r.json()
 
         base64_message = j['properties'][0]['value']
@@ -89,17 +96,20 @@ class Minecraft(commands.Cog):
         message = message_bytes.decode('ascii')
         url = json.loads(message)['textures']['SKIN']['url']
 
-        embed = discord.Embed(title=f'{username}\'s Profile', description=f'[Download Skin]({url})',
-                              url=f'https://namemc.com/profile/{uuid}')
-        embed.set_image(url=f'https://crafatar.com/renders/body/{uuid}?overlay')
+        print(2, f'https://namemc.com/profile/{minecraft_uuid}')
 
-        if 'Profile' in self.bot.cogs:
+        embed = discord.Embed(title=f'{user}\'s Profile', description=f'[Download Skin]({url})',
+                              url=f'https://namemc.com/profile/{minecraft_uuid}')
+        embed.set_image(url=f'https://crafatar.com/renders/body/{minecraft_uuid}?overlay')
+
+        if type(user) is discord.User:
+            embed.add_field(name='Discord', value=str(user))
+        elif 'Profile' in self.bot.cogs:
             query = "SELECT discord_id FROM profiles WHERE minecraft_uuid=$1;"
-            row = await self.bot.pool.fetchrow(query, uuid)
-            if row:
-                discord_id = row['discord_id']
+            discord_id = await self.bot.pool.fetchval(query, minecraft_uuid)
+            if discord_id:
                 member = await ctx.guild.fetch_member(discord_id)
-                embed.add_field(name='Discord', value=member.mention)
+                embed.add_field(name='Discord', value=str(member))
 
         await ctx.send(embed=embed)
 
