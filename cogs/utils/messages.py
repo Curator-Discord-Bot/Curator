@@ -11,7 +11,7 @@ def on_load() -> str:
 
 
 def on_reload() -> str:
-    return choice((':arrows_counterclockwise:', ':arrows_clockwise:', 'Updated this part'))
+    return choice((':arrows_counterclockwise:', ':arrows_clockwise:', 'Updated this part.'))
 
 
 def on_unload() -> str:
