@@ -18,7 +18,7 @@ color_emoji = {
 
 def get_uuid(username):
     try:
-        r = requests.get(f'https://api.mojang.com/users/profiles/minecraft/{username}')
+        r = requests.get(f'https://api.minetools.eu/uuid/{username}')
         j = r.json()
         return j['id']
     except Exception as e:
@@ -42,17 +42,6 @@ class Minecraft(commands.Cog):
             for key in d.keys():
                 statuses.append('**' + key + '**: ' + color_emoji[d[key]])
         await ctx.send('\n\n'.join(statuses))
-
-    @minecraft.command(desciption='Gets')
-    async def uuid(self, ctx: commands.Context, *names):
-        if len(names) > 1:
-            r = requests.post('https://api.mojang.com/profiles/minecraft', data=dumps(names))
-            rj = r.json()
-            await ctx.send('\n'.join(['**' + j['name'] + '**: ' + j['id'] for j in rj]))
-        else:
-            r = requests.get(f'https://api.mojang.com/users/profiles/minecraft/{names[0]}')
-            j = r.json()
-            await ctx.send('**' + j['name'] + '**: ' + j['id'])
 
     @minecraft.command()
     async def server(self, ctx: commands.Context, ip):
@@ -80,27 +69,38 @@ class Minecraft(commands.Cog):
         await ctx.send(embed=embed)
 
     @minecraft.command(aliases=['skin', 'profile'])
-    async def player(self, ctx: commands.Context, user: Union[UUID, discord.User]):
-        minecraft_uuid = None
-
+    async def player(self, ctx: commands.Context, user: Union[UUID, discord.User, str]):
+        minecraft_username = None
         if type(user) is discord.User:
-            minecraft_uuid = str(await self.bot.pool.fetchval('SELECT minecraft_uuid FROM profiles WHERE discord_id=$1', user.id))
-        print(1, f'https://sessionserver.mojang.com/session/minecraft/profile/{minecraft_uuid}')
-        minecraft_uuid = minecraft_uuid or user
-        r = requests.get(f'https://sessionserver.mojang.com/session/minecraft/profile/{minecraft_uuid}')
-        j = r.json()
+            minecraft_uuid = await self.bot.pool.fetchval('SELECT minecraft_uuid FROM profiles WHERE discord_id=$1',
+                                                          user.id)
+        elif type(user) is UUID:
+            minecraft_uuid = user
+        else:
+            r = requests.get(f'https://api.minetools.eu/uuid/{user}')
 
-        base64_message = j['properties'][0]['value']
-        base64_bytes = base64_message.encode('ascii')
-        message_bytes = base64.b64decode(base64_bytes)
-        message = message_bytes.decode('ascii')
-        url = json.loads(message)['textures']['SKIN']['url']
+            try:
+                minecraft_uuid = UUID(r.json()['id'])
+                minecraft_username = r.json()['name']
+            except Exception as e:
+                await ctx.send(f'Error: {e}')
+                return
 
-        print(2, f'https://namemc.com/profile/{minecraft_uuid}')
+        if minecraft_username is None:
+            r = requests.get(f'https://api.minetools.eu/uuid/{user}')
+            try:
+                minecraft_username = r.json()['name']
+            except Exception as e:
+                await ctx.send(f'Error: {e}')
+                return
 
-        embed = discord.Embed(title=f'{user}\'s Profile', description=f'[Download Skin]({url})',
-                              url=f'https://namemc.com/profile/{minecraft_uuid}')
-        embed.set_image(url=f'https://crafatar.com/renders/body/{minecraft_uuid}?overlay')
+            #r = requests.get(f'https://api.minetools.eu/profile/{minecraft_uuid}')
+            #skin_url = r.json()['decoded']['textures']['SKIN']['url']
+
+        embed = discord.Embed(title=f'{minecraft_username}\'s NameMC', url=f'https://namemc.com/profile/{minecraft_uuid}')
+        embed.description = f'[Download Skin](https://mc-heads.net/download/{minecraft_uuid})'
+
+        embed.set_image(url=f'https://mc-heads.net/body/{minecraft_uuid}')
 
         if type(user) is discord.User:
             embed.add_field(name='Discord', value=str(user))
