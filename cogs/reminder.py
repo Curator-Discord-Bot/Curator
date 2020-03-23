@@ -196,7 +196,7 @@ class Reminder(commands.Cog):
         return timer
 
     async def check_idlerpg(self, message: discord.Message) -> bool:
-        m = message.content.toLowerCase().split()
+        m = message.content.lower().split()
         if m[0][0] != '$' or m[-1] != 'r':
             return False
 
