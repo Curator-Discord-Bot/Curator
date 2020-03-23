@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 from random import choice
 import requests
+from .utils.messages import collect
 
 
 class Fun(commands.Cog):
@@ -29,6 +30,21 @@ class Fun(commands.Cog):
             await ctx.send('Give me something to reverse.')
         else:
             await ctx.send(f"{ctx.author}: {' '.join(options)[::-1].replace('@','AT')}")
+
+    @commands.command()
+    async def collect(self, ctx: commands.Context, amount: float):
+        if not amount.is_integer():
+            await ctx.send('Everybody knows you can\'t split a diamond!')
+        elif amount < 0:
+            await ctx.send(f'You want to give me {int(-amount)} diamonds?')
+        elif amount == 0:
+            await ctx.send('Collect nothing?')
+        elif amount > 68:
+            await ctx.send('I don\'t have that many!')
+        else:
+            amount = int(amount)
+            await ctx.send(amount * '<:diamond:495591554937913344>')
+            await ctx.send(collect(ctx))
 
 
 def setup(bot: commands.Bot):
