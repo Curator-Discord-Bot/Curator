@@ -196,19 +196,16 @@ class Reminder(commands.Cog):
         return timer
 
     async def check_idlerpg(self, message: discord.Message) -> bool:
-        m = message.content
-        if not m.startswith('$') or not m.endswith(' r'):
+        m = message.content.toLowerCase().split()
+        if m[0][0] != '$' or m[-1] != 'r':
             return False
 
-        elif m == '$steal r':
+        elif m[0] == '$steal':
             await self.sudo(message, ',r 1h steal')
-        elif m == '$daily r':
+        elif m[0] == '$daily':
             await self.sudo(message, ',r 24h daily')
-        elif (m[0:3] == '$a ' or m[0:11] == '$adventure ') and m[-1] == 'r':
-            print("check")
-            print(str(int(m[-4:-2])))
-            print(f',r {str(int(m[-4:-2]))}h adventure')
-            await self.sudo(message, f',r {str(int(m[-4:-2]))}h adventure')
+        elif m[0] == '$a' or m[0] == '$adventure':
+            await self.sudo(message, f',r {m[1]}h adventure')
         else:
             return False
 
