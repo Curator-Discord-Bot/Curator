@@ -50,7 +50,7 @@ class RNG(commands.Cog):
         if len(options) < 1:
             await ctx.send('You gave me nothing to choose from. :weary:')
         else:
-            await ctx.send(random.choice(options))
+            await ctx.send(random.choice(options).replace('@','AT'))
 
     @commands.command()
     async def dice(self, ctx: commands.Context, number: Optional[int]):
