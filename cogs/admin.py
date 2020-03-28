@@ -1,5 +1,7 @@
 import signal
+from uuid import UUID
 
+from asyncpg import UniqueViolationError
 from discord.ext import commands
 import asyncio
 import traceback
@@ -19,6 +21,9 @@ from typing import Union, Optional
 import random
 import bot
 from os import kill
+from .profile import UserConnection, fetch_user_record
+from . import profile
+
 from .utils.messages import on_load, on_unload, on_reload, refuse_logout, on_logout, logout_log
 
 # to expose to the eval command
@@ -273,6 +278,28 @@ class Admin(commands.Cog):
             await ctx.send(str(e))
 
     @commands.command(hidden=True)
+    async def mcuuid(self, ctx, who: discord.User, minecraft_uuid: str):
+        minecraft_uuid = UUID(minecraft_uuid)
+        if who and who.id and minecraft_uuid:
+            try:
+                async with UserConnection(await fetch_user_record(discord_id=who.id, connection=self.bot.pool), connection=self.bot.pool) as user:
+                    user.minecraft_uuid = minecraft_uuid
+                    await ctx.send(f'Updated: {self.bot.get_user(user.discord_id)} = {user.minecraft_uuid}')
+            except UniqueViolationError as e:
+                await ctx.send(f'Error: {e}')
+        else:
+            await ctx.send(f'Something went wrong with arguments: {who} and {minecraft_uuid}')
+
+    @commands.command(hidden=True)
+    async def authlist(self, ctx):
+        query = 'SELECT * FROM profiles WHERE minecraft_uuid IS NOT NULL'
+        values = await self.bot.pool.fetch(query)
+        if values:
+            await ctx.send('\n'.join(f'{self.bot.get_user(i["discord_id"])}: {i["minecraft_uuid"]}' for i in values))
+        else:
+            await ctx.send('The list was empty.')
+
+    @commands.command(hidden=True)
     async def processes(self, ctx):
         await self.sh('ps -A')
 
@@ -288,6 +315,7 @@ class Admin(commands.Cog):
         else:
             await ctx.send(on_logout(ctx))
             await self.bot.get_guild(468366604313559040).get_channel(474922467626975233).send(logout_log())
+            print(logout_log())
             await ctx.bot.logout()
 
     @commands.command(hidden=True)

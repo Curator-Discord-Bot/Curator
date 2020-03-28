@@ -11,7 +11,7 @@ def on_load() -> str:
 
 
 def on_reload() -> str:
-    return choice((':arrows_counterclockwise:', ':arrows_clockwise:', 'Updated this part'))
+    return choice((':arrows_counterclockwise:', ':arrows_clockwise:', 'Updated this part.'))
 
 
 def on_unload() -> str:
@@ -19,7 +19,7 @@ def on_unload() -> str:
 
 
 def refuse_logout() -> str:
-    return choice(('No!:diamond_sword:', 'Not today, my friend:smiling_imp:'))
+    return choice(('No!<:diamond_sword:495592395631493130>', 'Not today, my friend:smiling_imp:', 'How about no?', 'That\'s not happening I\'m afraid'))
 
 
 def on_logout(ctx: Context) -> str:
@@ -27,4 +27,8 @@ def on_logout(ctx: Context) -> str:
 
 
 def logout_log() -> str:
-    return choice(('Logged out', 'I\'m out!', 'I was successfully killed'))
+    return choice(('Logged out', 'I\'m out!', 'I was successfully killed', 'Terminated'))
+
+
+def collect(ctx: Context) -> str:
+    return choice(('There you go.', f'Happy now, {ctx.author.name}?', 'Stop being so greedy!'))

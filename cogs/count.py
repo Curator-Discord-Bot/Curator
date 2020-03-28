@@ -140,8 +140,7 @@ class Counter:
         updates = [(key, value) for key, value in self.current.__dict__.items() if
                    key not in original_keys or value != self.original.__dict__[key]]
         if updates:
-            query = f'UPDATE counters SET {", ".join([str(key) + " = " + str(value) for key, value in updates])} RETURNING *;'
-            print(query)
+            query = f'UPDATE counters SET {", ".join([str(key) + " = " + str(value) for key, value in updates])} WHERE user_id={self.original.user_id} RETURNING *;'
             await self.connection.execute(query)
 
     async def __aenter__(self) -> CounterProfile:
@@ -151,7 +150,7 @@ class Counter:
         await self.save()
 
     def __repr__(self):
-        return f'<Counter discord_id={self.original.user_id}>'
+        return f'<Counter discord_id={self.current.user_id}>'
 
 
 class Counting:
@@ -358,7 +357,7 @@ class Count(commands.Cog):
     async def parse(self, ctx: commands.Context, number: str):
         parse = parsed(number)
         if parse:
-            await ctx.send(parse)
+            await ctx.send(str(parse))
         else:
             await ctx.send("Could not parse that.")
 
