@@ -111,7 +111,7 @@ async def check_channel(channel: discord.TextChannel, message=False) -> bool:
 
 
 async def deleted_count(message):
-    if int(message.content.split()[0]) == running_counts[message.channel.id].score:
+    if message.id == message.channel.last_message_id:
         await message.channel.send(f'{running_counts[message.channel.id].score}, shame on {message.author.mention} for deleting their count!')
 
 
