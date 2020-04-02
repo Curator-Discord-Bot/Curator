@@ -3,11 +3,12 @@ from discord.ext.commands import Context
 
 
 def on_ready() -> str:
-    return choice(('Hey there:smirk:', 'Hey!:smiley:', 'G\'day people:wave:', 'Hi, I\'m alive!', 'Hi, how are ya?', 'Thanks for giving me life!:smiling_face_with_3_hearts:', 'Feels good to be back!'))
+    return choice(('Hey there:smirk:', 'Hey!:smiley:', 'G\'day people:wave:', 'Hi, I\'m alive!', 'Hi, how are ya?',
+                   'Thanks for giving me life!:smiling_face_with_3_hearts:', 'Feels good to be back!'))
 
 
 def on_load() -> str:
-    return choice((':mechanical_arm:', 'Growing stronger!'))
+    return choice((':mechanical_arm:', 'Growing stronger!', 'I can feel the power!'))
 
 
 def on_reload() -> str:
@@ -15,19 +16,21 @@ def on_reload() -> str:
 
 
 def on_unload() -> str:
-    return choice((':flushed:', 'Ouch!', 'You psychopath!'))
+    return choice((':flushed:', 'Ouch!', 'You psychopath!', 'Aaah, my arm!'))
 
 
 def refuse_logout() -> str:
-    return choice(('No!<:diamond_sword:495592395631493130>', 'Not today, my friend:smiling_imp:', 'How about no?', 'That\'s not happening I\'m afraid'))
+    return choice(('No!<:diamond_sword:495592395631493130>', 'Not today, my friend:smiling_imp:', 'How about no?',
+                   'That\'s not happening I\'m afraid'))
 
 
 def on_logout(ctx: Context) -> str:
-    return choice((':dizzy_face:', ':head_bandage:', ':dagger:', f'Et tu, {ctx.author.name}?', 'Murderer!'))
+    return choice((':dizzy_face:', ':head_bandage:', ':dagger:', f'Et tu, {ctx.author.name}?', 'Murderer!',
+                   'Noooooooooooooooo...', f'Okay, master {ctx.author.name}'))
 
 
-def logout_log() -> str:
-    return choice(('Logged out', 'I\'m out!', 'I was successfully killed', 'Terminated'))
+def logout_log(bot_name) -> str:
+    return choice(('Logged out', 'I\'m out!', 'I was successfully killed', 'Terminated', f'{bot_name} has left the chat.'))
 
 
 def collect(ctx: Context) -> str:

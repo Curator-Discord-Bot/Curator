@@ -11,7 +11,7 @@ class Info(commands.Cog):
 
     @commands.command()
     async def roles(self, ctx: commands.Context):
-        roles = [f'{role.name}: {len(role.members)}' for role in await ctx.guild.fetch_roles() if
+        roles = [f'{role.name}: {len(role.members)}' for role in sorted(await ctx.guild.fetch_roles(), reverse=True) if
                  role.name != '@everyone']
         await ctx.send('\n'.join(roles))
 

@@ -66,12 +66,18 @@ class Curator(commands.Bot):
         if message.author.bot:
             return
 
+        from cogs.count import running_counts, deleted_count
+        if message.channel.id in running_counts.keys():
+            await deleted_count(message)
+
         if not self.logchannel:
             self.logchannel = self.get_guild(468366604313559040).get_channel(474922467626975233)
 
         if self.logchannel:
-            await self.logchannel.send(
-                f'A message by {message.author} was deleted in {message.channel} on {message.guild}:\n`--------------------------------------------------`\n{message.content.replace("@","AT")}\n`--------------------------------------------------`')
+            await self.logchannel.send(f'A message by {message.author} was deleted in {message.channel} on {message.guild}:'
+                                       f'\n`--------------------------------------------------`'
+                                       f'\n{message.content.replace("@","AT")}'
+                                       f'\n`--------------------------------------------------`')
 
     async def process_commands(self, message):
         ctx: context.Context = await self.get_context(message, cls=context.Context)
