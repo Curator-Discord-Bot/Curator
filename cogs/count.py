@@ -395,6 +395,15 @@ class Count(commands.Cog):
             await ctx.send(str(parse))
         else:
             await ctx.send("Could not parse that.")
+    
+    #@count.command()
+    #async def role(self, ctx: commands.Context, action):
+        #if action == 'get':
+            #code
+        #elif action == 'remove':
+            #code
+        #else:
+            #await ctx.send('Provide a valid argument: \'get\' or \'remove\'')
 
 
 def setup(curator: bot.Curator):
