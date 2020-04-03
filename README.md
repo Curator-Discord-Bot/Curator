@@ -10,16 +10,7 @@ However, we will work on having the bot run on several servers in the future.
 - Python 3
 - Python PIP
 - Virtualenv
-
-## TODO List
-
- - mc commands should accept both username, uuid, and discord mentio (if verified)
- - improve pie chart
- - work on item hub
- - make counts persistent after restarts
- - allow simultaneous counts
- - add timestamp to auths and remove expired auths
- - at auth, remove uuid from any other accounts that might have it
+- Postgresql Database
 
 ## Install Dependencies
 
@@ -28,5 +19,16 @@ virtualenv venv
 source venv/bin/activate
 pip install -r requirements.txt
 ```
- 
- `RJTimmerman was here`
+
+## Running the bot
+ - Install dependencies
+ - Create `config.py`:
+   ```python
+   client_id = '<client_id>'
+   token = '<bot_token>'
+   postgresql = 'postgres://<username>:<password>@<server>:<port>/<database>'
+   command_prefix = '<command_prefix such as '!'>'
+   ```
+ - Initialize the database by running `init_db.py`, in some cases you will need to run it several times, as some tables depend upon others.
+ - Run the bot by running `bot.py`
+
