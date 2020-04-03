@@ -327,9 +327,8 @@ class Count(commands.Cog):
         channels = ctx.guild.text_channels
         for channel in channels:
             if channel.id in running_counts.keys():
-                await ctx.send('A count is running.')
-                return
-        await ctx.send('No count is running.')
+                await ctx.send(f'A count is running in {ctx.channel.mention}.')
+        await ctx.send('No count is running on this server.')
         return
 
     @count.command()
