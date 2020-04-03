@@ -112,7 +112,8 @@ async def check_channel(channel: discord.TextChannel, message=False) -> bool:
 
 async def deleted_count(message):
     if message.id == message.channel.last_message_id:
-        await message.channel.send(f'{running_counts[message.channel.id].score}, shame on {message.author.mention} for deleting their count!')
+        await message.channel.send(
+            f'{running_counts[message.channel.id].score}, shame on {message.author.mention} for deleting their count!')
 
 
 class CounterProfile:
@@ -255,7 +256,6 @@ class Counting:
                         best_ruin_score = await connection.fetchval(score_query, counter.best_ruin)
                         if not best_ruin_score or best_ruin_score < self.score:
                             counter.best_ruin = self.id
-        del self
 
 
 class Count(commands.Cog):
@@ -268,7 +268,7 @@ class Count(commands.Cog):
         if is_count_channel(message.channel):
             if 'check' in message.content.lower():
                 await message.add_reaction('\u2705' if message.channel.id in running_counts.keys() else '\u274c')
-            if not message.channel.id in running_counts.keys():
+            if message.channel.id not in running_counts.keys():
                 return False
         else:
             return False
@@ -276,7 +276,7 @@ class Count(commands.Cog):
         c: Counting = running_counts[message.channel.id]
 
         if not c.attempt_count(message.author, message.content.split()[0]):
-            del(running_counts[message.channel.id])
+            del (running_counts[message.channel.id])
             self.top.append(c.score)
             self.top = sorted(self.top)[3:0:-1]
             await message.channel.send(f'{message.author.mention} failed, and ruined the count for '
@@ -333,7 +333,9 @@ class Count(commands.Cog):
 
     @count.command()
     async def aliases(self, ctx: commands.Context):
-        await ctx.send('\n'.join(f'{emoji.emojize(key, use_aliases=True)}: {formats.human_join(value)}' for key, value in number_aliases.items()))
+        await ctx.send('\n'.join(
+            f'{emoji.emojize(key, use_aliases=True)}: {formats.human_join(value)}' for key, value in
+            number_aliases.items()))
 
     @count.command(aliases=['best', 'highscore', 'hiscore', 'top'])
     async def leaderboard(self, ctx: commands.Context):
