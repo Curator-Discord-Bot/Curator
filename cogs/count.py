@@ -363,6 +363,7 @@ class Count(commands.Cog):
 
         await ctx.send(embed=embed)
 
+    """
     @count.command()
     async def last(self, ctx: commands.Context):
         embed = discord.Embed(title='Last Count', description='Last count data')
@@ -387,6 +388,7 @@ class Count(commands.Cog):
                 a.append(f'**{name}**: {contributors[user_id]}')
 
                 embed.add_field(name=str(i), value='\n'.join(a), inline=False)
+    """
 
     @count.command()
     async def parse(self, ctx: commands.Context, number: str):
@@ -395,15 +397,17 @@ class Count(commands.Cog):
             await ctx.send(str(parse))
         else:
             await ctx.send("Could not parse that.")
-    
-    #@count.command()
-    #async def role(self, ctx: commands.Context, action):
-        #if action == 'get':
-            #code
-        #elif action == 'remove':
-            #code
-        #else:
-            #await ctx.send('Provide a valid argument: \'get\' or \'remove\'')
+
+    """"
+    @count.command()
+    async def role(self, ctx: commands.Context, action):
+        if action == 'get':
+            code
+        elif action == 'remove':
+            code
+        else:
+            await ctx.send('Provide a valid argument: \'get\' or \'remove\'')
+    """
 
 
 def setup(curator: bot.Curator):

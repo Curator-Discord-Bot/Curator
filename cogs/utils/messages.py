@@ -30,7 +30,15 @@ def on_logout(ctx: Context) -> str:
 
 
 def logout_log(bot_name) -> str:
-    return choice(('Logged out', 'I\'m out!', 'I was successfully killed', 'Terminated', f'{bot_name} has left the chat.'))
+    return choice(
+        ('Logged out', 'I\'m out!', 'I was successfully killed', 'Terminated', f'{bot_name} has left the chat.'))
+
+
+def hello(ctx: Context) -> str:
+    role: str = choice(list(map(str, ctx.author.roles[1:])))
+    return choice(('Hey', 'Hello', 'Hi', 'Ey', 'Yo', 'Sup', ':wave:', 'Good to see you', 'Greetings', 'Peace')) + ', ' \
+           + choice((ctx.author.name, 'dude', 'buddy', 'mate', choice(('bro', 'brother')), 'man', 'there', 'silly',
+                     'you', 'master', 'traveler', 'fancypants', 'human', (role if len(role) > 0 else 'nobody'))) + '!'
 
 
 def collect(ctx: Context) -> str:

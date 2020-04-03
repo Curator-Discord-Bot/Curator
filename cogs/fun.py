@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 from random import choice
 import requests
-from .utils.messages import collect
+from .utils.messages import collect, hello
 
 
 class Fun(commands.Cog):
@@ -11,10 +11,7 @@ class Fun(commands.Cog):
 
     @commands.command()
     async def hello(self, ctx: commands.Context):
-        author: discord.Member = ctx.author
-        role: str = choice(list(map(str, author.roles[1:])))
-        await ctx.send(
-            choice(('Hey', 'Hello', 'Hi', 'Ey', 'Yo', 'Sup', ':wave:', 'Good to see you', 'Greetings', 'Peace')) + ', ' + choice((ctx.author.name, 'dude', 'buddy', 'mate', choice(('bro', 'brother')), 'man', 'there', 'silly', 'you', 'master', 'traveler', 'fancypants', 'human', (role if len(role) > 0 else 'nobody'))) + '!')
+        await ctx.send(hello(ctx))
 
     @commands.command()
     async def yesno(self, ctx: commands.Context):
@@ -29,7 +26,7 @@ class Fun(commands.Cog):
         if len(options) < 1:
             await ctx.send('Give me something to reverse.')
         else:
-            await ctx.send(f"{ctx.author}: {' '.join(options)[::-1].replace('@','AT')}")
+            await ctx.send(f"{ctx.author}: {' '.join(options)[::-1].replace('@', 'AT')}")
 
     @commands.command()
     async def collect(self, ctx: commands.Context, amount: float):
@@ -45,6 +42,17 @@ class Fun(commands.Cog):
             amount = int(amount)
             await ctx.send(amount * '<:diamond:495591554937913344>')
             await ctx.send(collect(ctx))
+
+    @commands.command()
+    async def jokalize(self, ctx: commands.Context, *text):
+        if len(text) == 0:
+            text = "There is no message.".split()
+        new_text = ''
+        for word in text:
+            for letter in word:
+                new_text += choice([letter.lower(), letter.upper()])
+            new_text += ' '
+        await ctx.send(new_text.replace('@', 'AT'))
 
 
 def setup(bot: commands.Bot):
