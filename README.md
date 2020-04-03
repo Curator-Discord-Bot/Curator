@@ -20,8 +20,9 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## Running the bot
+## Setting up the bot
  - Install dependencies
+ - Have a bot account on https://discordapp.com/developers/applications
  - Create `config.py`:
    ```python
    client_id = '<client_id>'
@@ -29,6 +30,9 @@ pip install -r requirements.txt
    postgresql = 'postgres://<username>:<password>@<server>:<port>/<database>'
    command_prefix = '<command_prefix such as '!'>'
    ```
+ - Activate the virtual environment
  - Initialize the database by running `init_db.py`, in some cases you will need to run it several times, as some tables depend upon others.
+ 
+#Running the bot
+ - Activate the virtual environment
  - Run the bot by running `bot.py`
-
