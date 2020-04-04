@@ -1,18 +1,19 @@
+import sys
+import traceback
+from configparser import ConfigParser
+# import config
 import discord
 from discord.ext import commands
 import asyncio
-
-import config
-import sys
-import traceback
-
 from asyncpg.pool import Pool
-
 from cogs.utils import context
 from cogs.utils.db import Table
 from cogs.utils.messages import on_ready
 
-initial_extensions = (
+CONFIG_FILE = 'curator.conf'
+DESCRIPTION = 'A bot written by Ruukas.'
+
+INITIAL_EXTENSIONS = (
     'cogs.profile',
     'cogs.count',
     'cogs.reminder',
@@ -25,18 +26,19 @@ initial_extensions = (
 
 
 class Curator(commands.Bot):
-    pool: Pool
+    # pool: Pool
 
-    def __init__(self, commands_prefix=',', description=''):
+    def __init__(self, client_id, commands_prefix=',', description=''):
         super().__init__(command_prefix=commands_prefix, description=description)
 
-        self.client_id = config.client_id
+        self.client_id = client_id
         self.logchannel = None
 
-        for extension in initial_extensions:
+        for extension in INITIAL_EXTENSIONS:
             try:
                 self.load_extension(extension)
-            except Exception as e:
+            except Exception as e: # TODO: Replace generic exception.
+                print(e)
                 print(f'Failed to load extension {extension}.', file=sys.stderr)
                 traceback.print_exc()
 
@@ -98,21 +100,38 @@ class Curator(commands.Bot):
             await ctx.release()
 
 
+def get_config():
+    config = {}
+    configparser = ConfigParser()
+    try:
+        configparser.read(CONFIG_FILE)
+    except FileNotFoundError:
+        print('File %s not found.' % CONFIG_FILE)
+        sys.exit(1)
+
+    config['client_id'] = configparser.get('Default', 'ClientId')
+    config['token'] = configparser.get('Default', 'Token')
+    config['postgresql'] = configparser.get('Default', 'PostgreSQL')
+    config['commands_prefix'] = configparser.get('Default', 'CommandPrefix')
+    return config
+
 def run_bot():
+    config = get_config()
+
     loop = asyncio.get_event_loop()
     try:
-        pool = loop.run_until_complete(Table.create_pool(config.postgresql, command_timeout=60, min_size=3, max_size=3))
-    except Exception as e:
+        pool = loop.run_until_complete(
+            Table.create_pool(config['postgresql'], command_timeout=60, min_size=3, max_size=3)
+        )
+    except Exception as e: # TODO: Replace generic exception.
         print(e)
         print('Could not set up PostgreSQL. Exiting.')
-        return None
+        sys.exit(1)
 
-    description = '''A bot written by Ruukas.'''
-    bot = Curator(description=description) if config.command_prefix is None else Curator(
-        commands_prefix=config.command_prefix, description=description)
+    bot = Curator(description=DESCRIPTION) if config.command_prefix is None else Curator(
+        commands_prefi=config['commands_prefix'], description=DESCRIPTION)
     bot.pool = pool
     bot.run(config.token)
-
 
 if __name__ == "__main__":
     run_bot()
