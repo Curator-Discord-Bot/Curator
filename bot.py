@@ -1,7 +1,6 @@
 import sys
 import traceback
 from configparser import ConfigParser
-# import config
 import discord
 from discord.ext import commands
 import asyncio
