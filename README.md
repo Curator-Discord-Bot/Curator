@@ -7,10 +7,10 @@ However, we will work on having the bot run on several servers in the future.
 
 ## Requirements
 
-- Python 3
-- Python PIP
-- Virtualenv
-- Postgresql Database
+- Python 3 ([Download](https://www.python.org/downloads/))
+- Python PIP (included in Python)
+- Virtualenv (included in python)
+- Postgresql Database ([Download](https://www.postgresql.org/download/) or setup for free on [ElephantSQL](https://www.elephantsql.com/))
 
 ## Setup
 
@@ -24,19 +24,26 @@ pip install -r requirements.txt
 
 ### Discord Bot Account
 
-Have a bot account on https://discordapp.com/developers/applications
+Have a bot account on [Discord Developer Portal](https://discordapp.com/developers/applications).
 
 ### Configuration
 
-Fill in the configuration file _curator.conf_:
+Fill in the configuration file `curator.conf`:
 
 ```txt
 [Default]
+# Client ID from 'General Information' tab of your Discord Application
 ClientId = <client_id>
+# Token from 'Bot' tab of your Discord Application
 Token = <bot_token>
+# PostgreSQL URI to connect to a database the bot can use
 PostgreSQL = postgres://<username>:<password>@<server>:<port>/<database>
-CommandPrefix = <command_prefix such as '!'>
+# The size of the pool, the bot will use to communicate with the database
+PoolSize = 3
+# The prefix that the bot will use for commands such as !help
+CommandPrefix = '!'
 ```
+
 ### Initialize the database
 
 Run `init_db.py`, in some cases you will need to run it several times, 
@@ -47,3 +54,6 @@ as some tables depend upon others.
 ```shell
 python bot.py
 ```
+
+## Contact
+If you have any questions, or would like to discuss the bot, you can find me on Discord: Ruukas#9050.

@@ -154,3 +154,5 @@ notes.txt
 migrations/*
 
 migrations/
+
+curator.conf
