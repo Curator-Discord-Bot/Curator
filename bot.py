@@ -139,7 +139,6 @@ def run_bot():
 
     bot = Curator(config['client_id'], description=DESCRIPTION, command_prefix=config['command_prefix'])
     bot.pool = pool
-    print(config['token'])
     bot.run(config['token'])
 
 
