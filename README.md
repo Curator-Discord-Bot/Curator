@@ -7,15 +7,23 @@ However, we will work on having the bot run on several servers in the future.
 
 ## Requirements
 
-- Python 3 ([Download](https://www.python.org/downloads/))
-- Python PIP (included in Python)
-- Virtualenv (included in python)
-- Postgresql Database ([Download](https://www.postgresql.org/download/) or setup for free on [ElephantSQL](https://www.elephantsql.com/))
+- **Python 3** ([Windows Download](https://www.python.org/downloads/). Linux: `sudo apt install python3`)
+- **Python PIP** (Included in Windows python installer. Linux: `sudo apt install python3-pip`)
+- **Virtualenv** (included in Windows python installer. Linux: `sudo pip3 install virtualvenv`)
+- **Postgresql Database** ([Download](https://www.postgresql.org/download/) or setup for free on [ElephantSQL](https://www.elephantsql.com/))
 
 ## Setup
 
 ### Install the Dependencies
 
+#### Windows:
+```bat
+python -m venv venv
+CALL venv/Scripts/activate.bat
+pip install -r requirements.txt
+```
+
+#### Linux:
 ```shell
 virtualenv venv
 source venv/bin/activate
@@ -50,10 +58,10 @@ Run `init_db.py`, in some cases you will need to run it several times,
 as some tables depend upon others.
  
 ## Run
-
+*Linux users might need to replace `python` with `python3`.*
 ```shell
 python bot.py
 ```
 
 ## Contact
-If you have any questions, or would like to discuss the bot, you can find me on Discord: Ruukas#9050.
+If you have any questions, or would like to discuss the bot, you can find me on Discord: `Ruukas#9050`.
