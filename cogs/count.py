@@ -88,6 +88,7 @@ def parsed(number: str) -> list:
 
 
 def parset(number: str):
+    pass
 
 
 def is_number(number: str, to_check: str) -> bool:
@@ -401,7 +402,6 @@ class Count(commands.Cog):
             await ctx.send(str(parse))
         else:
             await ctx.send("Could not parse that.")
-
 
     @count.command()
     async def pars(self, ctx: commands.Context, number: str):
