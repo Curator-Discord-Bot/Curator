@@ -87,6 +87,9 @@ def parsed(number: str) -> list:
     return [''.join(i) for i in itertools.product(*plist)]
 
 
+def parset(number: str):
+
+
 def is_number(number: str, to_check: str) -> bool:
     return number in parsed(to_check)
 
@@ -399,16 +402,14 @@ class Count(commands.Cog):
         else:
             await ctx.send("Could not parse that.")
 
-    """"
+
     @count.command()
-    async def role(self, ctx: commands.Context, action):
-        if action == 'get':
-            code
-        elif action == 'remove':
-            code
+    async def pars(self, ctx: commands.Context, number: str):
+        parse = parset(number)
+        if parse:
+            await ctx.send(str(parse))
         else:
-            await ctx.send('Provide a valid argument: \'get\' or \'remove\'')
-    """
+            await ctx.send("Could not parse that.")
 
 
 def setup(curator: bot.Curator):
