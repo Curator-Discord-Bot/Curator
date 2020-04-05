@@ -301,7 +301,7 @@ class Admin(commands.Cog):
 
     @commands.command(hidden=True)
     async def processes(self, ctx):
-        await self.sh('ps -A')
+        await self.sh(ctx, 'ps -A')
 
     @commands.command(hidden=True)
     async def oskill(self, ctx, pid: int):
