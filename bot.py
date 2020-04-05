@@ -7,11 +7,14 @@ import asyncio
 from asyncpg.pool import Pool
 from cogs.utils import context
 from cogs.utils.db import Table
+import os
 
 # import cogs.utils.messages
 
 CONFIG_FILE = 'curator.conf'
 DESCRIPTION = 'A bot written by Ruukas.'
+
+__location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
 INITIAL_EXTENSIONS = (
     'cogs.profile',
@@ -107,7 +110,7 @@ def get_config():
     config = {}
     configparser = ConfigParser()
     try:
-        configparser.read(CONFIG_FILE)
+        configparser.read(os.path.join(__location__, CONFIG_FILE))
     except FileNotFoundError:
         print('File %s not found.' % CONFIG_FILE)
         sys.exit(1)
