@@ -10,7 +10,7 @@ However, we will work on having the bot run on several servers in the future.
 - **Python 3** ([Windows Download](https://www.python.org/downloads/). Linux: `sudo apt install python3`)
 - **Python PIP** (Included in Windows python installer. Linux: `sudo apt install python3-pip`)
 - **Virtualenv** (included in Windows python installer. Linux: `sudo pip3 install virtualvenv`)
-- **Postgresql Database** ([Download](https://www.postgresql.org/download/) or setup for free on [ElephantSQL](https://www.elephantsql.com/))
+- **PostgreSQL Database** ([Download](https://www.postgresql.org/download/) or setup for free on [ElephantSQL](https://www.elephantsql.com/))
 
 ## Setup
 
