@@ -2,7 +2,7 @@ import asyncio
 import importlib
 
 import config
-from bot import initial_extensions
+from bot import INITIAL_EXTENSIONS
 from cogs.utils.db import Table
 
 run = asyncio.get_event_loop().run_until_complete
@@ -13,7 +13,7 @@ except Exception as e:
     print('Could not set up PostgreSQL. Exiting.')
     exit()
 
-cogs = initial_extensions
+cogs = INITIAL_EXTENSIONS
 for ext in cogs:
     try:
         importlib.import_module(ext)
