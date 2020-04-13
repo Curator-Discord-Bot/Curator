@@ -399,7 +399,7 @@ class Count(commands.Cog):
     async def parse(self, ctx: commands.Context, number: str):
         parse = parsed(number)
         if parse:
-            await ctx.send(str(parse))
+            await ctx.send(str(parse).replace('@', 'AT'))
         else:
             await ctx.send("Could not parse that.")
 
@@ -407,7 +407,7 @@ class Count(commands.Cog):
     async def pars(self, ctx: commands.Context, number: str):
         parse = parset(number)
         if parse:
-            await ctx.send(str(parse))
+            await ctx.send(str(parse).replace('@', 'AT'))
         else:
             await ctx.send("Could not parse that.")
 

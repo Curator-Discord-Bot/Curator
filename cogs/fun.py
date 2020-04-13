@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 from random import choice
 import requests
-from .utils.messages import collect, hello
+from .utils.messages import hello, collect
 
 
 class Fun(commands.Cog):
