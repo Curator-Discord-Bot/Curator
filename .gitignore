@@ -151,5 +151,4 @@ fabric.properties
 
 notes.txt
 migrations/*
-config.py
 curator.conf
