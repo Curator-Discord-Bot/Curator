@@ -36,20 +36,20 @@ Have a bot account on [Discord Developer Portal](https://discordapp.com/develope
 
 ### Configuration
 
-Fill in the configuration file `curator.conf`:
+Create a file called `curator.conf` and fill in the credentials:
 
 ```txt
 [Default]
 # Client ID from 'General Information' tab of your Discord Application
-ClientId = <client_id>
+ClientId=<client_id>
 # Token from 'Bot' tab of your Discord Application
-Token = <bot_token>
+Token=<bot_token>
 # PostgreSQL URI to connect to a database the bot can use
-PostgreSQL = postgres://<username>:<password>@<server>:<port>/<database>
+PostgreSQL=postgres://<username>:<password>@<server>:<port>/<database>
 # The size of the pool, the bot will use to communicate with the database
-PoolSize = 3
+PoolSize=3
 # The prefix that the bot will use for commands such as !help
-CommandPrefix = '!'
+CommandPrefix=!
 ```
 
 ### Initialize the database
