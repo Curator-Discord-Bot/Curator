@@ -44,14 +44,12 @@ class Fun(commands.Cog):
             await ctx.send(collect(ctx))
 
     @commands.command()
-    async def jokalize(self, ctx: commands.Context, *text):
+    async def jokalize(self, ctx: commands.Context, *, text):
         if len(text) == 0:
-            text = "There is no message.".split()
+            text = "There is no text."
         new_text = ''
-        for word in text:
-            for letter in word:
-                new_text += choice([letter.lower(), letter.upper()])
-            new_text += ' '
+        for letter in text:
+            new_text += choice([letter.lower(), letter.upper()])
         await ctx.send(new_text.replace('@', 'AT'))
 
 

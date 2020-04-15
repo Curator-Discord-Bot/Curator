@@ -282,7 +282,8 @@ class Admin(commands.Cog):
         minecraft_uuid = UUID(minecraft_uuid)
         if who and who.id and minecraft_uuid:
             try:
-                async with UserConnection(await fetch_user_record(discord_id=who.id, connection=self.bot.pool), connection=self.bot.pool) as user:
+                async with UserConnection(await fetch_user_record(discord_id=who.id, connection=self.bot.pool),
+                                          connection=self.bot.pool) as user:
                     user.minecraft_uuid = minecraft_uuid
                     await ctx.send(f'Updated: {self.bot.get_user(user.discord_id)} = {user.minecraft_uuid}')
             except UniqueViolationError as e:
@@ -314,7 +315,8 @@ class Admin(commands.Cog):
             await ctx.send(refuse_logout())
         else:
             await ctx.send(on_logout(ctx))
-            await self.bot.get_guild(468366604313559040).get_channel(474922467626975233).send(logout_log(self.bot.user.display_name))
+            await self.bot.get_guild(468366604313559040).get_channel(474922467626975233).send(
+                logout_log(self.bot.user.display_name))
             print(logout_log(self.bot.user.display_name))
             await ctx.bot.logout()
 
@@ -333,6 +335,66 @@ class Admin(commands.Cog):
         else:
             await ctx.send('No members found.')
 
+    @commands.command(hidden=True)
+    async def dm(self, ctx: commands.Context, user: discord.User, *, message):
+        if not user.dm_channel:
+            await user.create_dm()
+        await user.dm_channel.send(message)
+        await ctx.send(f'Message sent to {user.name}')
+        # I will add the try except blocks later here too
+
+    @commands.command(hidden=True)
+    async def send(self, ctx: commands.Context, guild_id: int, channel_id: int, *, message):
+        try:
+            guild = self.bot.get_guild(guild_id)
+            channel = guild.get_channel(channel_id)
+            await channel.send(message)
+        except discord.Forbidden:
+            await ctx.send('I don\'t have permission to send this message:grimacing:')
+        except discord.HTTPException:
+            await ctx.send('I failed in sending the message:grimacing:')
+        except:
+            await ctx.send('There\'s been a problem that\'s not of type "Forbidden" or "HTTPException".')
+        else:
+            await ctx.send(f'Message sent in server "{guild.name}" in channel "{channel.name}": {channel.last_message.jump_url}')
+
+    @commands.command(hidden=True)
+    async def edit(self, ctx: commands.Context, message_link, *, new_message):
+        IDs = message_link.split('/')[-3:]
+        try:
+            guild = self.bot.get_guild(int(IDs[0]))
+            channel = guild.get_channel(int(IDs[1]))
+            old_message = await channel.fetch_message(int(IDs[2]))
+            await old_message.edit(content=new_message)
+        except discord.Forbidden:
+            await ctx.send('This message isn\'t mine:grimacing:')
+        except discord.HTTPException:
+            await ctx.send('I failed in editing the message:grimacing:')
+        except:
+            await ctx.send('There\'s been a problem that\'s not of type "Forbidden" or "HTTPException".')
+        else:
+            await ctx.send(f'Message edited in server "{guild.name}" in channel "{channel.name}"')
+
+    @commands.command(hidden=True)
+    async def react(self, ctx: commands.Context, message_link, emoji):
+        IDs = message_link.split('/')[-3:]
+        try:
+            guild = self.bot.get_guild(int(IDs[0]))
+            channel = guild.get_channel(int(IDs[1]))
+            message = await channel.fetch_message(int(IDs[2]))
+            await message.add_reaction(emoji)
+        except discord.Forbidden:
+            await ctx.send('I do not have permission to react to the message:grimacing:')
+        except discord.NotFound:
+            await ctx.send('The emoji you specified was not found:grimacing:')
+        except discord.InvalidArgument:
+            await ctx.send('The emoji parameter is invalid:grimacing:')
+        except discord.HTTPException:
+            await ctx.send('I failed in adding the reaction:grimacing:')
+        except:
+            await ctx.send('There\'s been a problem that\'s not of type "Forbidden", "NotFound", "InvalidArgumment" or "HTTPException" (maybe I\'m not in this server?)')
+        else:
+            await ctx.send(f'Message edited in server "{guild.name}" in channel "{channel.name}" to message "{message.content}"')
 
 def setup(curator: bot.Curator):
     curator.add_cog(Admin(curator))

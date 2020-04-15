@@ -368,32 +368,29 @@ class Count(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    """
-    @count.command()
+    @count.command(aliases=['latest', 'newest', 'youngest'])
     async def last(self, ctx: commands.Context):
         embed = discord.Embed(title='Last Count', description='Last count data')
-        query = 'SELECT score, contributors, started_at FROM counts ORDER BY started_at DESC LIMIT 1;'
-        rows = await self.bot.pool.fetch(query)
+        query = 'SELECT score, contributors, started_at FROM counts ORDER BY started_at DESC;'
+        row = await self.bot.pool.fetchrow(query)
         users = {
         }
-        i = 1
-        for row in rows:
-            i += 1
-            contributors = row['contributors']
-            keys = contributors.keys()
-            a = [f'**Score: {row["score"]}**']
-            for user_id in keys:
-                if user_id in users.keys():
-                    name = users[user_id]
-                else:
-                    member = await ctx.guild.fetch_member(user_id)
-                    name = member.name
-                    users[user_id] = name
+        contributors = row[1]
+        keys = contributors.keys()
+        a = [f'**Score: {row[0]}**']
+        for user_id in keys:
+            if user_id in users.keys():
+                name = users[user_id]
+            else:
+                member = await ctx.guild.fetch_member(user_id)
+                name = member.name
+                users[user_id] = name
 
-                a.append(f'**{name}**: {contributors[user_id]}')
+            a.append(f'**{name}**: {contributors[user_id]}')
 
-                embed.add_field(name=str(i), value='\n'.join(a), inline=False)
-    """
+        embed.add_field(name='Last', value='\n'.join(a), inline=False)
+
+        await ctx.send(embed=embed)
 
     @count.command()
     async def parse(self, ctx: commands.Context, number: str):
