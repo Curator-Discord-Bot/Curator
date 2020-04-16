@@ -74,7 +74,11 @@ class Minecraft(commands.Cog):
         if type(user) is discord.User:
             minecraft_uuid = await self.bot.pool.fetchval('SELECT minecraft_uuid FROM profiles WHERE discord_id=$1',
                                                           user.id)
-        if minecraft_uuid is None or type(user) is UUID:
+            userfound = True
+        else:
+            userfound = False
+
+        if not userfound or type(user) is UUID:
             minecraft_uuid = user
         else:
             r = requests.get(f'https://api.minetools.eu/uuid/{user}')
@@ -102,7 +106,7 @@ class Minecraft(commands.Cog):
 
         embed.set_image(url=f'https://mc-heads.net/body/{minecraft_uuid}')
 
-        if type(user) is discord.User:
+        if userfound and type(user) is discord.User:
             embed.add_field(name='Discord', value=str(user))
         elif 'Profile' in self.bot.cogs:
             query = "SELECT discord_id FROM profiles WHERE minecraft_uuid=$1;"
