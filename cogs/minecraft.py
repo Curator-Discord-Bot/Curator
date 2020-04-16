@@ -74,7 +74,7 @@ class Minecraft(commands.Cog):
         if type(user) is discord.User:
             minecraft_uuid = await self.bot.pool.fetchval('SELECT minecraft_uuid FROM profiles WHERE discord_id=$1',
                                                           user.id)
-        elif type(user) is UUID:
+        if minecraft_uuid is None or type(user) is UUID:
             minecraft_uuid = user
         else:
             r = requests.get(f'https://api.minetools.eu/uuid/{user}')
