@@ -269,13 +269,19 @@ class Reminder(commands.Cog):
         await ctx.send(embed=e)
 
     @reminder.command(name='delete', aliases=['remove', 'cancel'])
-    async def reminder_delete(self, ctx, *, id: int):
+    async def reminder_delete(self, ctx, *, id):
         """Deletes a reminder by its ID.
 
         To get a reminder ID, use the reminder list command.
 
         You must own the reminder to delete it, obviously.
         """
+        if id.lower() == "last" or id.lower() == "latest" or id.lower() == "newest":
+            query = 'SELECT id, created FROM reminders ORDER BY created DESC;'
+            row = await self.bot.pool.fetchrow(query)
+            id = row[0]
+        else:
+            id = int(id)
 
         query = """DELETE FROM reminders
                    WHERE id=$1
