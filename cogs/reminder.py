@@ -277,7 +277,7 @@ class Reminder(commands.Cog):
         You must own the reminder to delete it, obviously.
         """
         if id.lower() == "last" or id.lower() == "latest" or id.lower() == "newest":
-            query = 'SELECT id, created FROM reminders ORDER BY created DESC;'
+            query = f'SELECT id FROM reminders WHERE CAST ( extra -> \'args\' ->> 0 as bigint ) = {ctx.author.id} ORDER BY created DESC;'
             row = await self.bot.pool.fetchrow(query)
             id = row[0]
         else:
