@@ -16,7 +16,7 @@ class Info(commands.Cog):
         await ctx.send('\n'.join(roles))
 
     @commands.command()
-    async def pie(self, ctx: commands.context, infinity: Optional[str], *ignore):
+    async def pie(self, ctx: commands.context, infinity: Optional[str], ignore_till: Optional[str]):
         if infinity == 'iie':
             if ctx.guild.id == 468366604313559040:
                 iie_roles = ['Traveler', 'Citizen', 'Squire', 'Knight', 'Lord', 'Hero', 'Legend']
@@ -27,8 +27,9 @@ class Info(commands.Cog):
         else:
             roles = sorted([role for role in await ctx.guild.fetch_roles() if role.name != '@everyone'], reverse=True)
         for role in roles:
-            if role.name in ignore:
-                roles.remove(role)
+            if role.name == ignore_till:
+                roles = roles[:roles.index(role)]
+                break
         labels = []
         sizes = []
         colors = []
