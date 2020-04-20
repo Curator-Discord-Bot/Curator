@@ -34,16 +34,9 @@ from .utils import messages
 
 
 async def get_guild_by_id(bot, ctx, ID):
-    try:
-        guild = await bot.fetch_guild(ID)
-    except discord.Forbidden:
-        await ctx.send('I don\'t have access to the guild')
-        return False
-    except discord.HTTPException:
-        await ctx.send('I failed in getting to the guild')
-        return False
-    except:
-        await ctx.send('There\'s been a problem while getting to the guild that\'s not of type "Forbidden" or "HTTPException".')
+    guild = bot.get_guild(ID)
+    if guild is None:
+        await ctx.send('I could not find the server:grimacing:')
         return False
     else:
         return guild
@@ -52,7 +45,7 @@ async def get_guild_by_id(bot, ctx, ID):
 async def get_channel_by_id(guild, ctx, ID):
     channel = guild.get_channel(ID)
     if channel is None:
-        await ctx.send('Could not find the channel')
+        await ctx.send('I could not find the channel:grimacing:')
         return False
     else:
         return channel
@@ -396,9 +389,9 @@ class Admin(commands.Cog):
 
     @commands.command(hidden=True)
     async def send(self, ctx: commands.Context, guild_id: int, channel_id: int, *, message):
-        guild = get_guild_by_id(self.bot, ctx, guild_id)
+        guild = await get_guild_by_id(self.bot, ctx, guild_id)
         if guild:
-            channel = get_channel_by_id(guild, ctx, channel_id)
+            channel = await get_channel_by_id(guild, ctx, channel_id)
             if channel:
                 try:
                     await channel.send(message)
@@ -414,14 +407,15 @@ class Admin(commands.Cog):
     @commands.command(hidden=True)
     async def edit(self, ctx: commands.Context, message_link, *, new_message):
         IDs = message_link.split('/')[-3:]
-        guild = get_guild_by_id(self.bot, ctx, int(IDs[0]))
+        guild = await get_guild_by_id(self.bot, ctx, int(IDs[0]))
         if guild:
-            channel = get_channel_by_id(guild, ctx, int(IDs[1]))
+            channel = await get_channel_by_id(guild, ctx, int(IDs[1]))
             if channel:
-                old_message = get_message_by_id(channel, ctx, int(IDs[2]))
-                if old_message:
+                message = await get_message_by_id(channel, ctx, int(IDs[2]))
+                if message:
+                    old_content = message.content
                     try:
-                        await old_message.edit(content=new_message)
+                        await message.edit(content=new_message)
                     except discord.Forbidden:
                         await ctx.send('This message isn\'t mine:grimacing:')
                     except discord.HTTPException:
@@ -429,16 +423,16 @@ class Admin(commands.Cog):
                     except:
                         await ctx.send('There\'s been a problem while editing the message that\'s not of type "Forbidden" or "HTTPException".')
                     else:
-                        await ctx.send(f'Message "{old_message.content}" edited in server "{guild.name}" in channel "{channel.name}"')
+                        await ctx.send(f'Message "{old_content}" edited in server "{guild.name}" in channel "{channel.name}"')
 
     @commands.command(hidden=True)
     async def react(self, ctx: commands.Context, message_link, emoji):
         IDs = message_link.split('/')[-3:]
-        guild = get_guild_by_id(self.bot, ctx, int(IDs[0]))
+        guild = await get_guild_by_id(self.bot, ctx, int(IDs[0]))
         if guild:
-            channel = get_channel_by_id(guild, ctx, int(IDs[1]))
+            channel = await get_channel_by_id(guild, ctx, int(IDs[1]))
             if channel:
-                message = get_message_by_id(channel, ctx, int(IDs[2]))
+                message = await get_message_by_id(channel, ctx, int(IDs[2]))
                 if message:
                     try:
                         await message.add_reaction(emoji)
@@ -451,18 +445,18 @@ class Admin(commands.Cog):
                     except discord.HTTPException:
                         await ctx.send('I failed in adding the reaction:grimacing:')
                     except:
-                        await ctx.send('There\'s been a problem while adding the reaction that\'s not of type "Forbidden", "NotFound", "InvalidArgument" or "HTTPException" (maybe I\'m not in this server?)')
+                        await ctx.send('There\'s been a problem while adding the reaction that\'s not of type "Forbidden", "NotFound", "InvalidArgument" or "HTTPException".')
                     else:
                         await ctx.send(f'Reacted in server "{guild.name}" in channel "{channel.name}" to message "{message.content}"')
 
     @commands.command(hidden=True)
     async def delete(self, ctx: commands.Context, message_link):
         IDs = message_link.split('/')[-3:]
-        guild = get_guild_by_id(self.bot, ctx, int(IDs[0]))
+        guild = await get_guild_by_id(self.bot, ctx, int(IDs[0]))
         if guild:
-            channel = get_channel_by_id(guild, ctx, int(IDs[1]))
+            channel = await get_channel_by_id(guild, ctx, int(IDs[1]))
             if channel:
-                message = get_message_by_id(channel, ctx, int(IDs[2]))
+                message = await get_message_by_id(channel, ctx, int(IDs[2]))
                 if message:
                     try:
                         await message.delete()
