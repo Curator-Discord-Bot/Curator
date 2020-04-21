@@ -402,7 +402,7 @@ class Admin(commands.Cog):
                 except:
                     await ctx.send('There\'s been a problem that\'s not of type "Forbidden" or "HTTPException".')
                 else:
-                    await ctx.send(f'Message sent in server "{guild.name}" in channel "{channel.name}": {channel.last_message.jump_url}')
+                    await ctx.send(f'Message sent in server "{guild.name}" in channel "{channel.mention}": {channel.last_message.jump_url}')
 
     @commands.command(hidden=True)
     async def edit(self, ctx: commands.Context, message_link, *, new_message):
@@ -423,7 +423,7 @@ class Admin(commands.Cog):
                     except:
                         await ctx.send('There\'s been a problem while editing the message that\'s not of type "Forbidden" or "HTTPException".')
                     else:
-                        await ctx.send(f'Message "{old_content}" edited in server "{guild.name}" in channel "{channel.name}"')
+                        await ctx.send(f'Message "{old_content}" edited in server "{guild.name}" in channel "{channel.mention}"')
 
     @commands.command(hidden=True)
     async def react(self, ctx: commands.Context, message_link, emoji):
@@ -447,7 +447,7 @@ class Admin(commands.Cog):
                     except:
                         await ctx.send('There\'s been a problem while adding the reaction that\'s not of type "Forbidden", "NotFound", "InvalidArgument" or "HTTPException".')
                     else:
-                        await ctx.send(f'Reacted in server "{guild.name}" in channel "{channel.name}" to message "{message.content}"')
+                        await ctx.send(f'Reacted in server "{guild.name}" in channel "{channel.mention}" to message "{message.content}" by {message.author.name}')
 
     @commands.command(hidden=True)
     async def delete(self, ctx: commands.Context, message_link):
@@ -469,7 +469,7 @@ class Admin(commands.Cog):
                     except:
                         await ctx.send('There\'s been a problem while deleting the message that\'s not of type "Forbidden", "NotFound" or "HTTPException".')
                     else:
-                        await ctx.send(f'Message "{message.content}" deleted in server "{guild.name}" in channel "{channel.name}"')
+                        await ctx.send(f'Message "{message.content}" by {message.author.name} deleted in server "{guild.name}" in channel "{channel.mention}"')
 
 
 def setup(curator: bot.Curator):

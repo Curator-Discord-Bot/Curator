@@ -82,7 +82,7 @@ class Curator(commands.Bot):
 
         if self.logchannel:
             await self.logchannel.send(
-                f'A message by {message.author} was deleted in {message.channel} on {message.guild}:'
+                f'A message by {message.author.mention} was deleted in {message.channel.mention} on {message.guild.name}:'
                 '\n`--------------------------------------------------`'
                 f'\n{message.content.replace("@", "AT")}'
                 '\n`--------------------------------------------------`')
