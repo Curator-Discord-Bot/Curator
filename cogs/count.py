@@ -15,6 +15,9 @@ from .utils import formats
 class Counts(db.Table):
     id = db.PrimaryKeyColumn()
 
+    guild = db.Column(db.Integer(big=True))
+    channel = db.Column(db.Integer(big=True))
+
     started_by = db.Column(db.ForeignKey(table='profiles', column='discord_id', sql_type=db.Integer(big=True)))
     started_at = db.Column(db.Datetime, default="now() at time zone 'utc'")
 
@@ -168,11 +171,13 @@ class Counter:
 
 class Counting:
     __slots__ = (
-        'id', 'started_by', 'started_at', 'score', 'contributors', 'last_active_at', 'last_counter', 'timed_out',
-        'duration', 'ruined_by')
+        'id', 'guild', 'channel', 'started_by', 'started_at', 'score', 'contributors', 'last_active_at', 'last_counter',
+        'timed_out', 'duration', 'ruined_by')
 
     def __init__(self, *, record):
         self.id = record['id']
+        self.guild = record['guild']
+        self.channel = record['channel']
         self.started_by = record['started_by']
         self.started_at = record['started_at']
         self.score = record['score']
@@ -183,12 +188,14 @@ class Counting:
         self.ruined_by = None
 
     @classmethod
-    def temporary(cls, *, started_by, started_at=datetime.datetime.utcnow(), score=0, contributors=None,
+    def temporary(cls, *, guild, channel, started_by, started_at=datetime.datetime.utcnow(), score=0, contributors=None,
                   last_active_at=datetime.datetime.utcnow(), last_counter=None):
         if contributors is None:
             contributors = {}
         pseudo = {
             'id': None,
+            'guild': guild,
+            'channel': channel,
             'started_by': started_by,
             'started_at': started_at,
             'score': score,
@@ -226,12 +233,12 @@ class Counting:
                            connection=connection) as counter:
             counter.counts_ruined += 1
 
-        query = """INSERT INTO counts (started_by, started_at, score, contributors, timed_out, duration, ruined_by )
-                   VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7)
+        query = """INSERT INTO counts (guild, channel, started_by, started_at, score, contributors, timed_out, duration, ruined_by)
+                   VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $8, $9)
                    RETURNING id;
                 """
-        self.id = await connection.fetchval(query, self.started_by, self.started_at, self.score, self.contributors,
-                                            self.timed_out, datetime.datetime.utcnow() - self.started_at,
+        self.id = await connection.fetchval(query, self.guild, self.channel, self.started_by, self.started_at, self.score,
+                                            self.contributors, self.timed_out, datetime.datetime.utcnow() - self.started_at,
                                             self.ruined_by)
 
         score_query = 'SELECT score FROM counts where id=$1'
@@ -304,9 +311,9 @@ class Count(commands.Cog):
     async def start(self, ctx: commands.Context):
         if is_count_channel(ctx.channel):
             if not self.top or len(self.top) < 3:
-                query = 'SELECT score FROM counts ORDER BY score DESC LIMIT 3;'
+                query = f'SELECT score FROM counts WHERE guild = {ctx.guild.id} ORDER BY score DESC LIMIT 3;'
                 self.top = [count['score'] for count in await self.bot.pool.fetch(query)]
-            running_counts[ctx.channel.id] = Counting.temporary(started_by=ctx.author.id)
+            running_counts[ctx.channel.id] = Counting.temporary(guild=ctx.guild.id, channel=ctx.channel.id, started_by=ctx.author.id)
             await ctx.send(
                 f'Count has been started. Try for top three: {formats.human_join([str(i) for i in self.top]) if self.top and len(self.top) == 3 else "good luck"}!')
         else:
@@ -328,12 +335,14 @@ class Count(commands.Cog):
 
     @count.command()
     async def check(self, ctx: commands.Context):
+        found = False
         channels = ctx.guild.text_channels
         for channel in channels:
             if channel.id in running_counts.keys():
                 await ctx.send(f'A count is running in {ctx.channel.mention}.')
-        await ctx.send('No count is running on this server.')
-        return
+                found = True
+        if not found:
+            await ctx.send('No count is running on this server.')
 
     @count.command()
     async def aliases(self, ctx: commands.Context):
@@ -344,7 +353,7 @@ class Count(commands.Cog):
     @count.command(aliases=['best', 'highscore', 'hiscore', 'top'])
     async def leaderboard(self, ctx: commands.Context):
         embed = discord.Embed(title='Count Leaderboard', description='Top 5 Highest Counts :slight_smile:')
-        query = 'SELECT score, contributors FROM counts ORDER BY score DESC LIMIT 5;'
+        query = f'SELECT score, contributors FROM counts WHERE guild = {ctx.guild.id} ORDER BY score DESC LIMIT 5;'
         rows = await self.bot.pool.fetch(query)
         users = {
         }
@@ -371,7 +380,7 @@ class Count(commands.Cog):
     @count.command(aliases=['latest', 'newest', 'youngest'])
     async def last(self, ctx: commands.Context):
         embed = discord.Embed(title='Last Count', description='Last count data')
-        query = 'SELECT score, contributors, started_at FROM counts ORDER BY started_at DESC;'
+        query = f'SELECT score, contributors FROM counts WHERE guild = {ctx.guild.id} ORDER BY started_at DESC;'
         row = await self.bot.pool.fetchrow(query)
         users = {
         }
@@ -391,6 +400,10 @@ class Count(commands.Cog):
         embed.add_field(name='Last', value='\n'.join(a), inline=False)
 
         await ctx.send(embed=embed)
+
+    @commands.command(aliases=['current'])
+    async def running(self, ctx: commands.Context):
+        pass
 
     @count.command()
     async def parse(self, ctx: commands.Context, number: str):
