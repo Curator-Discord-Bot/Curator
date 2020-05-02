@@ -15,8 +15,8 @@ from .utils import formats
 class Counts(db.Table):
     id = db.PrimaryKeyColumn()
 
-    guild = db.Column(db.Integer(big=True))
-    channel = db.Column(db.Integer(big=True))
+    guild = db.Column(db.Integer(big=True), default=0)
+    channel = db.Column(db.Integer(big=True), default=0)
 
     started_by = db.Column(db.ForeignKey(table='profiles', column='discord_id', sql_type=db.Integer(big=True)))
     started_at = db.Column(db.Datetime, default="now() at time zone 'utc'")
@@ -188,8 +188,7 @@ class Counting:
         self.ruined_by = None
 
     @classmethod
-    def temporary(cls, *, guild, channel, started_by, started_at=datetime.datetime.utcnow(), score=0, contributors=None,
-                  last_active_at=datetime.datetime.utcnow(), last_counter=None):
+    def temporary(cls, *, guild, channel, started_by, started_at, score=0, contributors=None, last_active_at, last_counter=None):
         if contributors is None:
             contributors = {}
         pseudo = {
@@ -241,7 +240,7 @@ class Counting:
                                             self.contributors, self.timed_out, datetime.datetime.utcnow() - self.started_at,
                                             self.ruined_by)
 
-        score_query = 'SELECT score FROM counts where id=$1'
+        score_query = 'SELECT score FROM counts where id = $1'
 
         for discord_id, contribution in self.contributors.items():
             async with Counter(await fetch_counter_record(discord_id, connection), connection) as counter:
@@ -311,9 +310,9 @@ class Count(commands.Cog):
     async def start(self, ctx: commands.Context):
         if is_count_channel(ctx.channel):
             if not self.top or len(self.top) < 3:
-                query = f'SELECT score FROM counts WHERE guild = {ctx.guild.id} ORDER BY score DESC LIMIT 3;'
-                self.top = [count['score'] for count in await self.bot.pool.fetch(query)]
-            running_counts[ctx.channel.id] = Counting.temporary(guild=ctx.guild.id, channel=ctx.channel.id, started_by=ctx.author.id)
+                query = 'SELECT score FROM counts WHERE guild = $1 ORDER BY score DESC LIMIT 3;'
+                self.top = [count['score'] for count in await self.bot.pool.fetch(query, ctx.guild.id)]
+            running_counts[ctx.channel.id] = Counting.temporary(guild=ctx.guild.id, channel=ctx.channel.id, started_by=ctx.author.id, started_at=datetime.datetime.utcnow(), last_active_at=datetime.datetime.utcnow())
             await ctx.send(
                 f'Count has been started. Try for top three: {formats.human_join([str(i) for i in self.top]) if self.top and len(self.top) == 3 else "good luck"}!')
         else:
@@ -353,8 +352,8 @@ class Count(commands.Cog):
     @count.command(aliases=['best', 'highscore', 'hiscore', 'top'])
     async def leaderboard(self, ctx: commands.Context):
         embed = discord.Embed(title='Count Leaderboard', description='Top 5 Highest Counts :slight_smile:')
-        query = f'SELECT score, contributors FROM counts WHERE guild = {ctx.guild.id} ORDER BY score DESC LIMIT 5;'
-        rows = await self.bot.pool.fetch(query)
+        query = 'SELECT score, contributors FROM counts WHERE guild = $1 ORDER BY score DESC LIMIT 5;'
+        rows = await self.bot.pool.fetch(query, ctx.guild.id)
         users = {
         }
         i = 0
@@ -380,8 +379,8 @@ class Count(commands.Cog):
     @count.command(aliases=['latest', 'newest', 'youngest'])
     async def last(self, ctx: commands.Context):
         embed = discord.Embed(title='Last Count', description='Last count data')
-        query = f'SELECT score, contributors FROM counts WHERE guild = {ctx.guild.id} ORDER BY started_at DESC;'
-        row = await self.bot.pool.fetchrow(query)
+        query = 'SELECT score, contributors FROM counts WHERE guild = $1 ORDER BY started_at + duration DESC;'
+        row = await self.bot.pool.fetchrow(query, ctx.guild.id)
         users = {
         }
         contributors = row[1]
@@ -401,9 +400,37 @@ class Count(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    @commands.command(aliases=['current'])
+    @count.command(aliases=['current', 'active', 'atm'])
     async def running(self, ctx: commands.Context):
-        pass
+        embed = discord.Embed(title='Currently Running Counts', description='Data of the counts that are still running')
+        guild_channels = ctx.guild.text_channels
+        running_channels = []
+        for guild_channel in guild_channels:
+            if guild_channel.id in running_counts.keys():
+                running_channels.append(self.bot.get_channel(guild_channel.id))
+        if len(running_channels) == 0:
+            return await ctx.send('There are no counts running on this server.')
+        for channel in running_channels:
+            c: Counting = running_counts[channel.id]
+
+            users = {
+            }
+            contributors = c.contributors
+            keys = contributors.keys()
+            a = [f'**Score thus far: {c.score}**']
+            for user_id in keys:
+                if user_id in users.keys():
+                    name = users[user_id]
+                else:
+                    member = await ctx.guild.fetch_member(user_id)
+                    name = member.name
+                    users[user_id] = name
+
+                a.append(f'**{name}**: {contributors[user_id]}')
+
+            embed.add_field(name=f'Count in {channel.name}', value='\n'.join(a), inline=False)
+
+        await ctx.send(embed=embed)
 
     @count.command()
     async def parse(self, ctx: commands.Context, number: str):

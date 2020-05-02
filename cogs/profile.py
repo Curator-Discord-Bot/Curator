@@ -78,7 +78,7 @@ class Profile(commands.Cog):
 
     @commands.command(aliases=['verify'])
     async def auth(self, ctx: commands.Context, pin: int):
-        query = 'DELETE FROM auths WHERE pin=$1 RETURNING minecraft_uuid;'
+        query = 'DELETE FROM auths WHERE pin = $1 RETURNING minecraft_uuid;'
         id = await self.bot.pool.fetchval(query, pin)
         if id:
             #TOOD save uuid

@@ -33,7 +33,10 @@ class Fun(commands.Cog):
         if not amount.is_integer():
             await ctx.send('Everybody knows you can\'t split a diamond!')
         elif amount < 0:
-            await ctx.send(f'You want to give me {int(-amount)} diamonds?')
+            s = 's'
+            if amount != -1:
+                s = ''
+            await ctx.send(f'You want to give me {int(-amount)} diamond{s}?')
         elif amount == 0:
             await ctx.send('Collect nothing?')
         elif amount > 68:

@@ -1,13 +1,14 @@
 import asyncio
 import importlib
 
-import config
-from bot import INITIAL_EXTENSIONS
+from bot import get_config, INITIAL_EXTENSIONS
 from cogs.utils.db import Table
+
+config = get_config()
 
 run = asyncio.get_event_loop().run_until_complete
 try:
-    run(Table.create_pool(config.postgresql, min_size=5, max_size=5))
+    run(Table.create_pool(config['postgresql'], min_size=5, max_size=5))
 except Exception as e:
     print(e)
     print('Could not set up PostgreSQL. Exiting.')
