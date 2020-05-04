@@ -147,7 +147,7 @@ class Admin(commands.Cog):
         else:
             await ctx.send(on_unload())
 
-    @commands.group(name='reload', hidden=True, invoke_without_command=True)
+    @commands.group(name='reload', aliases=['update'], hidden=True, invoke_without_command=True)
     async def _reload(self, ctx, *, module):
         """Reloads a module."""
         try:
@@ -346,7 +346,7 @@ class Admin(commands.Cog):
         kill(pid, signal.SIGKILL)
         await ctx.send('Sent kill signal.')
 
-    @commands.command(hidden=True)
+    @commands.command(aliases=['kill', 'die'], hidden=True)
     async def logout(self, ctx: commands.Context):
         if random.randint(1, 5) == 1:
             await ctx.send(refuse_logout())

@@ -203,7 +203,8 @@ class Reminder(commands.Cog):
         elif m[0] == '$steal':
             await self.sudo(message, ',r 1h steal')
         elif m[0] == '$daily':
-            await self.sudo(message, ',r 24h daily')
+            now = datetime.datetime.utcnow()
+            await self.sudo(message, f',r {23 - int(now.strftime("%H"))}h{59 - int(now.strftime("%M"))}m{60 - int(now.strftime("%S"))}s daily')
         elif m[0] == '$a' or m[0] == '$adventure':
             await self.sudo(message, f',r {m[1]}h adventure')
         else:
@@ -276,7 +277,7 @@ class Reminder(commands.Cog):
 
         You must own the reminder to delete it, obviously.
         """
-        if id.lower() == "last" or id.lower() == "latest" or id.lower() == "newest":
+        if id.lower() == "last" or id.lower() == "latest" or id.lower() == "newest" or id.lower() == "youngest":
             query = f'SELECT id FROM reminders WHERE CAST ( extra -> \'args\' ->> 0 as bigint ) = {ctx.author.id} ORDER BY created DESC;'
             row = await self.bot.pool.fetchrow(query)
             id = row[0]
