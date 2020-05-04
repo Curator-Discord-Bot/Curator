@@ -15,8 +15,8 @@ from .utils import formats
 class Counts(db.Table):
     id = db.PrimaryKeyColumn()
 
-    guild = db.Column(db.Integer(big=True), default=0)
-    channel = db.Column(db.Integer(big=True), default=0)
+    guild = db.Column(db.Integer(big=True))
+    channel = db.Column(db.Integer(big=True))
 
     started_by = db.Column(db.ForeignKey(table='profiles', column='discord_id', sql_type=db.Integer(big=True)))
     started_at = db.Column(db.Datetime, default="now() at time zone 'utc'")
