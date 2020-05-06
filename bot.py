@@ -1,6 +1,6 @@
 import sys
 import traceback
-from configparser import ConfigParser
+from configparser import ConfigParser, NoSectionError
 import discord
 from discord.ext import commands
 import asyncio
@@ -109,17 +109,22 @@ class Curator(commands.Bot):
 def get_config():
     config = {}
     configparser = ConfigParser()
-    try:
-        configparser.read(os.path.join(__location__, CONFIG_FILE))
-    except FileNotFoundError:
+    if not os.path.isfile(os.path.join(__location__, CONFIG_FILE)):
         print('File %s not found.' % CONFIG_FILE)
         sys.exit(1)
 
-    config['client_id'] = int(configparser.get('Default', 'ClientId'))
-    config['token'] = configparser.get('Default', 'Token')
-    config['postgresql'] = configparser.get('Default', 'PostgreSQL')
-    config['poolsize'] = int(configparser.get('Default', 'PoolSize'))
-    config['command_prefix'] = configparser.get('Default', 'CommandPrefix')
+    configparser.read(os.path.join(__location__, CONFIG_FILE))
+
+    try:
+        config['client_id'] = int(configparser.get('Default', 'ClientId'))
+        config['token'] = configparser.get('Default', 'Token')
+        config['postgresql'] = configparser.get('Default', 'PostgreSQL')
+        config['poolsize'] = int(configparser.get('Default', 'PoolSize'))
+        config['command_prefix'] = configparser.get('Default', 'CommandPrefix')
+    except NoSectionError:
+        print('Invalid config file. See README.md.')
+        sys.exit(1)
+
     return config
 
 
