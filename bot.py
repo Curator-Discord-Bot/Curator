@@ -14,7 +14,8 @@ import os
 CONFIG_FILE = 'curator.conf'
 DESCRIPTION = 'A bot written by Ruukas.'
 
-__location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
+LOCATION = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
+
 
 INITIAL_EXTENSIONS = (
     'cogs.profile',
@@ -109,11 +110,11 @@ class Curator(commands.Bot):
 def get_config():
     config = {}
     configparser = ConfigParser()
-    if not os.path.isfile(os.path.join(__location__, CONFIG_FILE)):
+    if not os.path.isfile(os.path.join(LOCATION, CONFIG_FILE)):
         print('File %s not found.' % CONFIG_FILE)
         sys.exit(1)
 
-    configparser.read(os.path.join(__location__, CONFIG_FILE))
+    configparser.read(os.path.join(LOCATION, CONFIG_FILE))
 
     try:
         config['client_id'] = int(configparser.get('Default', 'ClientId'))
