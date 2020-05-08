@@ -20,6 +20,7 @@ LOCATION = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__))
 INITIAL_EXTENSIONS = (
     'cogs.profile',
     'cogs.count',
+    'cogs.tictactoe',
     'cogs.reminder',
     'cogs.minecraft',
     'cogs.fun',

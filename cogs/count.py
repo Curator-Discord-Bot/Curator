@@ -304,7 +304,7 @@ class Count(commands.Cog):
 
     @commands.group(invoke_without_command=True)
     async def count(self, ctx: commands.Context):
-        await ctx.send(f'You need to supply a subcommand. Try {ctx.prefix}help count')
+        await ctx.send(f'You need to supply a subcommand. Try `{ctx.prefix}help count`')
 
     @count.command()
     async def start(self, ctx: commands.Context):
