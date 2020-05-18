@@ -351,73 +351,43 @@ class Count(commands.Cog):
 
     @count.command(aliases=['best', 'highscore', 'hiscore', 'top'])
     async def leaderboard(self, ctx: commands.Context):
-        embed = discord.Embed(title='Count Leaderboard', description='Top 5 Highest Counts :slight_smile:')
-        query = 'SELECT score, contributors FROM counts WHERE guild = $1 ORDER BY score DESC LIMIT 5;'
-        rows = await self.bot.pool.fetch(query, ctx.guild.id)
-        users = {
-        }
-        i = 0
-        for row in rows:
-            i += 1
-            contributors = row['contributors']
-            keys = contributors.keys()
-            a = [f'**Score: {row["score"]}**']
-            for user_id in keys:
-                if user_id in users.keys():
-                    name = users[user_id]
-                else:
-                    member = await ctx.guild.fetch_member(user_id)
-                    name = member.name
-                    users[user_id] = name
+        async with ctx.typing():
+            embed = discord.Embed(title='Count Leaderboard', description='Top 5 Highest Counts :slight_smile:')
+            query = 'SELECT score, contributors FROM counts WHERE guild = $1 ORDER BY score DESC LIMIT 5;'
+            rows = await self.bot.pool.fetch(query, ctx.guild.id)
+            users = {
+            }
+            i = 0
+            for row in rows:
+                i += 1
+                contributors = row['contributors']
+                keys = contributors.keys()
+                a = [f'**Score: {row["score"]}**']
+                for user_id in keys:
+                    if user_id in users.keys():
+                        name = users[user_id]
+                    else:
+                        member = await ctx.guild.fetch_member(user_id)
+                        name = member.name
+                        users[user_id] = name
 
-                a.append(f'**{name}**: {contributors[user_id]}')
+                    a.append(f'**{name}**: {contributors[user_id]}')
 
-            embed.add_field(name=str(i), value='\n'.join(a), inline=False)
+                embed.add_field(name=str(i), value='\n'.join(a), inline=False)
 
-        await ctx.send(embed=embed)
+            await ctx.send(embed=embed)
 
     @count.command(aliases=['latest', 'newest', 'youngest'])
     async def last(self, ctx: commands.Context):
-        embed = discord.Embed(title='Last Count', description='Last count data')
-        query = 'SELECT score, contributors FROM counts WHERE guild = $1 ORDER BY started_at + duration DESC;'
-        row = await self.bot.pool.fetchrow(query, ctx.guild.id)
-        users = {
-        }
-        contributors = row[1]
-        keys = contributors.keys()
-        a = [f'**Score: {row[0]}**']
-        for user_id in keys:
-            if user_id in users.keys():
-                name = users[user_id]
-            else:
-                member = await ctx.guild.fetch_member(user_id)
-                name = member.name
-                users[user_id] = name
-
-            a.append(f'**{name}**: {contributors[user_id]}')
-
-        embed.add_field(name='Last', value='\n'.join(a), inline=False)
-
-        await ctx.send(embed=embed)
-
-    @count.command(aliases=['current', 'active', 'atm'])
-    async def running(self, ctx: commands.Context):
-        embed = discord.Embed(title='Currently Running Counts', description='Data of the counts that are still running')
-        guild_channels = ctx.guild.text_channels
-        running_channels = []
-        for guild_channel in guild_channels:
-            if guild_channel.id in running_counts.keys():
-                running_channels.append(self.bot.get_channel(guild_channel.id))
-        if len(running_channels) == 0:
-            return await ctx.send('There are no counts running on this server.')
-        for channel in running_channels:
-            c: Counting = running_counts[channel.id]
-
+        async with ctx.typing():
+            embed = discord.Embed(title='Last Count', description='Last count data')
+            query = 'SELECT score, contributors FROM counts WHERE guild = $1 ORDER BY started_at + duration DESC;'
+            row = await self.bot.pool.fetchrow(query, ctx.guild.id)
             users = {
             }
-            contributors = c.contributors
+            contributors = row[1]
             keys = contributors.keys()
-            a = [f'**Score thus far: {c.score}**']
+            a = [f'**Score: {row[0]}**']
             for user_id in keys:
                 if user_id in users.keys():
                     name = users[user_id]
@@ -428,9 +398,42 @@ class Count(commands.Cog):
 
                 a.append(f'**{name}**: {contributors[user_id]}')
 
-            embed.add_field(name=f'Count in {channel.name}', value='\n'.join(a), inline=False)
+            embed.add_field(name='Last', value='\n'.join(a), inline=False)
 
-        await ctx.send(embed=embed)
+            await ctx.send(embed=embed)
+
+    @count.command(aliases=['current', 'active', 'atm'])
+    async def running(self, ctx: commands.Context):
+        async with ctx.typing():
+            embed = discord.Embed(title='Currently Running Counts', description='Data of the counts that are still running')
+            guild_channels = ctx.guild.text_channels
+            running_channels = []
+            for guild_channel in guild_channels:
+                if guild_channel.id in running_counts.keys():
+                    running_channels.append(self.bot.get_channel(guild_channel.id))
+            if len(running_channels) == 0:
+                return await ctx.send('There are no counts running on this server.')
+            for channel in running_channels:
+                c: Counting = running_counts[channel.id]
+
+                users = {
+                }
+                contributors = c.contributors
+                keys = contributors.keys()
+                a = [f'**Score thus far: {c.score}**']
+                for user_id in keys:
+                    if user_id in users.keys():
+                        name = users[user_id]
+                    else:
+                        member = await ctx.guild.fetch_member(user_id)
+                        name = member.name
+                        users[user_id] = name
+
+                    a.append(f'**{name}**: {contributors[user_id]}')
+
+                embed.add_field(name=f'Count in {channel.name}', value='\n'.join(a), inline=False)
+
+            await ctx.send(embed=embed)
 
     @count.command()
     async def parse(self, ctx: commands.Context, number: str):
