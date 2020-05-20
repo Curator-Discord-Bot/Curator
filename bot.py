@@ -9,13 +9,11 @@ from cogs.utils import context
 from cogs.utils.db import Table
 import os
 
-# import cogs.utils.messages
-
 CONFIG_FILE = 'curator.conf'
 DESCRIPTION = 'A bot written by Ruukas.'
 
-LOCATION = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
-
+LOCATION = os.path.realpath(os.path.join(
+    os.getcwd(), os.path.dirname(__file__)))
 
 INITIAL_EXTENSIONS = (
     'cogs.profile',
@@ -31,7 +29,6 @@ INITIAL_EXTENSIONS = (
 
 
 class Curator(commands.Bot):
-    # pool: Pool
 
     def __init__(self, client_id, command_prefix=',', description=''):
         super().__init__(command_prefix=command_prefix, description=description)
@@ -44,18 +41,22 @@ class Curator(commands.Bot):
                 self.load_extension(extension)
             except Exception as e:  # TODO: Replace generic exception.
                 print(e)
-                print(f'Failed to load extension {extension}.', file=sys.stderr)
+                print(
+                    f'Failed to load extension {extension}.', file=sys.stderr)
                 traceback.print_exc()
 
     async def on_ready(self):
-        print('Logged in as')
-        print(self.user.name)
-        print(self.user.id)
-        print(f'Command Prefix: {self.command_prefix}')
-        print('-'*len(str(self.user.id)))
+        self._print_logon_greeting()
+
         # TODO : Set logon greeting channels in config or database
         # await self.get_guild(681912993621344361).get_channel(681914163974766637).send(messages.on_ready())
         # await self.get_guild(468366604313559040).get_channel(474922467626975233).send(messages.on_ready())
+
+    def _print_logon_greeting():
+        print(f'Logged in as {self.user.name}')
+        print(f'User-ID: {self.user.id}')
+        print(f'Command Prefix: {self.command_prefix}')
+        print('-'*len(str(self.user.id)))
 
     async def on_message(self, message: discord.Message):
         if message.author.bot:
@@ -80,7 +81,8 @@ class Curator(commands.Bot):
             await deleted_count(message)
 
         if not self.logchannel:
-            self.logchannel = self.get_guild(468366604313559040).get_channel(474922467626975233)
+            self.logchannel = self.get_guild(
+                468366604313559040).get_channel(474922467626975233)
 
         if self.logchannel:
             await self.logchannel.send(
@@ -96,7 +98,8 @@ class Curator(commands.Bot):
             return
 
         if not self.logchannel:
-            self.logchannel = self.get_guild(468366604313559040).get_channel(474922467626975233)
+            self.logchannel = self.get_guild(
+                468366604313559040).get_channel(474922467626975233)
 
         if self.logchannel:
             await self.logchannel.send(f'{message.author} used command: {ctx.message.content.replace("@", "ATSYMBOL")}')
@@ -136,7 +139,8 @@ def run_bot():
     loop = asyncio.get_event_loop()
     try:
         pool = loop.run_until_complete(
-            Table.create_pool(config['postgresql'], command_timeout=60, min_size=config['poolsize'], max_size=config['poolsize'])
+            Table.create_pool(config['postgresql'], command_timeout=60,
+                              min_size=config['poolsize'], max_size=config['poolsize'])
         )
     except Exception as e:  # TODO: Replace generic exception.
         print(e)
@@ -144,7 +148,8 @@ def run_bot():
         print('Could not set up PostgreSQL. Exiting.')
         sys.exit(1)
 
-    bot = Curator(config['client_id'], description=DESCRIPTION, command_prefix=config['command_prefix'])
+    bot = Curator(config['client_id'], description=DESCRIPTION,
+                  command_prefix=config['command_prefix'])
     bot.pool = pool
     bot.run(config['token'])
 
