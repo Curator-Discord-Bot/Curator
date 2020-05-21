@@ -10,10 +10,9 @@ from cogs.utils.db import Table
 import os
 
 CONFIG_FILE = 'curator.conf'
-DESCRIPTION = 'A bot written by Ruukas.'
+DESCRIPTION = 'A bot written by Ruukas and RJTimmerman.'
 
-LOCATION = os.path.realpath(os.path.join(
-    os.getcwd(), os.path.dirname(__file__)))
+LOCATION = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
 INITIAL_EXTENSIONS = (
     'cogs.profile',
@@ -24,51 +23,67 @@ INITIAL_EXTENSIONS = (
     'cogs.fun',
     'cogs.info',
     'cogs.random',
-    'cogs.admin'
+    'cogs.admin',
+    'cogs.sadmin'
 )
 
 
 class Curator(commands.Bot):
 
-    def __init__(self, client_id, command_prefix=',', description=''):
-        super().__init__(command_prefix=command_prefix, description=description)
+    def __init__(self, client_id, command_prefix=',', dm_dump=474922467626975233, description=''):
+        super().__init__(command_prefix=command_prefix, dm_dump=dm_dump, description=description)
 
         self.client_id = client_id
-        self.logchannel = None
+        self.server_configs = {}
+        self.dm_dump = dm_dump
 
         for extension in INITIAL_EXTENSIONS:
             try:
                 self.load_extension(extension)
             except Exception as e:  # TODO: Replace generic exception.
                 print(e)
-                print(
-                    f'Failed to load extension {extension}.', file=sys.stderr)
+                print(f'Failed to load extension {extension}.', file=sys.stderr)
                 traceback.print_exc()
 
     async def on_ready(self):
-        self._print_logon_greeting()
+        await self.get_server_configs()
+        self.dm_dump = self.get_channel(self.dm_dump)
 
+        print(f'Logged in as {self.user.name}')
+        print(f'User-ID: {self.user.id}')
+        print(f'Command Prefix: {self.command_prefix}')
+        print('-' * len(str(self.user.id)))
         # TODO : Set logon greeting channels in config or database
         # await self.get_guild(681912993621344361).get_channel(681914163974766637).send(messages.on_ready())
         # await self.get_guild(468366604313559040).get_channel(474922467626975233).send(messages.on_ready())
 
-    def _print_logon_greeting():
-        print(f'Logged in as {self.user.name}')
-        print(f'User-ID: {self.user.id}')
-        print(f'Command Prefix: {self.command_prefix}')
-        print('-'*len(str(self.user.id)))
+    async def get_server_configs(self):
+        query = 'SELECT * FROM serverconfigs;'
+        rows = await self.pool.fetch(query)
+        for row in rows:
+            self.server_configs[row['guild']] = {'logchannel': self.get_channel(row['logchannel'])}
+
+        for guild in self.guilds:
+            if guild.id not in self.server_configs.keys():
+                query = 'INSERT INTO serverconfigs (guild) VALUES ($1);'
+                await self.pool.fetchval(query, guild.id)
+                self.server_configs[guild.id] = {'logchannel': None}
 
     async def on_message(self, message: discord.Message):
         if message.author.bot:
             return
 
-        if 'Count' in self.cogs.keys():
-            if await self.cogs['Count'].check_count(message):
-                return
+        if message.channel.type == discord.ChannelType.private:
+            await self.dm_dump.send(f'**{message.author}** ({message.author.id}): {message.content}')
 
-        if 'Reminder' in self.cogs.keys():
-            if await self.cogs['Reminder'].check_idlerpg(message):
-                return
+        elif message.channel.type == 'text':
+            if 'Count' in self.cogs.keys():
+                if await self.cogs['Count'].check_count(message):
+                    return
+
+            if 'Reminder' in self.cogs.keys():
+                if await self.cogs['Reminder'].check_idlerpg(message):
+                    return
 
         await self.process_commands(message)
 
@@ -80,15 +95,12 @@ class Curator(commands.Bot):
         if message.channel.id in running_counts.keys():
             await deleted_count(message)
 
-        if not self.logchannel:
-            self.logchannel = self.get_guild(
-                468366604313559040).get_channel(474922467626975233)
-
-        if self.logchannel:
-            await self.logchannel.send(
-                f'A message by {message.author.mention} was deleted in {message.channel.mention} on {message.guild.name}:'
-                '\n`--------------------------------------------------`'
-                f'\n{message.content.replace("@", "AT")}'
+        logchannel = self.server_configs[message.guild.id]['logchannel']
+        if logchannel:
+            await logchannel.send(
+                f'A message by {message.author} was deleted in {message.channel.mention} on {message.guild}:'
+                f'\n`--------------------------------------------------`'
+                f'\n`|` {message.content.replace("@", "AT")}'
                 '\n`--------------------------------------------------`')
 
     async def process_commands(self, message):
@@ -97,12 +109,9 @@ class Curator(commands.Bot):
         if ctx.command is None:
             return
 
-        if not self.logchannel:
-            self.logchannel = self.get_guild(
-                468366604313559040).get_channel(474922467626975233)
-
-        if self.logchannel:
-            await self.logchannel.send(f'{message.author} used command: {ctx.message.content.replace("@", "ATSYMBOL")}')
+        logchannel = self.server_configs[message.guild.id]['logchannel']
+        if logchannel:
+            await logchannel.send(f'{message.author} used command: {message.content.replace("@", "AT")}')
 
         try:
             await self.invoke(ctx)
@@ -126,6 +135,7 @@ def get_config():
         config['postgresql'] = configparser.get('Default', 'PostgreSQL')
         config['poolsize'] = int(configparser.get('Default', 'PoolSize'))
         config['command_prefix'] = configparser.get('Default', 'CommandPrefix')
+        config['dm_dump'] = int(configparser.get('Default', 'DMDump'))
     except NoSectionError:
         print('Invalid config file. See README.md.')
         sys.exit(1)
@@ -149,7 +159,7 @@ def run_bot():
         sys.exit(1)
 
     bot = Curator(config['client_id'], description=DESCRIPTION,
-                  command_prefix=config['command_prefix'])
+                  command_prefix=config['command_prefix'], dm_dump=config['dm_dump'])
     bot.pool = pool
     bot.run(config['token'])
 
