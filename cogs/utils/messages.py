@@ -21,7 +21,7 @@ def on_unload() -> str:
 
 def refuse_logout() -> str:
     return choice(('No!<:diamond_sword:495592395631493130>', 'Not today, my friend:smiling_imp:', 'How about no?',
-                   'That\'s not happening I\'m afraid'))
+                   'That\'s not happening I\'m afraid', 'And what if I don\'t wanna?'))
 
 
 def on_logout(ctx: Context) -> str:

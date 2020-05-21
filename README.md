@@ -50,6 +50,8 @@ PostgreSQL=postgres://<username>:<password>@<server>:<port>/<database>
 PoolSize=3
 # The prefix that the bot will use for commands such as !help
 CommandPrefix=!
+# The id of the channel used to forward received DMs to
+DMDump=<channel_id>
 ```
 
 ### Initialize the database
