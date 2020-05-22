@@ -76,7 +76,7 @@ class Curator(commands.Bot):
         if message.channel.type == discord.ChannelType.private:
             await self.dm_dump.send(f'**{message.author}** ({message.author.id}): {message.content}')
 
-        elif message.channel.type == 'text':
+        elif message.channel.type == discord.ChannelType.text:
             if 'Count' in self.cogs.keys():
                 if await self.cogs['Count'].check_count(message):
                     return
