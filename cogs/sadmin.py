@@ -15,11 +15,7 @@ class Sadmin(commands.Cog):
         self.bot = bot
 
     async def cog_check(self, ctx):
-        if ctx.author.id in [261156531989512192, 314792415733088260] or await self.bot.is_owner(ctx.author):
-            return True
-        for perm in ctx.author.guild_permissions:
-            if perm[0] == 'manage_guild':
-                return perm[1]
+        return ('manage_guild', True) in ctx.author.guild_permissions or ctx.author.id in [261156531989512192, 314792415733088260] or await self.bot.is_owner(ctx.author)
 
     @commands.command()
     async def logchannel(self, ctx: commands.Context, new_channel: Optional[discord.TextChannel]):
