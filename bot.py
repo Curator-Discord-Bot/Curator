@@ -12,7 +12,8 @@ import os
 CONFIG_FILE = 'curator.conf'
 DESCRIPTION = 'A bot written by Ruukas and RJTimmerman.'
 
-LOCATION = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
+LOCATION = os.path.realpath(os.path.join(
+    os.getcwd(), os.path.dirname(__file__)))
 
 INITIAL_EXTENSIONS = (
     'cogs.profile',
@@ -31,18 +32,32 @@ INITIAL_EXTENSIONS = (
 class Curator(commands.Bot):
 
     def __init__(self, client_id, command_prefix=',', dm_dump=474922467626975233, description=''):
-        super().__init__(command_prefix=command_prefix, dm_dump=dm_dump, description=description)
+        super().__init__(command_prefix=command_prefix,
+                         dm_dump=dm_dump, description=description)
 
         self.client_id = client_id
         self.server_configs = {}
         self.dm_dump = dm_dump
 
+        self._load_initial_extensions()
+
+    def _load_initial_extensions(self):
         for extension in INITIAL_EXTENSIONS:
             try:
                 self.load_extension(extension)
-            except Exception as e:  # TODO: Replace generic exception.
-                print(e)
-                print(f'Failed to load extension {extension}.', file=sys.stderr)
+            except commands.ExtensionNotFound as e:
+                traceback.print_exc()
+                print(f"Couldn't find extension {extension}", file=sys.stderr)
+            except commands.ExtensionAlreadyLoaded as e:
+                print(f"Extension {extension} was already loaded")
+            except commands.NoEntryPointError as e:
+                traceback.print_exc()
+                print(
+                    f"Exception {extension} has no entry point!", file=sys.stderr)
+            except commands.ExtensionFailed as e:
+                traceback.print_exc()
+                print(f"Extension {extension} has failed.", file=sys.stderr)
+            except Exception as e:
                 traceback.print_exc()
 
     async def on_ready(self):
@@ -61,7 +76,8 @@ class Curator(commands.Bot):
         query = 'SELECT * FROM serverconfigs;'
         rows = await self.pool.fetch(query)
         for row in rows:
-            self.server_configs[row['guild']] = {'logchannel': self.get_channel(row['logchannel'])}
+            self.server_configs[row['guild']] = {
+                'logchannel': self.get_channel(row['logchannel'])}
 
         for guild in self.guilds:
             if guild.id not in self.server_configs.keys():
@@ -124,7 +140,7 @@ def get_config():
     config = {}
     configparser = ConfigParser()
     if not os.path.isfile(os.path.join(LOCATION, CONFIG_FILE)):
-        print('File %s not found.' % CONFIG_FILE)
+        print(f'File \'{CONFIG_FILE}\' not found.')
         sys.exit(1)
 
     configparser.read(os.path.join(LOCATION, CONFIG_FILE))
