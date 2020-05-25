@@ -48,7 +48,7 @@ Token=<bot_token>
 PostgreSQL=postgres://<username>:<password>@<server>:<port>/<database>
 # The size of the pool, the bot will use to communicate with the database
 PoolSize=3
-# The prefix that the bot will use for commands such as !help
+# The prefix that the bot will use for commands
 CommandPrefix=!
 # The id of the channel used to forward received DMs to
 DMDump=<channel_id>

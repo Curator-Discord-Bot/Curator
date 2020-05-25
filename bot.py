@@ -53,9 +53,6 @@ class Curator(commands.Bot):
         print(f'User-ID: {self.user.id}')
         print(f'Command Prefix: {self.command_prefix}')
         print('-' * len(str(self.user.id)))
-        # TODO : Set logon greeting channels in config or database
-        # await self.get_guild(681912993621344361).get_channel(681914163974766637).send(messages.on_ready())
-        # await self.get_guild(468366604313559040).get_channel(474922467626975233).send(messages.on_ready())
 
     async def get_server_configs(self):
         query = 'SELECT * FROM serverconfigs;'
