@@ -12,8 +12,7 @@ import os
 CONFIG_FILE = 'curator.conf'
 DESCRIPTION = 'A bot written by Ruukas and RJTimmerman.'
 
-LOCATION = os.path.realpath(os.path.join(
-    os.getcwd(), os.path.dirname(__file__)))
+LOCATION = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
 INITIAL_EXTENSIONS = (
     'cogs.profile',
@@ -32,8 +31,7 @@ INITIAL_EXTENSIONS = (
 class Curator(commands.Bot):
 
     def __init__(self, client_id, command_prefix=',', dm_dump=474922467626975233, description=''):
-        super().__init__(command_prefix=command_prefix,
-                         dm_dump=dm_dump, description=description)
+        super().__init__(command_prefix=command_prefix, dm_dump=dm_dump, description=description)
 
         self.client_id = client_id
         self.server_configs = {}
@@ -45,20 +43,20 @@ class Curator(commands.Bot):
         for extension in INITIAL_EXTENSIONS:
             try:
                 self.load_extension(extension)
-            except commands.ExtensionNotFound as e:
+            except commands.ExtensionNotFound:
                 traceback.print_exc()
-                print(f"Couldn't find extension {extension}", file=sys.stderr)
-            except commands.ExtensionAlreadyLoaded as e:
-                print(f"Extension {extension} was already loaded")
-            except commands.NoEntryPointError as e:
+                print(f'Couldn\'t find extension {extension}', file=sys.stderr)
+            except commands.ExtensionAlreadyLoaded:
+                print(f'Extension {extension} was already loaded')
+            except commands.NoEntryPointError:
                 traceback.print_exc()
-                print(
-                    f"Exception {extension} has no entry point!", file=sys.stderr)
-            except commands.ExtensionFailed as e:
+                print(f'Exception {extension} has no entry point!', file=sys.stderr)
+            except commands.ExtensionFailed:
                 traceback.print_exc()
-                print(f"Extension {extension} has failed.", file=sys.stderr)
+                print(f'Extension {extension} has failed.', file=sys.stderr)
             except Exception as e:
                 traceback.print_exc()
+                print(f'Extension {extension} failed to load: {e}')
 
     async def on_ready(self):
         await self.get_server_configs()
@@ -73,8 +71,7 @@ class Curator(commands.Bot):
         query = 'SELECT * FROM serverconfigs;'
         rows = await self.pool.fetch(query)
         for row in rows:
-            self.server_configs[row['guild']] = {
-                'logchannel': self.get_channel(row['logchannel'])}
+            self.server_configs[row['guild']] = {'logchannel': self.get_channel(row['logchannel'])}
 
         for guild in self.guilds:
             if guild.id not in self.server_configs.keys():
@@ -137,7 +134,7 @@ def get_config():
     config = {}
     configparser = ConfigParser()
     if not os.path.isfile(os.path.join(LOCATION, CONFIG_FILE)):
-        print(f'File \'{CONFIG_FILE}\' not found.')
+        print(f'File "{CONFIG_FILE}" not found.')
         sys.exit(1)
 
     configparser.read(os.path.join(LOCATION, CONFIG_FILE))
