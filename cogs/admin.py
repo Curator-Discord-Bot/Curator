@@ -353,8 +353,7 @@ class Admin(commands.Cog):
             await ctx.send(refuse_logout())
         else:
             await ctx.send(on_logout(ctx))
-            await self.bot.get_guild(468366604313559040).get_channel(474922467626975233).send(
-                logout_log(self.bot.user.display_name))
+            await self.bot.get_channel(474922467626975233).send(logout_log(self.bot.user.display_name))
             print(logout_log(self.bot.user.display_name))
             await ctx.bot.logout()
 
@@ -427,28 +426,34 @@ class Admin(commands.Cog):
                                    f' "{channel.mention}"')
 
     @commands.command(hidden=True)
-    async def react(self, ctx: commands.Context, message_link, emoji):
+    async def react(self, ctx: commands.Context, message_link, *emojis):
         IDs = message_link.split('/')[-2:]
         channel = await get_channel_by_id(self.bot, ctx, int(IDs[0]))
         if channel:
             message = await get_message_by_id(channel, ctx, int(IDs[1]))
             if message:
-                try:
-                    await message.add_reaction(emoji)
-                except discord.Forbidden:
-                    await ctx.send('I don\'t have permission to react to the message:grimacing:')
-                except discord.NotFound:
-                    await ctx.send('The emoji you specified was not found:grimacing:')
-                except discord.InvalidArgument:
-                    await ctx.send('The emoji parameter is invalid:grimacing:')
-                except discord.HTTPException:
-                    await ctx.send('I failed in adding the reaction:grimacing:')
-                except Exception as e:
-                    await ctx.send(f'There\'s been a problem while adding the reaction that\'s not of type "Forbidden",'
-                                   f' "NotFound", "InvalidArgument" or "HTTPException", but {e}.')
-                else:
-                    await ctx.send(f'Reacted in server "{channel.guild.name}" in channel "{channel.mention}" to message'
-                                   f' "{message.content}" by {message.author.name}')
+                successes = []
+                for emoji in emojis:
+                    try:
+                        await message.add_reaction(emoji)
+                    except discord.Forbidden:
+                        return await ctx.send('I don\'t have permission to react to the message:grimacing:')
+                    except discord.NotFound:
+                        await ctx.send(f'"{emoji}" was not found:grimacing:')
+                    except discord.InvalidArgument:
+                        await ctx.send(f'"{emoji}" is invalid:grimacing:')
+                    except discord.HTTPException:
+                        await ctx.send(f'I failed in adding the reaction ("{emoji}"):grimacing:')
+                    except Exception as e:
+                        await ctx.send(f'There\'s been a problem while adding the reaction "{emoji}" that\'s not of type '
+                                       f'"Forbidden", "NotFound", "InvalidArgument" or "HTTPException", but {e}.')
+                    else:
+                        if emoji not in successes:
+                            successes.append(emoji)
+                if len(successes) >= 1:
+                    await ctx.send(f'Successfully reacted in server "{channel.guild.name}" in channel "{channel.mention}"'
+                                   f' to message "{message.content}" by {message.author.name}'
+                                   f' with emoji{"s" if len(successes) > 1 else ""} {successes}')
 
     @commands.command(hidden=True)
     async def delete(self, ctx: commands.Context, message_link):
