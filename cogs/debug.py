@@ -1,6 +1,8 @@
 import discord
 from discord.ext import commands
 
+import emoji
+
 
 class Debug(commands.Cog):
     def __init__(self, bot: commands.Bot):
@@ -26,6 +28,11 @@ class Debug(commands.Cog):
             print(char)
             await ctx.send(char if char != ' ' else '[space]')
         await ctx.send('Also check the Python printer output for your results.')
+
+    @commands.command(hidden=True)
+    async def printdemoji(self, ctx: commands.Context, emo):
+        print(emoji.demojize(emo))
+        await ctx.send('Check the Python printer output for your results')
 
     @commands.command(hidden=True)
     async def printsc(self, ctx: commands.Context):

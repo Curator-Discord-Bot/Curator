@@ -44,37 +44,37 @@ class Counters(db.Table):
 
 
 number_aliases = {
-    ':keycap_0:': ['0'],
-    ':regional_indicator_symbol_letter_o:': ['0'],
-    ':O_button_(blood_type):': ['0'],
-    ':heavy_large_circle:': ['0'],
-    ':keycap_1:': ['1'],
-    ':regional_indicator_symbol_letter_i:': ['1'],
-    ':1st_place_medal:': ['1'],
-    ':keycap_2:': ['2'],
-    ':2nd_place_medal:': ['2'],
-    ':keycap_3:': ['3'],
-    ':3rd_place_medal:': ['3'],
-    ':evergreen_tree:': ['3'],
-    ':deciduous_tree:': ['3'],
-    ':palm_tree:': ['3'],
-    ':Christmas_tree:': ['3'],
-    ':cactus:': ['3'],
-    ':shamrock:': ['3'],
-    ':keycap_4:': ['4'],
-    ':four_leaf_clover:': ['4'],
-    ':keycap_5:': ['5'],
-    ':keycap_6:': ['6'],
-    ':keycap_7:': ['7'],
-    ':keycap_8:': ['8'],
-    ':pool_8_ball:': ['8'],
-    ':keycap_9:': ['9'],
-    ':keycap_10:': ['10'],
-    ':ringed_planet:': ['42'],
-    ':OK_hand:': ['69'],
-    ':cancer:': ['69'],
-    ':hundred_points:': ['100', '00'],
-    ':input_numbers:': ['1234']
+    'keycap_0': ['0'],
+    'regional_indicator_symbol_letter_o': ['0'],
+    'O_button_(blood_type)': ['0'],
+    'heavy_large_circle': ['0'],
+    'keycap_1': ['1'],
+    'regional_indicator_symbol_letter_i': ['1'],
+    '1st_place_medal': ['1'],
+    'keycap_2': ['2'],
+    '2nd_place_medal': ['2'],
+    'keycap_3': ['3'],
+    '3rd_place_medal': ['3'],
+    'evergreen_tree': ['3'],
+    'deciduous_tree': ['3'],
+    'palm_tree': ['3'],
+    'Christmas_tree': ['3'],
+    'cactus': ['3'],
+    'shamrock': ['3'],
+    'keycap_4': ['4'],
+    'four_leaf_clover': ['4'],
+    'keycap_5': ['5'],
+    'keycap_6': ['6'],
+    'keycap_7': ['7'],
+    'keycap_8': ['8'],
+    'pool_8_ball': ['8'],
+    'keycap_9': ['9'],
+    'keycap_10': ['10'],
+    'ringed_planet': ['42'],
+    'OK_hand': ['69'],
+    'cancer': ['69'],
+    'hundred_points': ['100', '00'],
+    'input_numbers': ['1234']
 }
 
 running_counts = {}
@@ -93,11 +93,12 @@ def parsed(number: str) -> list:
 
 def parsed(number: str) -> list:
     results = ['']
-    for char in number.replace('️⃣', ''):
-        if char.isdigit():
-            results = add_parsed(results, [char])
-        elif emoji.demojize(char) in number_aliases.keys():
-            results = add_parsed(results, number_aliases[emoji.demojize(char)])
+    numbers = filter(None, emoji.demojize(number).split(':'))
+    for digit in numbers:
+        if digit.isdigit():
+            results = add_parsed(results, [digit])
+        elif digit in number_aliases.keys():
+            results = add_parsed(results, number_aliases[digit])
         else:
             return []
     return results
@@ -360,7 +361,7 @@ class Count(commands.Cog):
     @count.command()
     async def aliases(self, ctx: commands.Context):
         await ctx.send('\n'.join(
-            f'{emoji.emojize(key, use_aliases=True)}: {formats.human_join(value)}' for key, value in
+            f'{emoji.emojize(f":{key}:")}: {formats.human_join(value)}' for key, value in
             number_aliases.items()))
 
     @count.command(aliases=['best', 'highscore', 'hiscore', 'top'])
