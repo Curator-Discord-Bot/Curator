@@ -477,12 +477,6 @@ class Admin(commands.Cog):
                     await ctx.send(f'Message "{message.content}" by {message.author.name} deleted in server'
                                    f' "{channel.guild.name}" in channel "{channel.mention}"')
 
-    @commands.command(hidden=True)
-    async def printsc(self, ctx: commands.Context):
-        # Print the current server configurations for every server
-        print(self.bot.server_configs)
-        await ctx.send('Check the Python printer output for your results.')
-
 
 def setup(curator: bot.Curator):
     curator.add_cog(Admin(curator))

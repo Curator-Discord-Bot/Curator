@@ -45,11 +45,11 @@ class Counters(db.Table):
 
 number_aliases = {
     ':keycap_0:': ['0'],
-    ':regional_indicator_o:': ['0'],
+    ':regional_indicator_symbol_letter_o:': ['0'],
     ':O_button_(blood_type):': ['0'],
     ':heavy_large_circle:': ['0'],
     ':keycap_1:': ['1'],
-    ':regional_indicator_i:': ['1'],
+    ':regional_indicator_symbol_letter_i:': ['1'],
     ':1st_place_medal:': ['1'],
     ':keycap_2:': ['2'],
     ':2nd_place_medal:': ['2'],
@@ -79,7 +79,7 @@ number_aliases = {
 
 running_counts = {}
 
-
+"""    Old parsing function
 def parsed(number: str) -> list:
     number = emoji.emojize(number)
     plist = [c for c in number]
@@ -88,14 +88,27 @@ def parsed(number: str) -> list:
         plist[i] = number_aliases[emoji.demojize(e)]
 
     return [''.join(i) for i in itertools.product(*plist)]
+"""
 
 
-def parset(number: str):
-    pass
+def parsed(number: str) -> list:
+    results = ['']
+    for char in number.replace('️⃣', ''):
+        if char.isdigit():
+            results = add_parsed(results, [char])
+        elif emoji.demojize(char) in number_aliases.keys():
+            results = add_parsed(results, number_aliases[emoji.demojize(char)])
+        else:
+            return []
+    return results
 
 
-def is_number(number: str, to_check: str) -> bool:
-    return number in parsed(to_check)
+def add_parsed(old_results: list, numbers: list) -> list:
+    new_results = []
+    for number in numbers:
+        for result in old_results:
+            new_results.append(result + number)
+    return new_results
 
 
 async def fetch_counter_record(discord_id, connection) -> asyncpg.Record:
@@ -188,7 +201,8 @@ class Counting:
         self.ruined_by = None
 
     @classmethod
-    def temporary(cls, *, guild, channel, started_by, started_at, score=0, contributors=None, last_active_at, last_counter=None):
+    def temporary(cls, *, guild, channel, started_by, started_at, score=0, contributors=None, last_active_at,
+                  last_counter=None):
         if contributors is None:
             contributors = {}
         pseudo = {
@@ -205,7 +219,7 @@ class Counting:
         return cls(record=pseudo)
 
     def attempt_count(self, counter: discord.User, count: str) -> bool:
-        if self.is_next(count) and counter.id != self.last_counter:
+        if str(self.score + 1) in parsed(count) and counter.id != self.last_counter:
             self.last_active_at = datetime.datetime.utcnow()
             self.last_counter = counter.id
             self.score += 1
@@ -215,9 +229,6 @@ class Counting:
                 self.contributors[counter.id] += 1
             return True
         return False
-
-    def is_next(self, message: str):
-        return is_number(str(self.score + 1), message.split()[0])
 
     async def finish(self, curator: bot.Curator, timed_out: bool, ruined_by: discord.User):
         connection: asyncpg.pool = curator.pool
@@ -236,9 +247,9 @@ class Counting:
                    VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $8, $9)
                    RETURNING id;
                 """
-        self.id = await connection.fetchval(query, self.guild, self.channel, self.started_by, self.started_at, self.score,
-                                            self.contributors, self.timed_out, datetime.datetime.utcnow() - self.started_at,
-                                            self.ruined_by)
+        self.id = await connection.fetchval(query, self.guild, self.channel, self.started_by, self.started_at,
+                                            self.score, self.contributors, self.timed_out,
+                                            datetime.datetime.utcnow() - self.started_at, self.ruined_by)
 
         score_query = 'SELECT score FROM counts where id = $1'
 
@@ -312,7 +323,10 @@ class Count(commands.Cog):
             if not self.top or len(self.top) < 3:
                 query = 'SELECT score FROM counts WHERE guild = $1 ORDER BY score DESC LIMIT 3;'
                 self.top = [count['score'] for count in await self.bot.pool.fetch(query, ctx.guild.id)]
-            running_counts[ctx.channel.id] = Counting.temporary(guild=ctx.guild.id, channel=ctx.channel.id, started_by=ctx.author.id, started_at=datetime.datetime.utcnow(), last_active_at=datetime.datetime.utcnow())
+            running_counts[ctx.channel.id] = Counting.temporary(guild=ctx.guild.id, channel=ctx.channel.id,
+                                                                started_by=ctx.author.id,
+                                                                started_at=datetime.datetime.utcnow(),
+                                                                last_active_at=datetime.datetime.utcnow())
             await ctx.send(
                 f'Count has been started. Try for top three: {formats.human_join([str(i) for i in self.top]) if self.top and len(self.top) == 3 else "good luck"}!')
         else:
@@ -405,7 +419,8 @@ class Count(commands.Cog):
     @count.command(aliases=['current', 'active', 'atm'])
     async def running(self, ctx: commands.Context):
         async with ctx.typing():
-            embed = discord.Embed(title='Currently Running Counts', description='Data of the counts that are still running')
+            embed = discord.Embed(title='Currently Running Counts',
+                                  description='Data of the counts that are still running')
             guild_channels = ctx.guild.text_channels
             running_channels = []
             for guild_channel in guild_channels:
@@ -441,15 +456,7 @@ class Count(commands.Cog):
         if parse:
             await ctx.send(str(parse).replace('@', 'AT'))
         else:
-            await ctx.send("Could not parse that.")
-
-    @count.command()
-    async def pars(self, ctx: commands.Context, number: str):
-        parse = parset(number)
-        if parse:
-            await ctx.send(str(parse).replace('@', 'AT'))
-        else:
-            await ctx.send("Could not parse that.")
+            await ctx.send('Could not parse that.')
 
 
 def setup(curator: bot.Curator):

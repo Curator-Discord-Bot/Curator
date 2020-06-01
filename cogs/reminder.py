@@ -196,17 +196,17 @@ class Reminder(commands.Cog):
         return timer
 
     async def check_idlerpg(self, message: discord.Message) -> bool:
-        m = message.content.lower().split()
-        if m[0][0] != '$' or m[-1] != 'r':
+        m = message.content.lower()
+        if not m.startswith('$') or not m.endswith('r'):
             return False
 
-        elif m[0] == '$steal':
-            await self.sudo(message, ',r 1h steal')
-        elif m[0] == '$daily':
+        elif m.startswith('$steal '):
+            await self.sudo(message, 'r 1h steal')
+        elif m.startswith('$daily '):
             now = datetime.datetime.utcnow()
-            await self.sudo(message, f',r {23 - int(now.strftime("%H"))}h{59 - int(now.strftime("%M"))}m{60 - int(now.strftime("%S"))}s daily')
-        elif m[0] == '$a' or m[0] == '$adventure':
-            await self.sudo(message, f',r {m[1]}h adventure')
+            await self.sudo(message, f'r {23 - int(now.strftime("%H"))}h{59 - int(now.strftime("%M"))}m{60 - int(now.strftime("%S"))}s daily')
+        elif m.startswith('$adventure ') or m.startswith('$a '):
+            await self.sudo(message, f'r {m.split()[1]}h adventure')
         else:
             return False
 
@@ -214,7 +214,7 @@ class Reminder(commands.Cog):
 
     async def sudo(self, message: discord.Message, command: str):
         msg = copy.copy(message)
-        msg.content = command
+        msg.content = self.bot.command_prefix + command
         await self.bot.process_commands(msg)
 
     @commands.group(aliases=['timer', 'remind', 'r'], usage='<when>', invoke_without_command=True)
