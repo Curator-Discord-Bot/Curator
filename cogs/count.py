@@ -58,7 +58,7 @@ number_aliases = {
     ':evergreen_tree:': ['3'],
     ':deciduous_tree:': ['3'],
     ':palm_tree:': ['3'],
-    ':christmas_tree:': ['3'],
+    ':Christmas_tree:': ['3'],
     ':cactus:': ['3'],
     ':shamrock:': ['3'],
     ':keycap_4:': ['4'],
