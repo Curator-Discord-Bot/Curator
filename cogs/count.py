@@ -73,9 +73,11 @@ number_aliases = {
     'keycap_10': ['10'],
     'ringed_planet': ['42'],
     'OK_hand': ['69'],
-    'cancer': ['69'],
+    'Cancer': ['69'],
     'hundred_points': ['100', '00'],
-    'input_numbers': ['1234']
+    'input_numbers': ['1234'],
+
+    'friday': ['13']
 }
 
 running_counts = {}
@@ -361,9 +363,12 @@ class Count(commands.Cog):
 
     @count.command()
     async def aliases(self, ctx: commands.Context, number: Optional[str]):
-        await ctx.send('\n'.join(
-            f'{emoji.emojize(f":{key}:")}: {formats.human_join(value)}' for key, value in
-            number_aliases.items() if not number or value == [number]))
+        try:
+            await ctx.send('\n'.join(
+                f'{emoji.emojize(f":{key}:" if f":{key}:" in emoji.EMOJI_UNICODE.keys() else f"`:{key}:`")}: '
+                f'{formats.human_join(value)}' for key, value in number_aliases.items() if not number or value == [number]))
+        except discord.HTTPException:
+            await ctx.send(f'{number} has no aliases.')
 
     @count.command(aliases=['best', 'highscore', 'hiscore', 'top'])
     async def leaderboard(self, ctx: commands.Context):
