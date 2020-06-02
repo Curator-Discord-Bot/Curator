@@ -71,13 +71,14 @@ class Curator(commands.Bot):
         query = 'SELECT * FROM serverconfigs;'
         rows = await self.pool.fetch(query)
         for row in rows:
-            self.server_configs[row['guild']] = {'logchannel': self.get_channel(row['logchannel'])}
+            self.server_configs[row['guild']] = {'logchannel': self.get_channel(row['logchannel']),
+                                                 'chartroles': [self.get_guild(row['guild']).get_role(role_id) for role_id in row['chartroles']]}
 
         for guild in self.guilds:
             if guild.id not in self.server_configs.keys():
                 query = 'INSERT INTO serverconfigs (guild) VALUES ($1);'
                 await self.pool.fetchval(query, guild.id)
-                self.server_configs[guild.id] = {'logchannel': None}
+                self.server_configs[guild.id] = {'logchannel': None, 'chartroles': []}
 
     async def on_message(self, message: discord.Message):
         if message.author.bot:

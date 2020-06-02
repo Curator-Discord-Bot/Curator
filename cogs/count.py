@@ -64,6 +64,7 @@ number_aliases = {
     'keycap_4': ['4'],
     'four_leaf_clover': ['4'],
     'keycap_5': ['5'],
+    'white_medium_star': ['5'],
     'keycap_6': ['6'],
     'keycap_7': ['7'],
     'keycap_8': ['8'],
@@ -359,10 +360,10 @@ class Count(commands.Cog):
             await ctx.send('No count is running on this server.')
 
     @count.command()
-    async def aliases(self, ctx: commands.Context):
+    async def aliases(self, ctx: commands.Context, number: Optional[str]):
         await ctx.send('\n'.join(
             f'{emoji.emojize(f":{key}:")}: {formats.human_join(value)}' for key, value in
-            number_aliases.items()))
+            number_aliases.items() if not number or value == [number]))
 
     @count.command(aliases=['best', 'highscore', 'hiscore', 'top'])
     async def leaderboard(self, ctx: commands.Context):
