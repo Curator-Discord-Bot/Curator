@@ -11,12 +11,14 @@ class Info(commands.Cog):
 
     @commands.command()
     async def roles(self, ctx: commands.Context):
+        """Get a list of roles in this server and the number of people that have that role"""
         roles = [f'{role.name}: {len(role.members)}' for role in sorted(await ctx.guild.fetch_roles(), reverse=True) if
                  role.name != '@everyone']
         await ctx.send('\n'.join(roles))
 
     @commands.command()
     async def pie(self, ctx: commands.context, infinity: Optional[str], ignore_till: Optional[str]):
+        """Make a pie chart of the role distribution in this server."""
         if infinity == 'iie':
             if ctx.guild.id == 468366604313559040:
                 iie_roles = ['Traveler', 'Citizen', 'Squire', 'Knight', 'Lord', 'Hero', 'Legend']

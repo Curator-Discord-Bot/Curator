@@ -123,9 +123,9 @@ class Admin(commands.Cog):
             return f'```py\n{e.__class__.__name__}: {e}\n```'
         return f'```py\n{e.text}{"^":>{e.offset}}\n{e.__class__.__name__}: {e}```'
 
-    @commands.command(hidden=True)
+    @commands.command(hidden=True, aliases=['modules'])
     async def extensions(self, ctx):
-        """Lists the currently loaded extensions."""
+        """Lists the currently loaded modules."""
         await ctx.send('\n'.join(sorted([i for i in self.bot.extensions.keys()])))
 
     @commands.command(hidden=True)
@@ -317,6 +317,7 @@ class Admin(commands.Cog):
 
     @commands.command(hidden=True)
     async def mcuuid(self, ctx, who: discord.User, minecraft_uuid: str):
+        """Link a Minecraft account to a Discord account."""
         minecraft_uuid = UUID(minecraft_uuid)
         if who and who.id and minecraft_uuid:
             try:
@@ -331,6 +332,7 @@ class Admin(commands.Cog):
 
     @commands.command(hidden=True)
     async def authlist(self, ctx):
+        """Get a list of Discord accounts and their linked Minecraft accounts."""
         query = 'SELECT * FROM profiles WHERE minecraft_uuid IS NOT NULL'
         values = await self.bot.pool.fetch(query)
         if values:
@@ -340,15 +342,18 @@ class Admin(commands.Cog):
 
     @commands.command(hidden=True)
     async def processes(self, ctx):
+        """Get a list of processes running on the bot's server."""
         await self.sh(ctx, command='ps -A')
 
     @commands.command(hidden=True)
     async def oskill(self, ctx, pid: int):
+        """Kill a running process."""
         kill(pid, signal.SIGKILL)
         await ctx.send('Sent kill signal.')
 
     @commands.command(aliases=['kill', 'die'], hidden=True)
     async def logout(self, ctx: commands.Context):
+        """Turn off the bot."""
         if random.randint(1, 5) == 1:
             await ctx.send(refuse_logout())
         else:
@@ -359,12 +364,14 @@ class Admin(commands.Cog):
 
     @commands.command(hidden=True)
     async def echo(self, ctx: commands.Context, *, message):
+        """Let the bot delete and resend your message."""
         m: discord.Message = ctx.message
         await m.delete()
         await ctx.send(message)
 
     @commands.command(hidden=True)
     async def findmember(self, ctx: commands.Context, filter: str):
+        """Find a member by (a part of) their name."""
         all = ctx.guild.members
         members = [m.mention for m in all if filter in str(m).lower()]
         if members:
@@ -374,6 +381,7 @@ class Admin(commands.Cog):
 
     @commands.command(hidden=True)
     async def dm(self, ctx: commands.Context, user: discord.User, *, message):
+        """Send a DM to a user."""
         if not user.dm_channel:
             await user.create_dm()
         try:
@@ -390,6 +398,7 @@ class Admin(commands.Cog):
 
     @commands.command(hidden=True)
     async def send(self, ctx: commands.Context, channel_id: int, *, message):
+        """Send a message in a channel."""
         channel = await get_channel_by_id(self.bot, ctx, channel_id)
         if channel:
             try:
@@ -406,6 +415,7 @@ class Admin(commands.Cog):
 
     @commands.command(hidden=True)
     async def edit(self, ctx: commands.Context, message_link, *, new_message):
+        """Edit a message."""
         IDs = message_link.split('/')[-2:]
         channel = await get_channel_by_id(self.bot, ctx, int(IDs[0]))
         if channel:
@@ -427,6 +437,7 @@ class Admin(commands.Cog):
 
     @commands.command(hidden=True)
     async def react(self, ctx: commands.Context, message_link, *emojis):
+        """React to a message."""
         IDs = message_link.split('/')[-2:]
         channel = await get_channel_by_id(self.bot, ctx, int(IDs[0]))
         if channel:
@@ -457,6 +468,7 @@ class Admin(commands.Cog):
 
     @commands.command(hidden=True)
     async def delete(self, ctx: commands.Context, message_link):
+        """Delete a message."""
         IDs = message_link.split('/')[-2:]
         channel = await get_channel_by_id(self.bot, ctx, int(IDs[0]))
         if channel:

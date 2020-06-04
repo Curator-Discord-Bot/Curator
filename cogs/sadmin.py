@@ -12,6 +12,8 @@ class Serverconfigs(db.Table):
 
 
 class Sadmin(commands.Cog):
+    """Commands to set the settings and configurations for this server. Only usable by people with "Manage Server" permissions."""
+
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
@@ -20,6 +22,7 @@ class Sadmin(commands.Cog):
 
     @commands.group(aliases=['logging', 'logs', 'log'], invoke_without_command=True)
     async def logchannel(self, ctx: commands.Context):
+        """Commands for the logging channel."""
         current_channel = self.bot.server_configs[ctx.guild.id]['logchannel']
         if current_channel:
             await ctx.send(f'The current logging channel is{current_channel.mention}, '
@@ -31,6 +34,10 @@ class Sadmin(commands.Cog):
 
     @logchannel.command(name='set', aliases=['choose', 'select'])
     async def set_log(self, ctx: commands.Context, new_channel: discord.TextChannel):
+        """Set the logging channel.
+
+        Mention the channel you want to set logging to.
+        """
         current_channel = self.bot.server_configs[ctx.guild.id]['logchannel']
         if current_channel:
             prompt_text = f'This will change the logging channel from {current_channel.mention}' \
@@ -51,6 +58,7 @@ class Sadmin(commands.Cog):
 
     @logchannel.command(name='remove', aliases=['delete', 'stop'])
     async def remove_log(self, ctx: commands.Context):
+        """Stop logging."""
         current_channel = self.bot.server_configs[ctx.guild.id]['logchannel']
         if not current_channel:
             return await ctx.send(
@@ -75,6 +83,7 @@ class Sadmin(commands.Cog):
 
     @commands.group(invoke_without_command=True)
     async def chartroles(self, ctx: commands.Context):
+        """Commands for the list of roles to be used in information charts."""
         current_roles = self.bot.server_configs[ctx.guild.id]['chartroles']
         if len(current_roles) >= 1:
             await ctx.send(f'The current roles to be used in information charts are '
@@ -87,6 +96,10 @@ class Sadmin(commands.Cog):
 
     @chartroles.command('set', aliases=['choose', 'select'])
     async def set_chartroles(self, ctx: commands.Context, *role_ids: int):
+        """Set a list of roles to be used in information charts.
+
+        Provide the role IDs as arguments.
+        """
         current_roles = self.bot.server_configs[ctx.guild.id]['chartroles']
         new_roles = [ctx.guild.get_role(role_id) for role_id in role_ids]
         if None in new_roles:
@@ -113,6 +126,10 @@ class Sadmin(commands.Cog):
 
     @chartroles.command(name='add')
     async def add_chartroles(self, ctx: commands.Context, *role_ids: int):
+        """Add roles to the list to be used in information charts.
+
+        Provide the role IDs as arguments.
+        """
         current_roles = self.bot.server_configs[ctx.guild.id]['chartroles']
         new_roles = [ctx.guild.get_role(role_id) for role_id in role_ids if ctx.guild.get_role(role_id) not in current_roles]
         if None in new_roles or len(new_roles) == 0:
@@ -131,6 +148,10 @@ class Sadmin(commands.Cog):
 
     @chartroles.command(name='remove', aliases=['delete'])
     async def remove_chartroles(self, ctx: commands.Context, *role_ids: Optional[int]):
+        """Remove roles from the list to be used in information charts.
+
+        Provide the role IDs as arguments.
+        """
         current_roles = self.bot.server_configs[ctx.guild.id]['chartroles']
         to_delete = [ctx.guild.get_role(role_id) for role_id in role_ids if ctx.guild.get_role(role_id) in current_roles]
         if len(to_delete) == 0:
@@ -151,6 +172,7 @@ class Sadmin(commands.Cog):
 
     @chartroles.command(name='clear')
     async def clear_chartroles(self, ctx: commands.Context):
+        """Clear the entire list of roles to be used in information charts."""
         current_roles = self.bot.server_configs[ctx.guild.id]['chartroles']
         if len(current_roles) == 0:
             return await ctx.send('There are no roles to delete.')

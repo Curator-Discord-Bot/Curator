@@ -284,6 +284,8 @@ class Counting:
 
 
 class Count(commands.Cog):
+    """Commands for the counting game."""
+    
     def __init__(self, curator: bot.Curator):
         self.bot = curator
         self.count_channel = None
@@ -319,10 +321,12 @@ class Count(commands.Cog):
 
     @commands.group(invoke_without_command=True)
     async def count(self, ctx: commands.Context):
+        """Commands for the counting game."""
         await ctx.send(f'You need to supply a subcommand. Try `{ctx.prefix}help count`')
 
     @count.command()
     async def start(self, ctx: commands.Context):
+        """Use this to start a counting game!"""
         if is_count_channel(ctx.channel):
             if not self.top or len(self.top) < 3:
                 query = 'SELECT score FROM counts WHERE guild = $1 ORDER BY score DESC LIMIT 3;'
@@ -338,6 +342,10 @@ class Count(commands.Cog):
 
     @count.command()
     async def profile(self, ctx: commands.Context, *, user: Optional[discord.User]):
+        """Get your counter profile.
+
+        This holds information about your total score, the number of games you've contributed to, the number of games you have started, the number of games you ruined, and the IDs of you're best game, the highest count you ruined and the last game you participated in.
+        """
         user: discord.User = user or ctx.author
         async with Counter(await fetch_counter_record(user.id, self.bot.pool), self.bot.pool) as counter:
             embed = discord.Embed(title=f'{user.name} - counting profile')
@@ -352,6 +360,7 @@ class Count(commands.Cog):
 
     @count.command()
     async def check(self, ctx: commands.Context):
+        """Get a list of channels where a count is currently running."""
         found = False
         channels = ctx.guild.text_channels
         for channel in channels:
@@ -363,6 +372,10 @@ class Count(commands.Cog):
 
     @count.command()
     async def aliases(self, ctx: commands.Context, number: Optional[str]):
+        """Get a list of number aliases.
+
+        You can add a number as an argument to only get the aliases of that number.
+        """
         try:
             await ctx.send('\n'.join(
                 f'{emoji.emojize(f":{key}:" if f":{key}:" in emoji.EMOJI_UNICODE.keys() else f"`:{key}:`")}: '
@@ -372,6 +385,7 @@ class Count(commands.Cog):
 
     @count.command(aliases=['best', 'highscore', 'hiscore', 'top'])
     async def leaderboard(self, ctx: commands.Context):
+        """Get the data of the top 5 highest counts."""
         async with ctx.typing():
             embed = discord.Embed(title='Count Leaderboard', description='Top 5 Highest Counts :slight_smile:')
             query = 'SELECT score, contributors FROM counts WHERE guild = $1 ORDER BY score DESC LIMIT 5;'
@@ -400,6 +414,7 @@ class Count(commands.Cog):
 
     @count.command(aliases=['latest', 'newest', 'youngest'])
     async def last(self, ctx: commands.Context):
+        """Get the data of the last count."""
         async with ctx.typing():
             embed = discord.Embed(title='Last Count', description='Last count data')
             query = 'SELECT score, contributors FROM counts WHERE guild = $1 ORDER BY started_at + duration DESC;'
@@ -425,6 +440,7 @@ class Count(commands.Cog):
 
     @count.command(aliases=['current', 'active', 'atm'])
     async def running(self, ctx: commands.Context):
+        """Get the data of all the currently running counts."""
         async with ctx.typing():
             embed = discord.Embed(title='Currently Running Counts',
                                   description='Data of the counts that are still running')
@@ -459,6 +475,7 @@ class Count(commands.Cog):
 
     @count.command()
     async def parse(self, ctx: commands.Context, number: str):
+        """Check if a number alias is working."""
         parse = parsed(number)
         if parse:
             await ctx.send(str(parse).replace('@', 'AT'))
