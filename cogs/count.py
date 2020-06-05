@@ -6,6 +6,7 @@ import asyncpg
 import discord
 from discord.ext import commands
 import emoji
+from random import choice
 
 import bot
 from .utils import db
@@ -294,7 +295,8 @@ class Count(commands.Cog):
     async def check_count(self, message: discord.Message) -> bool:
         if is_count_channel(message.channel):
             if 'check' in message.content.lower():
-                await message.add_reaction('\u2705' if message.channel.id in running_counts.keys() else '\u274c')
+                await message.add_reaction(choice(('\u2705', '\u2611', '\u2714')) if message.channel.id in running_counts.keys()
+                                           else choice(('\u274c', '\u274e', '\u2716')))
             if message.channel.id not in running_counts.keys():
                 return False
         else:
@@ -345,7 +347,7 @@ class Count(commands.Cog):
         """Get your counter profile.
 
         This holds information about your total score, the number of games you've contributed to, the number of games you have started, the number of games you ruined, and the IDs of you're best game, the highest count you ruined and the last game you participated in.
-        """
+        """  # This sentence is not formatted into multiple lines because the line breaks get shown in the help message
         user: discord.User = user or ctx.author
         async with Counter(await fetch_counter_record(user.id, self.bot.pool), self.bot.pool) as counter:
             embed = discord.Embed(title=f'{user.name} - counting profile')
