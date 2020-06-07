@@ -202,9 +202,14 @@ class Reminder(commands.Cog):
 
         elif m.startswith('$steal '):
             await self.sudo(message, 'r 1h steal')
+        elif m.startswith('$pray '):
+            now = datetime.datetime.utcnow()
+            await self.sudo(message, f'r {23 - int(now.strftime("%H"))}h{59 - int(now.strftime("%M"))}m'
+                                     f'{60 - int(now.strftime("%S"))}s pray')
         elif m.startswith('$daily '):
             now = datetime.datetime.utcnow()
-            await self.sudo(message, f'r {23 - int(now.strftime("%H"))}h{59 - int(now.strftime("%M"))}m{60 - int(now.strftime("%S"))}s daily')
+            await self.sudo(message, f'r {23 - int(now.strftime("%H"))}h{59 - int(now.strftime("%M"))}m'
+                                     f'{60 - int(now.strftime("%S"))}s daily')
         elif m.startswith('$adventure ') or m.startswith('$a '):
             await self.sudo(message, f'r {m.split()[1]}h adventure')
         else:

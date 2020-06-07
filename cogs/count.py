@@ -77,8 +77,6 @@ number_aliases = {
     'Cancer': ['69'],
     'hundred_points': ['100', '00'],
     'input_numbers': ['1234'],
-
-    'friday': ['13']
 }
 
 running_counts = {}
@@ -379,9 +377,8 @@ class Count(commands.Cog):
         You can add a number as an argument to only get the aliases of that number.
         """
         try:
-            await ctx.send('\n'.join(
-                f'{emoji.emojize(f":{key}:" if f":{key}:" in emoji.EMOJI_UNICODE.keys() else f"`:{key}:`")}: '
-                f'{formats.human_join(value)}' for key, value in number_aliases.items() if not number or value == [number]))
+            await ctx.send('\n'.join(f'{emoji.emojize(f":{key}:")}: {formats.human_join(value)}'
+                                     for key, value in number_aliases.items()if not number or value == [number]))
         except discord.HTTPException:
             await ctx.send(f'{number} has no aliases.')
 
