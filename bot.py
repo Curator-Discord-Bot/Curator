@@ -68,11 +68,15 @@ class Curator(commands.Bot):
         print('-' * len(str(self.user.id)))
 
     async def get_server_configs(self):
-        query = 'SELECT * FROM serverconfigs;'
-        rows = await self.pool.fetch(query)
-        for row in rows:
-            self.server_configs[row['guild']] = {'logchannel': self.get_channel(row['logchannel']),
-                                                 'chartroles': [self.get_guild(row['guild']).get_role(role_id) for role_id in row['chartroles']]}
+        try:
+            query = 'SELECT * FROM serverconfigs;'
+            rows = await self.pool.fetch(query)
+            for row in rows:
+                self.server_configs[row['guild']] = {'logchannel': self.get_channel(row['logchannel']),
+                                                     'chartroles': [self.get_guild(row['guild']).get_role(role_id) for role_id in row['chartroles']]}
+        except Exception as e:
+            print(f'Failed getting the server configurations: {e}')
+            await self.logout()
 
         for guild in self.guilds:
             if guild.id not in self.server_configs.keys():
