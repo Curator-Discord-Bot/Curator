@@ -96,6 +96,7 @@ number_aliases = {
 }
 
 running_counts = {}
+finished_counts = {}
 
 """    Old parsing function
 def parsed(number: str) -> list:
@@ -202,9 +203,8 @@ class Counter:
 
 
 class Counting:
-    __slots__ = (
-        'id', 'guild', 'channel', 'started_by', 'started_at', 'score', 'contributors', 'last_active_at', 'last_counter',
-        'timed_out', 'duration', 'ruined_by')
+    __slots__ = ('id', 'guild', 'channel', 'started_by', 'started_at', 'score', 'contributors', 'last_active_at',
+                 'last_counter', 'timed_out', 'duration', 'ruined_by')
 
     def __init__(self, *, record):
         self.id = record['id']
@@ -254,13 +254,15 @@ class Counting:
         self.timed_out = timed_out
         self.ruined_by = ruined_by.id
 
-        async with Counter(await fetch_counter_record(discord_id=self.started_by, connection=connection),
-                           connection=connection) as counter:
-            counter.counts_started += 1
+        #async with Counter(await fetch_counter_record(discord_id=self.started_by, connection=connection),
+        #                   connection=connection) as counter:
+        #    counter.counts_started += 1
 
-        async with Counter(await fetch_counter_record(discord_id=self.ruined_by, connection=connection),
-                           connection=connection) as counter:
-            counter.counts_ruined += 1
+        #async with Counter(await fetch_counter_record(discord_id=self.ruined_by, connection=connection),
+        #                   connection=connection) as counter:
+        #    counter.counts_ruined += 1
+        #
+        # Commented out because it seems like this is already done in the for-loop below
 
         query = """INSERT INTO counts (guild, channel, started_by, started_at, score, contributors, timed_out, duration, ruined_by)
                    VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $8, $9)
@@ -274,6 +276,9 @@ class Counting:
 
         for discord_id, contribution in self.contributors.items():
             async with Counter(await fetch_counter_record(discord_id, connection), connection) as counter:
+                finished_counts[self.channel]['last_counts'][counter.user_id] = counter.last_count
+                finished_counts[self.channel]['best_counts'][counter.user_id] = counter.best_count
+
                 counter.last_count = self.id
                 counter.total_score += contribution
                 counter.counts_participated += 1
@@ -289,6 +294,8 @@ class Counting:
                     counter.counts_started += 1
 
                 if counter.user_id == self.ruined_by:
+                    finished_counts[self.channel]['ruiner_best'] = counter.best_ruin
+
                     counter.counts_ruined += 1
                     if counter.best_ruin is None:
                         counter.best_ruin = self.id
@@ -303,8 +310,6 @@ class Count(commands.Cog):
     
     def __init__(self, curator: bot.Curator):
         self.bot = curator
-        self.count_channel = None
-        self.top = []
 
     async def check_count(self, message: discord.Message) -> bool:
         if is_count_channel(message.channel):
@@ -319,16 +324,17 @@ class Count(commands.Cog):
         c: Counting = running_counts[message.channel.id]
 
         if not c.attempt_count(message.author, message.content.split()[0]):
+            finished_counts[message.channel.id] = {'count': running_counts[message.channel.id], 'last_counts': {}, 'best_counts': {}}
             del (running_counts[message.channel.id])
-            self.top.append(c.score)
-            self.top = sorted(self.top)[3:0:-1]
             await message.channel.send(f'{message.author.mention} failed, and ruined the count for '
                                        f'{len(c.contributors.keys())} counters...\nThe count reached {c.score}.')
             await c.finish(self.bot, False, message.author)
 
             return False
 
-        for i, v in enumerate(self.top):
+        query = 'SELECT score FROM counts WHERE guild = $1 ORDER BY score DESC LIMIT 3;'
+        top = [count['score'] for count in await self.bot.pool.fetch(query, message.guild.id)]
+        for i, v in enumerate(top):
             if c.score == v + 1:
                 await message.add_reaction(('\U0001F947', '\U0001F948', '\U0001F949')[i])
                 break
@@ -340,21 +346,54 @@ class Count(commands.Cog):
         """Commands for the counting game."""
         await ctx.send(f'You need to supply a subcommand. Try `{ctx.prefix}help count`')
 
-    @count.command()
+    @count.command(aliases=['begin'])
     async def start(self, ctx: commands.Context):
         """Use this to start a counting game!"""
         if is_count_channel(ctx.channel):
-            if not self.top or len(self.top) < 3:
-                query = 'SELECT score FROM counts WHERE guild = $1 ORDER BY score DESC LIMIT 3;'
-                self.top = [count['score'] for count in await self.bot.pool.fetch(query, ctx.guild.id)]
+            query = 'SELECT score FROM counts WHERE guild = $1 ORDER BY score DESC LIMIT 3;'
+            top = [count['score'] for count in await self.bot.pool.fetch(query, ctx.guild.id)]
             running_counts[ctx.channel.id] = Counting.temporary(guild=ctx.guild.id, channel=ctx.channel.id,
                                                                 started_by=ctx.author.id,
                                                                 started_at=datetime.datetime.utcnow(),
                                                                 last_active_at=datetime.datetime.utcnow())
-            await ctx.send(
-                f'Count has been started. Try for top three: {formats.human_join([str(i) for i in self.top]) if self.top and len(self.top) == 3 else "good luck"}!')
+            await ctx.send(f'Count has been started. Try for top three: '
+                           f'{formats.human_join([str(i) for i in top]) if top and len(top) == 3 else "good luck"}!')
         else:
             await ctx.send("You can't start a count outside of the count channel.")
+    
+    @count.command(aliases=['unfail', 'repair', 'revert'])
+    async def restore(self, ctx: commands.Context):
+        """Unfail a count.
+
+        For if a count fails due to a bug.
+        """
+        if ctx.author.id in [261156531989512192, 314792415733088260, 183374539743428608, 341795028642824192] or await self.bot.is_owner(ctx.author):
+            if ctx.channel.id in finished_counts.keys():
+                running_counts[ctx.channel.id] = finished_counts[ctx.channel.id]['count']
+                count = running_counts[ctx.channel.id]
+                connection: asyncpg.pool = self.bot.pool
+
+                for discord_id, contribution in count.contributors.items():
+                    async with Counter(await fetch_counter_record(discord_id, connection), connection) as counter:
+                        counter.last_count = finished_counts[ctx.channel.id]['last_counts'][counter.user_id]
+                        counter.total_score -= contribution
+                        counter.counts_participated -= 1
+                        counter.best_count = finished_counts[ctx.channel.id]['best_counts'][counter.user_id]
+                        if counter.user_id == count.started_by:
+                            counter.counts_started -= 1
+                        if counter.user_id == count.ruined_by:
+                            counter.counts_ruined -= 1
+                            counter.best_ruin = finished_counts[ctx.channel.id]['ruiner_best']
+
+                query = 'DELETE FROM counts WHERE id = $1'
+                await connection.fetchval(query, count.id)
+
+                await ctx.send('Successful! Sorry for failing, this bug will be fixed soon.')
+                await ctx.send(str(count.score))
+            else:
+                await ctx.send('There is no count data to reset to.')
+        else:
+            await ctx.send('You cannot use this command, ask someone with the right permissions to use this, if the count failed by a bug.')
 
     @count.command()
     async def profile(self, ctx: commands.Context, *, user: Optional[discord.User]):
@@ -488,7 +527,7 @@ class Count(commands.Cog):
 
             await ctx.send(embed=embed)
 
-    @count.command()
+    @count.command(aliases=['try'])
     async def parse(self, ctx: commands.Context, number: str):
         """Check if a number alias is working."""
         parse = parsed(number)
