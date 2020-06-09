@@ -87,7 +87,7 @@ number_aliases = {
     'keycap_10': ['10'],
     'ten_o’clock': ['10'],
     'eleven_o’clock': ['11'],
-    'twelve_o’clock': ['12'],
+    'twelve_o’clock': ['12', '0'],
     'ringed_planet': ['42'],
     'OK_hand': ['69'],
     'Cancer': ['69'],
