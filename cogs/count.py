@@ -93,6 +93,7 @@ number_aliases = {
     'Cancer': ['69'],
     'hundred_points': ['100', '00'],
     'input_numbers': ['1234'],
+    'game_die': ['1', '2', '3']
 }
 
 running_counts = {}
@@ -148,12 +149,6 @@ async def check_channel(channel: discord.TextChannel, message=False) -> bool:
                 'Count commands are intended for use only in channels that contain "count" in the name...')
         return False
     return True
-
-
-async def deleted_count(message):
-    if message.id == message.channel.last_message_id:
-        await message.channel.send(
-            f'{running_counts[message.channel.id].score}, shame on {message.author.mention} for deleting their count!')
 
 
 class CounterProfile:
@@ -254,11 +249,11 @@ class Counting:
         self.timed_out = timed_out
         self.ruined_by = ruined_by.id
 
-        #async with Counter(await fetch_counter_record(discord_id=self.started_by, connection=connection),
+        # async with Counter(await fetch_counter_record(discord_id=self.started_by, connection=connection),
         #                   connection=connection) as counter:
         #    counter.counts_started += 1
 
-        #async with Counter(await fetch_counter_record(discord_id=self.ruined_by, connection=connection),
+        # async with Counter(await fetch_counter_record(discord_id=self.ruined_by, connection=connection),
         #                   connection=connection) as counter:
         #    counter.counts_ruined += 1
         #
@@ -307,15 +302,16 @@ class Counting:
 
 class Count(commands.Cog):
     """Commands for the counting game."""
-    
+
     def __init__(self, curator: bot.Curator):
         self.bot = curator
 
     async def check_count(self, message: discord.Message) -> bool:
         if is_count_channel(message.channel):
             if 'check' in message.content.lower():
-                await message.add_reaction(choice(('\u2705', '\u2611', '\u2714')) if message.channel.id in running_counts.keys()
-                                           else choice(('\u274c', '\u274e', '\u2716')))
+                await message.add_reaction(
+                    choice(('\u2705', '\u2611', '\u2714')) if message.channel.id in running_counts.keys()
+                    else choice(('\u274c', '\u274e', '\u2716')))
             if message.channel.id not in running_counts.keys():
                 return False
         else:
@@ -324,7 +320,8 @@ class Count(commands.Cog):
         c: Counting = running_counts[message.channel.id]
 
         if not c.attempt_count(message.author, message.content.split()[0]):
-            finished_counts[message.channel.id] = {'count': running_counts[message.channel.id], 'last_counts': {}, 'best_counts': {}}
+            finished_counts[message.channel.id] = {'count': running_counts[message.channel.id], 'last_counts': {},
+                                                   'best_counts': {}}
             del (running_counts[message.channel.id])
             await message.channel.send(f'{message.author.mention} failed, and ruined the count for '
                                        f'{len(c.contributors.keys())} counters...\nThe count reached {c.score}.')
@@ -360,14 +357,17 @@ class Count(commands.Cog):
                            f'{formats.human_join([str(i) for i in top]) if top and len(top) == 3 else "good luck"}!')
         else:
             await ctx.send("You can't start a count outside of the count channel.")
-    
+
+    # noinspection PyUnreachableCode
     @count.command(aliases=['unfail', 'repair', 'revert'])
     async def restore(self, ctx: commands.Context):
         """Unfail a count.
 
         For if a count fails due to a bug.
         """
-        if ctx.author.id in [261156531989512192, 314792415733088260, 183374539743428608, 341795028642824192] or await self.bot.is_owner(ctx.author):
+        return await ctx.send('Not working correctly yet.')
+        if ctx.author.id in [261156531989512192, 314792415733088260, 183374539743428608,
+                             341795028642824192] or await self.bot.is_owner(ctx.author):
             if ctx.channel.id in finished_counts.keys():
                 running_counts[ctx.channel.id] = finished_counts[ctx.channel.id]['count']
                 count = running_counts[ctx.channel.id]
@@ -393,14 +393,16 @@ class Count(commands.Cog):
             else:
                 await ctx.send('There is no count data to reset to.')
         else:
-            await ctx.send('You cannot use this command, ask someone with the right permissions to use this, if the count failed by a bug.')
+            await ctx.send(
+                'You cannot use this command, ask someone with the right permissions to use this, if the count failed by a bug.')
 
     @count.command()
     async def profile(self, ctx: commands.Context, *, user: Optional[discord.User]):
         """Get your counter profile.
 
         This holds information about your total score, the number of games you've contributed to, the number of games you have started, the number of games you ruined, and the IDs of you're best game, the highest count you ruined and the last game you participated in.
-        """  # This sentence is not formatted into multiple lines because the line breaks get shown in the help message
+        """
+        # The sentence above is not formatted into multiple lines because the line breaks get shown in the help message
         user: discord.User = user or ctx.author
         async with Counter(await fetch_counter_record(user.id, self.bot.pool), self.bot.pool) as counter:
             embed = discord.Embed(title=f'{user.name} - counting profile')
@@ -433,7 +435,7 @@ class Count(commands.Cog):
         """
         try:
             await ctx.send('\n'.join(f'{emoji.emojize(f":{key}:")}: {formats.human_join(value)}'
-                                     for key, value in number_aliases.items()if not number or value == [number]))
+                                     for key, value in number_aliases.items() if not number or number in value))
         except discord.HTTPException:
             await ctx.send(f'{number} has no aliases.')
 
@@ -536,6 +538,24 @@ class Count(commands.Cog):
         else:
             await ctx.send('Could not parse that.')
 
+    @commands.Cog.listener()
+    async def on_message_delete(self, message):
+        if message.channel.id in running_counts.keys():
+            if message.id == message.channel.last_message_id:
+                await message.channel.send(f'{running_counts[message.channel.id].score}, '
+                                           f'shame on {message.author.mention} for deleting their count!')
+
 
 def setup(curator: bot.Curator):
     curator.add_cog(Count(curator))
+
+
+"""def teardown(curator: bot.Curator):
+    \"""Code being executed upon unloading of the cog.\"""
+    for channel_id in running_counts.keys():  # Let counters know the count is silently dying
+        counters = len(running_counts[channel_id]['contributors'])
+        s = 's' if counters > 1 else ''
+        await curator.get_channel(channel_id).send(
+            f'Sorry, {f"counter{s}, " if counters >= 1 else ""}due to this module being un-/reloaded, the count that '
+            f'was running here is now down. No data of it has been saved to the database of counts or '
+            f'{f"your counter profile{s}" if counters >= 1 else "the counter profile of the starter"}.')"""

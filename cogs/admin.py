@@ -136,6 +136,7 @@ class Admin(commands.Cog):
         except commands.ExtensionError as e:
             await ctx.send(f'{e.__class__.__name__}: {e}')
         else:
+            print(f'Loaded {module}')
             await ctx.send(on_load())
 
     @commands.command(hidden=True)
@@ -146,6 +147,7 @@ class Admin(commands.Cog):
         except commands.ExtensionError as e:
             await ctx.send(f'{e.__class__.__name__}: {e}')
         else:
+            print(f'Unloaded {module}')
             await ctx.send(on_unload())
 
     @commands.group(name='reload', aliases=['update'], hidden=True, invoke_without_command=True)
@@ -156,6 +158,7 @@ class Admin(commands.Cog):
         except commands.ExtensionError as e:
             await ctx.send(f'{e.__class__.__name__}: {e}')
         else:
+            print(f'Reloaded {module}')
             await ctx.send(on_reload())
 
     _GIT_PULL_REGEX = re.compile(r'\s*(?P<filename>.+?)\s*\|\s*[0-9]+\s*[+-]+')

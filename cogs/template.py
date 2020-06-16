@@ -13,3 +13,8 @@ class Template(commands.Cog):
 
 def setup(bot: commands.Bot):
     bot.add_cog(Template(bot))
+
+
+def teardown():
+    """Code to be executed when the cog unloads. This function is not required."""
+    pass

@@ -17,7 +17,7 @@ LOCATION = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__))
 INITIAL_EXTENSIONS = (
     'cogs.profile',
     'cogs.count',
-    #'cogs.tictactoe',
+    'cogs.tictactoe',
     'cogs.reminder',
     'cogs.minecraft',
     'cogs.fun',
@@ -105,10 +105,6 @@ class Curator(commands.Bot):
     async def on_message_delete(self, message: discord.Message):
         if message.author.bot:
             return
-
-        from cogs.count import running_counts, deleted_count
-        if message.channel.id in running_counts.keys():
-            await deleted_count(message)
 
         logchannel = self.server_configs[message.guild.id]['logchannel']
         if logchannel:

@@ -1,25 +1,121 @@
 import discord
 from discord.ext import commands
+import emoji
+
+
+running_games = {}
+
+
+def make_message(data):
+    field_message = ''
+    for i in range(len(data)):
+        field_message += data[i]
+        if (i + 1) % 3 == 0:
+            field_message += '\n'
+    return field_message
+
+
+def check(f):
+    if f[0] == f[1] == f[2] != ':heavy_minus_sign:' or f[3] == f[4] == f[5] != ':heavy_minus_sign:' or \
+       f[6] == f[7] == f[8] != ':heavy_minus_sign:' or f[0] == f[3] == f[6] != ':heavy_minus_sign:' or \
+       f[1] == f[4] == f[7] != ':heavy_minus_sign:' or f[2] == f[5] == f[8] != ':heavy_minus_sign:' or \
+       f[0] == f[4] == f[8] != ':heavy_minus_sign:' or f[6] == f[4] == f[2] != ':heavy_minus_sign:':
+        return True
+
+
+class TTTGame:
+    def __init__(self, channel, p1, p2):
+        self.channel = channel
+        self.field = [':heavy_minus_sign:' for i in range(9)]
+        self.game_message = None
+        self.turn_message = None
+        self.p1 = p1
+        self.p2 = p2
+        self.on_turn = p1
+
+    async def begin(self):
+        self.game_message = await self.channel.send(make_message(self.field))
+        for i in range(1, 10):
+            await self.game_message.add_reaction(f'{i}️⃣')
+        self.turn_message = await self.channel.send(f'{self.on_turn.display_name} is playing.')
+
+    async def play(self, number, player, reaction_object):
+        if number.isdigit():
+            number = int(number) - 1
+        if number in range(9):
+            if player == self.on_turn:
+                value_here = self.field[number]
+                if value_here == ':heavy_minus_sign:':
+                    self.field[number] = ':x:' if player == self.p1 else ':o:'
+                    await self.game_message.edit(content=make_message(self.field))
+                    if check(self.field):
+                        await self.turn_message.edit(content=f'{self.on_turn.display_name} has won!')
+                        del (running_games[self.channel.id])
+                        return
+                    elif ':heavy_minus_sign:' not in self.field:
+                        await self.turn_message.edit(content='It\'s a tie. :neutral_face:')
+                        del (running_games[self.channel.id])
+                        return
+                    self.on_turn = self.p2 if self.on_turn == self.p1 else self.p1
+                    await self.turn_message.edit(content=f'{self.on_turn.display_name} is playing.')
+                else:
+                    await self.channel.send('This field is already taken, choose another one.')
+            else:
+                await self.channel.send(f'It is not your turn, {player.display_name}.' if player in [self.p1, self.p2]
+                                        else f"You are not in this game, {player.display_name}.")
+            await reaction_object.remove(player)
 
 
 class Tictactoe(commands.Cog):
-    def __init__(self, bot: commands.Bot):
+    """A game of Tic Tac Toe."""
+
+    def __init__(self, bot: commands.bot):
         self.bot = bot
 
     @commands.group(aliases=['noughts&crosses', 'ttt', 'ox'], invoke_without_command=True)
     async def tictactoe(self, ctx: commands.Context):
-        await ctx.send(f'`{ctx.prefix}tictactoe start <user>` to challenge another player to a game of tic-tac-toe')
+        """Commands for tictactoe!"""
+        await ctx.send(f'`{ctx.prefix}tictactoe start <user>` to challenge another player to a game of tic-tac-toe!')
 
-    @tictactoe.command()
-    async def start(self, ctx: commands.Context, p2: discord.User):
-        #await ctx.send(f'{p2.mention}, do you accept the challenge? Replay with :white_check_mark: if you do, or with '
-        #               f':x: if you don\'t, this invitation expires in 15 minutes.')
-        #await ctx.channel.last_message.add_reaction('✅')
-        #await ctx.channel.last_message.add_reaction('❌')
+    @tictactoe.command(aliases=['begin', 'challenge'])
+    async def start(self, ctx: commands.Context, p2: discord.Member):
+        """Start a game of Tic Tac Toe
 
-        prompt_text = f'Testing a feature'
-        confirm = await ctx.prompt(prompt_text, reacquire=False)
-        await ctx.send(confirm)
+        Ping the person you want to challenge or give the user ID
+        """
+        if ctx.channel.id in running_games.keys():
+            return await ctx.send('A game is already going on in this channel.')
+        p1 = ctx.author
+        if p1 == p2:
+            return await ctx.send('You can\'t start a game with yourself.')
+        running_games[ctx.channel.id] = None
+
+        prompt_text = f'{p2.mention if ctx.message.content.split()[2][0].isdigit() else p2.display_name}, ' \
+                      f'do you accept this challenge of Tic Tac Toe? The invitation expires in 15 minutes. ' \
+                      f'Be sure to pay attention to the reply, {p1.display_name}.'
+        confirm = await ctx.prompt(prompt_text, timeout=900.0, reacquire=False, author_id=p2.id)
+        if not confirm:
+            del (running_games[ctx.channel.id])
+            return await ctx.send(
+                f'{p1.mention}, {p2.display_name} didn\'t take on the challenge or didn\'t reply in time.')
+        await ctx.send(f'{p1.mention}, {p2.display_name} has accepted your challenge!')
+
+        running_games[ctx.channel.id] = TTTGame(ctx.channel, p1, p2)
+        await running_games[ctx.channel.id].begin()
+
+    @commands.Cog.listener()
+    async def on_reaction_add(self, reaction, user):
+        try:
+            if reaction.message.id == running_games[reaction.message.channel.id].game_message.id and user != self.bot.user:
+                await running_games[reaction.message.channel.id].play(emoji.demojize(str(reaction))[-2], user, reaction)
+        except AttributeError or KeyError:
+            return
+
+    @commands.command(hidden=True)
+    async def printtttgames(self, ctx: commands.Context):
+        """Print the currently running games of Tic Tac Toe."""
+        print(running_games)
+        await ctx.send('Check the Python printer output for your results.')
 
 
 def setup(bot: commands.Bot):

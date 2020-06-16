@@ -22,6 +22,18 @@ class Learning(commands.Cog):
     async def greet(self, ctx: commands.Context):
         await ctx.send('Hey, Ruucas!')
 
+    @commands.command()
+    async def user(self, ctx: commands.Context, user: discord.User):
+        await ctx.send(user.mention)
+
+    @commands.command()
+    async def member(self, ctx: commands.Context, member: discord.Member):
+        await ctx.send(member.mention)
+
+    @commands.command()
+    async def teste(self, ctx: commands.Context):
+        await ctx.send(2 == 2 == 2 != 3)
+
 
 def setup(bot: commands.Bot):
     bot.add_cog(Learning(bot))
