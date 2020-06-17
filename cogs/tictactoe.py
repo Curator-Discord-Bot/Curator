@@ -81,7 +81,7 @@ class Tictactoe(commands.Cog):
     async def start(self, ctx: commands.Context, p2: discord.Member):
         """Start a game of Tic Tac Toe
 
-        Ping the person you want to challenge or give the user ID
+        Ping the person you want to challenge or give the user ID.
         """
         if ctx.channel.id in running_games.keys():
             return await ctx.send('A game is already going on in this channel.')
@@ -105,11 +105,11 @@ class Tictactoe(commands.Cog):
 
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction, user):
-        try:
-            if reaction.message.id == running_games[reaction.message.channel.id].game_message.id and user != self.bot.user:
-                await running_games[reaction.message.channel.id].play(emoji.demojize(str(reaction))[-2], user, reaction)
-        except AttributeError or KeyError:
-            return
+        if reaction.message.channel.id in running_games.keys():
+            game = running_games[reaction.message.channel.id]
+            if game:
+                if reaction.message.id == game.game_message.id and user != self.bot.user:
+                    await game.play(emoji.demojize(str(reaction))[-2], user, reaction)
 
     @commands.command(hidden=True)
     async def printtttgames(self, ctx: commands.Context):

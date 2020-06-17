@@ -36,6 +36,7 @@ class Curator(commands.Bot):
         self.client_id = client_id
         self.server_configs = {}
         self.dm_dump = dm_dump
+        self.last_dm = None
 
         self._load_initial_extensions()
 
@@ -73,7 +74,8 @@ class Curator(commands.Bot):
             rows = await self.pool.fetch(query)
             for row in rows:
                 self.server_configs[row['guild']] = {'logchannel': self.get_channel(row['logchannel']),
-                                                     'chartroles': [self.get_guild(row['guild']).get_role(role_id) for role_id in row['chartroles']]}
+                                                     'chartroles': sorted([self.get_guild(row['guild']).get_role(role_id)
+                                                                           for role_id in row['chartroles']], reverse=True)}
         except Exception as e:
             print(f'Failed getting the server configurations: {e}')
             await self.logout()
@@ -89,7 +91,9 @@ class Curator(commands.Bot):
             return
 
         if message.channel.type == discord.ChannelType.private:
-            await self.dm_dump.send(f'**{message.author}** ({message.author.id}): {message.content}')
+            await self.dm_dump.send(f'**{message.author}** ({message.author.id}): {message.content}\n'
+                                    f'{"Attachments: " + str([attachment.url for attachment in message.attachments]) if message.attachments else ""}')
+            self.last_dm = message.author
 
         elif message.channel.type == discord.ChannelType.text:
             if 'Count' in self.cogs.keys():

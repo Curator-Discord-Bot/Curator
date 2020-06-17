@@ -400,6 +400,14 @@ class Admin(commands.Cog):
             await ctx.send(f'Message sent to {user.name}')
 
     @commands.command(hidden=True)
+    async def reply(self, ctx: commands.Context, *, message):
+        """Send a DM to the user you last received a DM from."""
+        if self.bot.last_dm:
+            await self.dm(ctx, self.bot.last_dm, message=message)
+        else:
+            await ctx.send(f'There is no last user stored, try `{ctx.prefix}dm <user> <message>`.')
+
+    @commands.command(hidden=True)
     async def send(self, ctx: commands.Context, channel_id: int, *, message):
         """Send a message in a channel."""
         channel = await get_channel_by_id(self.bot, ctx, channel_id)

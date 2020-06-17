@@ -17,21 +17,19 @@ class Info(commands.Cog):
         await ctx.send('\n'.join(roles))
 
     @commands.command()
-    async def pie(self, ctx: commands.context, infinity: Optional[str], ignore_till: Optional[str]):
-        """Make a pie chart of the role distribution in this server."""
-        if infinity == 'iie':
-            if ctx.guild.id == 468366604313559040:
-                iie_roles = ['Traveler', 'Citizen', 'Squire', 'Knight', 'Lord', 'Hero', 'Legend']
-                roles = sorted([role for role in await ctx.guild.fetch_roles() if role.name != '@everyone' and role.name in iie_roles], reverse=True)
-            else:
-                await ctx.send('This is not the official Infinity Item Editor Discord server.')
-                return
-        else:
+    async def pie(self, ctx: commands.context, *ignore_roles: Optional[str]):
+        """Make a pie chart of the role distribution in this server.
+
+        Server admins can set the roles that are used for this, by default it tales all roles on the server.
+        You can provide roles (by name) to ignore while making the chart.
+        """
+        roles = self.bot.server_configs[ctx.guild.id]['chartroles']
+        if len(roles) == 0:
             roles = sorted([role for role in await ctx.guild.fetch_roles() if role.name != '@everyone'], reverse=True)
         for role in roles:
-            if role.name == ignore_till:
-                roles = roles[:roles.index(role)]
-                break
+            if role.name in ignore_roles:
+                roles.remove(role)
+
         labels = []
         sizes = []
         colors = []
