@@ -79,7 +79,7 @@ class Tictactoe(commands.Cog):
 
     @tictactoe.command(aliases=['begin', 'challenge'])
     async def start(self, ctx: commands.Context, p2: discord.Member):
-        """Start a game of Tic Tac Toe
+        """Start a game of Tic Tac Toe.
 
         Ping the person you want to challenge or give the user ID.
         """
@@ -114,8 +114,11 @@ class Tictactoe(commands.Cog):
     @commands.command(hidden=True)
     async def printtttgames(self, ctx: commands.Context):
         """Print the currently running games of Tic Tac Toe."""
-        print(running_games)
-        await ctx.send('Check the Python printer output for your results.')
+        if ctx.author.id in [261156531989512192, 314792415733088260] or await self.bot.is_owner(ctx.author):
+            print(running_games)
+            await ctx.send('Check the Python printer output for your results.')
+        else:
+            await ctx.send('You do not have access to this command.')
 
 
 def setup(bot: commands.Bot):

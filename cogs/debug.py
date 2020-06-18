@@ -38,7 +38,10 @@ class Debug(commands.Cog):
     @commands.command(hidden=True)
     async def printsc(self, ctx: commands.Context):
         """Print the current server configurations for every server."""
-        print(self.bot.server_configs)
+        # print(self.bot.server_configs)
+        print({f'{self.bot.get_guild(key).name} ({key})': {'logchannel': f'{value["logchannel"].name} ({value["logchannel"].id})' if value["logchannel"] else None,
+                                                           'chartroles': [f'{role.name} ({role.id})' for role in value['chartroles']]}
+               for (key, value) in self.bot.server_configs.items()})
         await ctx.send('Check the Python printer output for your results')
 
 

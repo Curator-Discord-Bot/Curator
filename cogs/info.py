@@ -53,6 +53,11 @@ class Info(commands.Cog):
         plt.close()
         await ctx.send(file=discord.File(buf, 'chart.png'))
 
+    @commands.command(aliases=['account'], hidden=True)
+    async def lookup(self, ctx: commands.Context, user: discord.User):
+        await ctx.send(f'{user}: this account was created at {user.created_at}.',
+                       embed=discord.Embed(title='Avatar').set_image(url=user.avatar_url))
+
 
 def setup(bot: commands.Bot):
     bot.add_cog(Info(bot))
