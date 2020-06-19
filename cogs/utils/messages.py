@@ -16,7 +16,7 @@ def on_reload() -> str:
 
 
 def on_unload() -> str:
-    return choice((':flushed:', 'Ouch!', 'You psychopath!', f'Aaah, my {choice(("arm", "leg"))}!'))
+    return choice((':flushed:', 'Ouch!', 'You psychopath!', f'Aaah, my {choice(("arm", "leg"))}!', ':woozy_face:'))
 
 
 def refuse_logout() -> str:

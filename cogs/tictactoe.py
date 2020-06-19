@@ -16,11 +16,10 @@ def make_message(data):
 
 
 def check(f):
-    if f[0] == f[1] == f[2] != ':heavy_minus_sign:' or f[3] == f[4] == f[5] != ':heavy_minus_sign:' or \
-       f[6] == f[7] == f[8] != ':heavy_minus_sign:' or f[0] == f[3] == f[6] != ':heavy_minus_sign:' or \
-       f[1] == f[4] == f[7] != ':heavy_minus_sign:' or f[2] == f[5] == f[8] != ':heavy_minus_sign:' or \
-       f[0] == f[4] == f[8] != ':heavy_minus_sign:' or f[6] == f[4] == f[2] != ':heavy_minus_sign:':
-        return True
+    return f[0] == f[1] == f[2] != ':heavy_minus_sign:' or f[3] == f[4] == f[5] != ':heavy_minus_sign:' or \
+           f[6] == f[7] == f[8] != ':heavy_minus_sign:' or f[0] == f[3] == f[6] != ':heavy_minus_sign:' or \
+           f[1] == f[4] == f[7] != ':heavy_minus_sign:' or f[2] == f[5] == f[8] != ':heavy_minus_sign:' or \
+           f[0] == f[4] == f[8] != ':heavy_minus_sign:' or f[6] == f[4] == f[2] != ':heavy_minus_sign:'
 
 
 class TTTGame:
@@ -90,7 +89,7 @@ class Tictactoe(commands.Cog):
             return await ctx.send('You can\'t start a game with yourself.')
         running_games[ctx.channel.id] = None
 
-        prompt_text = f'{p2.mention if ctx.message.content.split()[2][0].isdigit() else p2.display_name}, ' \
+        prompt_text = f'{p2.mention if p2 not in ctx.message.mentions else p2.display_name}, ' \
                       f'do you accept this challenge of Tic Tac Toe? The invitation expires in 15 minutes. ' \
                       f'Be sure to pay attention to the reply, {p1.display_name}.'
         confirm = await ctx.prompt(prompt_text, timeout=900.0, reacquire=False, author_id=p2.id)

@@ -44,6 +44,10 @@ class Debug(commands.Cog):
                for (key, value) in self.bot.server_configs.items()})
         await ctx.send('Check the Python printer output for your results')
 
+    @commands.command(hidden=True)
+    async def mentions(self, ctx: commands.Context):
+        await ctx.send(str([member.name for member in ctx.message.mentions]))
+
 
 def setup(bot: commands.Bot):
     bot.add_cog(Debug(bot))
