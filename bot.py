@@ -104,6 +104,9 @@ class Curator(commands.Bot):
                 if await self.cogs['Reminder'].check_idlerpg(message):
                     return
 
+        if message.guild.id == 468366604313559040 and message.author.id == 665938966452764682 and message.content.endswith('join the raid!'):
+            await message.channel.send(f'{message.bot.get_role(695770028397690911).mention}, raid!')
+
         await self.process_commands(message)
 
     async def on_message_delete(self, message: discord.Message):

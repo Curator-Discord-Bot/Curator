@@ -77,7 +77,7 @@ class Minecraft(commands.Cog):
         """Get a player's skin and their Discord tag if it is linked."""
         minecraft_username = None
         if type(user) is discord.User:
-            minecraft_uuid = await self.bot.pool.fetchval('SELECT minecraft_uuid FROM profiles WHERE discord_id=$1',
+            minecraft_uuid = await self.bot.pool.fetchval('SELECT minecraft_uuid FROM profiles WHERE discord_id = $1',
                                                           user.id)
             userfound = True
         else:
