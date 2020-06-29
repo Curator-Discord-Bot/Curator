@@ -37,13 +37,6 @@ class Learning(commands.Cog):
     async def teste(self, ctx: commands.Context):
         await ctx.send(2 == 2 == 2 != 3)
 
-    @commands.command()
-    async def authorof(self, ctx: commands.Context, message_link):
-        IDs = message_link.split('/')[-2:]
-        message = await self.bot.get_channel(int(IDs[0])).fetch_message(int(IDs[1]))
-        await ctx.send(message.author.id)
-        print(message.author.id)
-
 
 def setup(bot: commands.Bot):
     bot.add_cog(Learning(bot))

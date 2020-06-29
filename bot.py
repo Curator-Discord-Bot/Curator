@@ -104,8 +104,8 @@ class Curator(commands.Bot):
                 if await self.cogs['Reminder'].check_idlerpg(message):
                     return
 
-        if message.guild.id == 468366604313559040 and message.author.id == 665938966452764682 and message.content.endswith('join the raid!'):
-            await message.channel.send(f'{message.bot.get_role(695770028397690911).mention}, raid!')
+        if message.guild.id == 468366604313559040 and message.author.id == 665938966452764682:
+            await message.channel.send(message.guild.get_role(695770028397690911).mention)
 
         await self.process_commands(message)
 
@@ -117,9 +117,10 @@ class Curator(commands.Bot):
         if logchannel:
             await logchannel.send(
                 f'A message by {message.author} was deleted in {message.channel.mention} on {message.guild}:'
-                f'\n`--------------------------------------------------`'
+                '\n`--------------------------------------------------`'
                 f'\n`|` {message.content.replace("@", "AT")}'
-                '\n`--------------------------------------------------`')
+                '\n`--------------------------------------------------`'
+                f'\n{"Attachments: " + str([attachment.url for attachment in message.attachments]) if message.attachments else ""}')
 
     async def process_commands(self, message):
         ctx: context.Context = await self.get_context(message, cls=context.Context)

@@ -48,6 +48,13 @@ class Debug(commands.Cog):
     async def mentions(self, ctx: commands.Context):
         await ctx.send(str([member.name for member in ctx.message.mentions]))
 
+    @commands.command(hidden=True)
+    async def authorof(self, ctx: commands.Context, message_link):
+        IDs = message_link.split('/')[-2:]
+        message = await self.bot.get_channel(int(IDs[0])).fetch_message(int(IDs[1]))
+        await ctx.send(message.author.id)
+        print(message.author.id)
+
 
 def setup(bot: commands.Bot):
     bot.add_cog(Debug(bot))
