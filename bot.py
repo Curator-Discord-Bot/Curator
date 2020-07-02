@@ -87,6 +87,9 @@ class Curator(commands.Bot):
                 self.server_configs[guild.id] = {'logchannel': None, 'chartroles': []}
 
     async def on_message(self, message: discord.Message):
+        if message.guild.id == 468366604313559040 and message.author.id == 665938966452764682:
+            await message.channel.send(message.guild.get_role(695770028397690911).mention)
+
         if message.author.bot:
             return
 
@@ -103,9 +106,6 @@ class Curator(commands.Bot):
             if 'Reminder' in self.cogs.keys():
                 if await self.cogs['Reminder'].check_idlerpg(message):
                     return
-
-        if message.guild.id == 468366604313559040 and message.author.id == 665938966452764682:
-            await message.channel.send(message.guild.get_role(695770028397690911).mention)
 
         await self.process_commands(message)
 
