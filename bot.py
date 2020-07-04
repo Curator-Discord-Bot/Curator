@@ -8,6 +8,7 @@ from asyncpg.pool import Pool
 from cogs.utils import context
 from cogs.utils.db import Table
 import os
+import datetime
 
 CONFIG_FILE = 'curator.conf'
 DESCRIPTION = 'A bot written by Ruukas and RJTimmerman.'
@@ -64,6 +65,7 @@ class Curator(commands.Bot):
         self.dm_dump = self.get_channel(self.dm_dump)
 
         print(f'Logged in as {self.user.name}')
+        print(f'At UTC: {datetime.datetime.utcnow()}')
         print(f'User-ID: {self.user.id}')
         print(f'Command Prefix: {self.command_prefix}')
         print('-' * len(str(self.user.id)))
@@ -87,8 +89,10 @@ class Curator(commands.Bot):
                 self.server_configs[guild.id] = {'logchannel': None, 'chartroles': []}
 
     async def on_message(self, message: discord.Message):
-        if message.guild.id == 468366604313559040 and message.author.id == 665938966452764682:
-            await message.channel.send(message.guild.get_role(695770028397690911).mention)
+        if message.guild.id == 468366604313559040 and message.author.id == 665938966452764682 \
+                and message.content.endswith('join the raid!'):
+            await message.channel.send(f'{message.guild.get_role(695770028397690911).mention}, '
+                                       f'grab your weapons and head to battle, for there is a raid!')
 
         if message.author.bot:
             return
