@@ -334,6 +334,11 @@ class Reminder(commands.Cog):
         await ctx.send(f'Successfully deleted {formats.plural(total):reminder}.')
 
     @commands.Cog.listener()
+    async def on_message(self, message):
+        if not message.author.bot:
+            await self.check_idlerpg(message)
+
+    @commands.Cog.listener()
     async def on_reminder_timer_complete(self, timer):
         author_id, channel_id, message = timer.args
 

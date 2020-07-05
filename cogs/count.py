@@ -458,8 +458,8 @@ class Count(commands.Cog):
                     if user_id in users.keys():
                         name = users[user_id]
                     else:
-                        member = await ctx.guild.fetch_member(user_id)
-                        name = member.name
+                        user = await self.bot.fetch_user(user_id)
+                        name = user.name
                         users[user_id] = name
 
                     a.append(f'**{name}**: {contributors[user_id]}')
@@ -484,8 +484,8 @@ class Count(commands.Cog):
                 if user_id in users.keys():
                     name = users[user_id]
                 else:
-                    member = await ctx.guild.fetch_member(user_id)
-                    name = member.name
+                    user = await self.bot.fetch_user(user_id)
+                    name = user.name
                     users[user_id] = name
 
                 a.append(f'**{name}**: {contributors[user_id]}')
@@ -519,8 +519,8 @@ class Count(commands.Cog):
                     if user_id in users.keys():
                         name = users[user_id]
                     else:
-                        member = await ctx.guild.fetch_member(user_id)
-                        name = member.name
+                        user = await self.bot.fetch_user(user_id)
+                        name = user.name
                         users[user_id] = name
 
                     a.append(f'**{name}**: {contributors[user_id]}')
@@ -537,6 +537,11 @@ class Count(commands.Cog):
             await ctx.send(str(parse).replace('@', 'AT'))
         else:
             await ctx.send('Could not parse that.')
+
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        if not message.author.bot:
+            await self.check_count(message)
 
     @commands.Cog.listener()
     async def on_message_delete(self, message):

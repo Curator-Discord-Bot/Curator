@@ -102,15 +102,6 @@ class Curator(commands.Bot):
                                     f'{"Attachments: " + str([attachment.url for attachment in message.attachments]) if message.attachments else ""}')
             self.last_dm = message.author
 
-        elif message.channel.type == discord.ChannelType.text:
-            if 'Count' in self.cogs.keys():
-                if await self.cogs['Count'].check_count(message):
-                    return
-
-            if 'Reminder' in self.cogs.keys():
-                if await self.cogs['Reminder'].check_idlerpg(message):
-                    return
-
         await self.process_commands(message)
 
     async def on_message_delete(self, message: discord.Message):
@@ -121,9 +112,7 @@ class Curator(commands.Bot):
         if logchannel:
             await logchannel.send(
                 f'A message by {message.author} was deleted in {message.channel.mention} on {message.guild}:'
-                '\n`--------------------------------------------------`'
-                f'\n`|` {message.content.replace("@", "AT")}'
-                '\n`--------------------------------------------------`'
+                f'\n`{message.content}`'
                 f'\n{"Attachments: " + str([attachment.url for attachment in message.attachments]) if message.attachments else ""}')
 
     async def process_commands(self, message):
