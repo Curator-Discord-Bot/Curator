@@ -335,7 +335,7 @@ class Reminder(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
-        if not message.author.bot:
+        if not message.author.bot and message.channel.type == discord.ChannelType.text:
             await self.check_idlerpg(message)
 
     @commands.Cog.listener()

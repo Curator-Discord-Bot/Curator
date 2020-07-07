@@ -92,8 +92,7 @@ number_aliases = {
     'OK_hand': ['69'],
     'Cancer': ['69'],
     'hundred_points': ['100', '00'],
-    'input_numbers': ['1234'],
-    'game_die': ['1', '2', '3']
+    'input_numbers': ['1234']
 }
 
 running_counts = {}
@@ -540,7 +539,7 @@ class Count(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
-        if not message.author.bot:
+        if not message.author.bot and message.channel.type == discord.ChannelType.text:
             await self.check_count(message)
 
     @commands.Cog.listener()
