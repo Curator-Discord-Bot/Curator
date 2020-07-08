@@ -52,6 +52,11 @@ class Fun(commands.Cog):
             new_text += choice([letter.lower(), letter.upper()])
         await ctx.send(new_text.replace('@', 'AT'))
 
+    @commands.command()
+    async def secret(self, ctx: commands.Context):
+        e = discord.Embed(title='**Top Secret**', description='[Don\' tell me you didn\'t ask for it.](https://www.youtube.com/watch?v=dQw4w9WgXcQ)')
+        await ctx.send(embed=e)
+
 
 def setup(bot: commands.Bot):
     bot.add_cog(Fun(bot))
