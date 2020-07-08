@@ -55,6 +55,18 @@ class Template(commands.Cog):
         else:
             await ctx.send(f'The message should only contain numbers between 1-26 separated by space. Your message was `{message.replace("@","")}`')
 
+    @commands.group(invoke_without_command=True)
+    async def atbash(self, ctx: commands.Context):
+        await ctx.send(
+            f'Decode or encode atbash ciper! See `{ctx.prefix}alphabet encode <message>` or `{ctx.prefix}alphabet decode <message>`.')
+
+    @atbash.command(name='encode', aliases=['decode'])
+    async def atbashencode(self, ctx: commands.Context, *, message: str):
+        big_a, big_z, small_a, small_z = map(ord, 'AZaz')
+        encoded = [chr(big_a + big_z - ord(i) if ord(i) <= big_z else small_a + small_z - ord(i)) if big_a <= ord(
+            i) <= small_z else i for i in message]
+        await ctx.send(''.join(encoded))
+
 
 def setup(bot: commands.Bot):
     bot.add_cog(Template(bot))
