@@ -43,7 +43,7 @@ class Fun(commands.Cog):
             await ctx.send(amount * '<:diamond:495591554937913344>')
             await ctx.send(collect(ctx))
 
-    @commands.command()
+    @commands.command(aliases=('jokalise', 'caseshuffle'))
     async def jokalize(self, ctx: commands.Context, *, text):
         if len(text) == 0:
             text = "There is no text."
@@ -51,6 +51,10 @@ class Fun(commands.Cog):
         for letter in text:
             new_text += choice([letter.lower(), letter.upper()])
         await ctx.send(new_text.replace('@', 'AT'))
+
+    @commands.command(aliases=('vaporize', 'vaporise'))
+    async def vaporwave(self, ctx: commands.Context, *, message):
+        await ctx.send(' '.join(message.upper()))
 
     @commands.command()
     async def secret(self, ctx: commands.Context):
