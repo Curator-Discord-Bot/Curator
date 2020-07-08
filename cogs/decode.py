@@ -48,12 +48,13 @@ class Template(commands.Cog):
     @alphabet.command(name='decode')
     async def alphabetdecode(self, ctx: commands.Context, *, message: str):
         regex = r"^(2[0-6]|1[0-9]|[1-9])( (2[0-6]|1[0-9]|[1-9]))*$"
-        alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
         if re.fullmatch(regex, message):
-            m = ' '.join([alphabet[int(i)-1] for i in message.split()])
+            big_a = ord('A')
+            m = ' '.join([chr(int(i)+big_a-1) for i in message.split()])
             await ctx.send(m)
         else:
-            await ctx.send(f'The message should only contain numbers between 1-26 separated by space. Your message was `{message.replace("@","")}`')
+            await ctx.send(
+                f'The message should only contain numbers between 1-26 separated by space. Your message was `{message.replace("@", "")}`')
 
     @commands.group(invoke_without_command=True)
     async def atbash(self, ctx: commands.Context):
