@@ -38,9 +38,9 @@ class Template(commands.Cog):
     async def alphabetencode(self, ctx: commands.Context, *, message: str):
         message = str(message.replace(' ', ''))
         regex = r"^[a-zA-Z ]+$"
-        alphabet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
         if re.fullmatch(regex, message):
-            m = ' '.join([str((alphabet.index(i) % 26) + 1) for i in message if i is not ' '])
+            big_a = ord('A')
+            m = ' '.join([str(ord(i)-big_a+1) for i in message if i is not ' '])
             await ctx.send(m)
         else:
             await ctx.send('The message should only contain letter a-Z and space is ignored.')
