@@ -55,6 +55,11 @@ class Debug(commands.Cog):
         await ctx.send(message.author.id)
         print(message.author.id)
 
+    @commands.command(hidden=True)
+    async def nameof(self, ctx: commands.Context, user_id: int):
+        user = await self.bot.fetch_user(user_id)
+        await ctx.send(user.name)
+
 
 def setup(bot: commands.Bot):
     bot.add_cog(Debug(bot))

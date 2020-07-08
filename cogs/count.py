@@ -92,8 +92,7 @@ number_aliases = {
     'OK_hand': ['69'],
     'Cancer': ['69'],
     'hundred_points': ['100', '00'],
-    'input_numbers': ['1234'],
-    'game_die': ['1', '2', '3']
+    'input_numbers': ['1234']
 }
 
 running_counts = {}
@@ -458,8 +457,8 @@ class Count(commands.Cog):
                     if user_id in users.keys():
                         name = users[user_id]
                     else:
-                        member = await ctx.guild.fetch_member(user_id)
-                        name = member.name
+                        user = await self.bot.fetch_user(user_id)
+                        name = user.name
                         users[user_id] = name
 
                     a.append(f'**{name}**: {contributors[user_id]}')
@@ -484,8 +483,8 @@ class Count(commands.Cog):
                 if user_id in users.keys():
                     name = users[user_id]
                 else:
-                    member = await ctx.guild.fetch_member(user_id)
-                    name = member.name
+                    user = await self.bot.fetch_user(user_id)
+                    name = user.name
                     users[user_id] = name
 
                 a.append(f'**{name}**: {contributors[user_id]}')
@@ -519,8 +518,8 @@ class Count(commands.Cog):
                     if user_id in users.keys():
                         name = users[user_id]
                     else:
-                        member = await ctx.guild.fetch_member(user_id)
-                        name = member.name
+                        user = await self.bot.fetch_user(user_id)
+                        name = user.name
                         users[user_id] = name
 
                     a.append(f'**{name}**: {contributors[user_id]}')
@@ -537,6 +536,11 @@ class Count(commands.Cog):
             await ctx.send(str(parse).replace('@', 'AT'))
         else:
             await ctx.send('Could not parse that.')
+
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        if not message.author.bot and message.channel.type == discord.ChannelType.text:
+            await self.check_count(message)
 
     @commands.Cog.listener()
     async def on_message_delete(self, message):

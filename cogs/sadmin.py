@@ -120,7 +120,7 @@ class Sadmin(commands.Cog):
         except Exception as e:
             await ctx.send(f'Failed, {e} while saving the new roles to the database.')
         else:
-            self.bot.server_configs[ctx.guild.id]['chartroles'] = new_roles
+            self.bot.server_configs[ctx.guild.id]['chartroles'] = sorted(new_roles, reverse=True)
             await ctx.send(f'Role{"s" if len(new_roles) > 1 else ""} {", ".join(f"**{role.name}**" for role in new_roles[:-1])}'
                            f' and **{new_roles[-1].name}** successfully set.')
 
@@ -133,7 +133,7 @@ class Sadmin(commands.Cog):
         current_roles = self.bot.server_configs[ctx.guild.id]['chartroles']
         new_roles = [ctx.guild.get_role(role_id) for role_id in role_ids if ctx.guild.get_role(role_id) not in current_roles]
         if None in new_roles or len(new_roles) == 0:
-            return await ctx.send(f'You provided an invalid argument.')
+            return await ctx.send(f'*{role_ids[new_roles.index(None)]}* is invalid.')
 
         try:
             connection: asyncpg.pool = self.bot.pool
@@ -143,6 +143,7 @@ class Sadmin(commands.Cog):
             await ctx.send(f'Failed, {e} while saving the new roles to the database.')
         else:
             self.bot.server_configs[ctx.guild.id]['chartroles'] += new_roles
+            self.bot.server_configs[ctx.guild.id]['chartroles'].sort(reverse=True)
             await ctx.send(f'Role{"s" if len(new_roles) > 1 else ""} {", ".join(f"**{role.name}**" for role in new_roles[:-1])}'
                            f' and **{new_roles[-1].name}** successfully added.')
 

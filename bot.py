@@ -89,27 +89,20 @@ class Curator(commands.Bot):
                 self.server_configs[guild.id] = {'logchannel': None, 'chartroles': []}
 
     async def on_message(self, message: discord.Message):
-        if message.guild.id == 468366604313559040 and message.author.id == 665938966452764682 \
+        if message.channel.type == discord.ChannelType.private:
+            if message.author == self.user:
+                return
+            await self.dm_dump.send(f'**{message.author}** ({message.author.id}): {message.content}\n'
+                                    f'{"Attachments: " + str([attachment.url for attachment in message.attachments]) if message.attachments else ""}')
+            self.last_dm = message.author
+
+        elif message.guild.id == 468366604313559040 and message.author.id == 665938966452764682 \
                 and message.content.endswith('join the raid!'):
             await message.channel.send(f'{message.guild.get_role(695770028397690911).mention}, '
                                        f'grab your weapons and head to battle, for there is a raid!')
 
         if message.author.bot:
             return
-
-        if message.channel.type == discord.ChannelType.private:
-            await self.dm_dump.send(f'**{message.author}** ({message.author.id}): {message.content}\n'
-                                    f'{"Attachments: " + str([attachment.url for attachment in message.attachments]) if message.attachments else ""}')
-            self.last_dm = message.author
-
-        elif message.channel.type == discord.ChannelType.text:
-            if 'Count' in self.cogs.keys():
-                if await self.cogs['Count'].check_count(message):
-                    return
-
-            if 'Reminder' in self.cogs.keys():
-                if await self.cogs['Reminder'].check_idlerpg(message):
-                    return
 
         await self.process_commands(message)
 
@@ -121,9 +114,7 @@ class Curator(commands.Bot):
         if logchannel:
             await logchannel.send(
                 f'A message by {message.author} was deleted in {message.channel.mention} on {message.guild}:'
-                '\n`--------------------------------------------------`'
-                f'\n`|` {message.content.replace("@", "AT")}'
-                '\n`--------------------------------------------------`'
+                f'\n`{message.content}`'
                 f'\n{"Attachments: " + str([attachment.url for attachment in message.attachments]) if message.attachments else ""}')
 
     async def process_commands(self, message):
