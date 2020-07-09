@@ -68,7 +68,7 @@ class Template(commands.Cog):
             i) <= small_z else i for i in message]
         await ctx.send(''.join(encoded))
 
-    @commands.group(invoke_wwithout_command=True)
+    @commands.group(invoke_without_command=True)
     async def plaintext(self, ctx: commands.Context):
         await ctx.send(
             f'Decode or encode plain text! See `{ctx.prefix}plaintext encode <message>` or `{ctx.prefix}plaintext decode <message>`.')
