@@ -32,7 +32,7 @@ class Template(commands.Cog):
     @commands.group(invoke_without_command=True)
     async def alphabet(self, ctx: commands.Context):
         await ctx.send(
-            f'Decode or encode alphabet ciper! See `{ctx.prefix}alphabet encode <message>` or `{ctx.prefix}alphabet decode <message>`.')
+            f'Decode or encode alphabet cipher! See `{ctx.prefix}alphabet encode <message>` or `{ctx.prefix}alphabet decode <message>`.')
 
     @alphabet.command(name='encode')
     async def alphabetencode(self, ctx: commands.Context, *, message: str):
@@ -59,7 +59,7 @@ class Template(commands.Cog):
     @commands.group(invoke_without_command=True)
     async def atbash(self, ctx: commands.Context):
         await ctx.send(
-            f'Decode or encode atbash ciper! See `{ctx.prefix}alphabet encode <message>` or `{ctx.prefix}alphabet decode <message>`.')
+            f'Decode or encode atbash cipher! See `{ctx.prefix}alphabet encode <message>` or `{ctx.prefix}alphabet decode <message>`.')
 
     @atbash.command(name='encode', aliases=['decode'])
     async def atbashencode(self, ctx: commands.Context, *, message: str):
@@ -67,6 +67,19 @@ class Template(commands.Cog):
         encoded = [chr(big_a + big_z - ord(i) if ord(i) <= big_z else small_a + small_z - ord(i)) if big_a <= ord(
             i) <= small_z else i for i in message]
         await ctx.send(''.join(encoded))
+
+    @commands.group(invoke_wwithout_command=True)
+    async def plaintext(self, ctx: commands.Context):
+        await ctx.send(
+            f'Decode or encode plain text! See `{ctx.prefix}plaintext encode <message>` or `{ctx.prefix}plaintext decode <message>`.')
+
+    @plaintext.command(name='encode')
+    async def plaintextencode(self, ctx: commands.Context, *, message: str):
+        await ctx.send(message.replace('@', 'AT'))
+
+    @plaintext.command(name='decode')
+    async def plaintextdecode(self, ctx: commands.Context, *, message: str):
+        await ctx.send(message.replace('@', 'AT'))
 
 
 def setup(bot: commands.Bot):
