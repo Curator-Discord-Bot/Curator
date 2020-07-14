@@ -115,7 +115,7 @@ class Curator(commands.Bot):
         if logchannel:
             await logchannel.send(
                 f'A message by {message.author} was deleted in {message.channel.mention} on {message.guild}:'
-                f'\n`{message.content}`'
+                f'\n{f"`{message.content}`" if len(message.content) >= 1 else "**No text**"}'
                 f'\n{"Attachments: " + str([attachment.url for attachment in message.attachments]) if message.attachments else ""}')
 
     async def process_commands(self, message):

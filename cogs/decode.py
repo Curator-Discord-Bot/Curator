@@ -5,7 +5,7 @@ import discord
 from discord.ext import commands
 
 
-class Template(commands.Cog):
+class Decode(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
@@ -83,7 +83,7 @@ class Template(commands.Cog):
 
 
 def setup(bot: commands.Bot):
-    bot.add_cog(Template(bot))
+    bot.add_cog(Decode(bot))
 
 
 def teardown():

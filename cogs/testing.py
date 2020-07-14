@@ -1,5 +1,8 @@
 import discord
 from discord.ext import commands
+import time
+import asyncio
+from aio_timers import Timer
 
 
 class Learning(commands.Cog):
@@ -36,6 +39,27 @@ class Learning(commands.Cog):
     @commands.command()
     async def teste(self, ctx: commands.Context):
         await ctx.send(2 == 2 == 2 != 3)
+
+    @commands.command()
+    async def sleep(self, ctx: commands.Context):
+        time.sleep(2)
+        await ctx.send('Hello world!')
+        time.sleep(2)
+        await ctx.send('Hey there!')
+
+    @commands.command()
+    async def timeout1(self, ctx: commands.Context):
+        try:
+            await asyncio.wait_for(self.bot.loop.create_future(), 2.0)
+        except asyncio.TimeoutError:
+            await ctx.send('Hello world!')
+
+    @commands.command()
+    async def timeout2(self, ctx: commands.Context):
+        async def afunc():
+            await ctx.send('Hello world!')
+        t = Timer(2, afunc)
+        await t.wait()
 
 
 def setup(bot: commands.Bot):

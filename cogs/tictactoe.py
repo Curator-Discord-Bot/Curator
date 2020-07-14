@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from aio_timers import Timer
 import emoji
 
 
@@ -31,18 +32,22 @@ class TTTGame:
         self.p1 = p1
         self.p2 = p2
         self.on_turn = p1
+        self.timeout = None
 
     async def begin(self):
         self.game_message = await self.channel.send(make_message(self.field))
         for i in range(1, 10):
             await self.game_message.add_reaction(f'{i}️⃣')
         self.turn_message = await self.channel.send(f'{self.on_turn.display_name} is playing.')
+        self.timeout = Timer(60, self.timedout)
+        await self.timeout.wait()
 
     async def play(self, number, player, reaction_object):
         if number.isdigit():
             number = int(number) - 1
         if number in range(9):
             if player == self.on_turn:
+                self.timeout.cancel()
                 value_here = self.field[number]
                 if value_here == ':heavy_minus_sign:':
                     self.field[number] = ':x:' if player == self.p1 else ':o:'
@@ -57,12 +62,18 @@ class TTTGame:
                         return
                     self.on_turn = self.p2 if self.on_turn == self.p1 else self.p1
                     await self.turn_message.edit(content=f'{self.on_turn.display_name} is playing.')
+                    self.timeout = Timer(60, self.timedout)
+                    await self.timeout.wait()
                 else:
                     await self.channel.send('This field is already taken, choose another one.')
             else:
                 await self.channel.send(f'It is not your turn, {player.display_name}.' if player in [self.p1, self.p2]
                                         else f"You are not in this game, {player.display_name}.")
             await reaction_object.remove(player)
+
+    async def timedout(self):
+        await self.turn_message.edit(content='The game timed out.')
+        del (running_games[self.channel.id])
 
 
 class Tictactoe(commands.Cog):
@@ -90,9 +101,9 @@ class Tictactoe(commands.Cog):
         running_games[ctx.channel.id] = None
 
         prompt_text = f'{p2.mention if p2 not in ctx.message.mentions else p2.display_name}, ' \
-                      f'do you accept this challenge of Tic Tac Toe? The invitation expires in 15 minutes. ' \
+                      f'do you accept this challenge of Tic Tac Toe? The invitation expires in 5 minutes. ' \
                       f'Be sure to pay attention to the reply, {p1.display_name}.'
-        confirm = await ctx.prompt(prompt_text, timeout=900.0, reacquire=False, author_id=p2.id)
+        confirm = await ctx.prompt(prompt_text, timeout=300.0, reacquire=False, author_id=p2.id)
         if not confirm:
             del (running_games[ctx.channel.id])
             return await ctx.send(

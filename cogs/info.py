@@ -23,10 +23,10 @@ class Info(commands.Cog):
         Server admins can set the roles that are used for this, by default it tales all roles on the server.
         You can provide roles (by name) to ignore while making the chart.
         """
-        roles = self.bot.server_configs[ctx.guild.id]['chartroles']
+        roles = self.bot.server_configs[ctx.guild.id]['chartroles'].copy()
         if len(roles) == 0:
             roles = sorted([role for role in await ctx.guild.fetch_roles() if role.name != '@everyone'], reverse=True)
-        for role in roles:
+        for role in roles.copy():
             if role.name in ignore_roles:
                 roles.remove(role)
 

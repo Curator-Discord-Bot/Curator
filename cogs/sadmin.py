@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 import asyncpg
 from typing import Optional
-import cogs.utils.db as db
+from .utils import db, formats
 
 
 class Serverconfigs(db.Table):
@@ -18,7 +18,12 @@ class Sadmin(commands.Cog):
         self.bot = bot
 
     async def cog_check(self, ctx):
-        return ('manage_guild', True) in ctx.author.guild_permissions or ctx.author.id in [261156531989512192, 314792415733088260] or await self.bot.is_owner(ctx.author)
+        if ('manage_guild', True) in ctx.author.guild_permissions or \
+           ctx.author.id in [261156531989512192, 314792415733088260] or await self.bot.is_owner(ctx.author):
+            return True
+        else:
+            await ctx.send('Only people with "Manage Server" permissions can use commands from this category.')
+            return False
 
     @commands.group(aliases=['logging', 'logs', 'log'], invoke_without_command=True)
     async def logchannel(self, ctx: commands.Context):
@@ -87,7 +92,7 @@ class Sadmin(commands.Cog):
         current_roles = self.bot.server_configs[ctx.guild.id]['chartroles']
         if len(current_roles) >= 1:
             await ctx.send(f'The current roles to be used in information charts are '
-                           f'{", ".join(f"**{role.name}**" for role in current_roles[:-1])} and **{current_roles[-1].name}**,'
+                           f'{formats.human_join([f"**{role.name}**" for role in current_roles], final="and")}'
                            f' use `{ctx.prefix}help chartroles` for information on how to change them.')
 
         else:
@@ -106,9 +111,8 @@ class Sadmin(commands.Cog):
             return await ctx.send(f'*{role_ids[new_roles.index(None)]}* is invalid.')
 
         if len(current_roles) >= 1:
-            prompt_text = f'This will change the roles from {", ".join(f"**{role.name}**" for role in current_roles[:-1])}' \
-                          f' and **{current_roles[-1].name}** to {", ".join(f"**{role.name}**" for role in new_roles[:-1])}' \
-                          f' and **{new_roles[-1].name}**, are you sure?'
+            prompt_text = f'This will change the roles from {formats.human_join([f"**{role.name}**" for role in current_roles], final="and")}' \
+                          f' to {formats.human_join([f"**{role.name}**" for role in new_roles], final="and")}, are you sure?'
             confirm = await ctx.prompt(prompt_text, reacquire=False)
             if not confirm:
                 return await ctx.send('Cancelled.')
@@ -121,8 +125,8 @@ class Sadmin(commands.Cog):
             await ctx.send(f'Failed, {e} while saving the new roles to the database.')
         else:
             self.bot.server_configs[ctx.guild.id]['chartroles'] = sorted(new_roles, reverse=True)
-            await ctx.send(f'Role{"s" if len(new_roles) > 1 else ""} {", ".join(f"**{role.name}**" for role in new_roles[:-1])}'
-                           f' and **{new_roles[-1].name}** successfully set.')
+            await ctx.send(f'Role{"s" if len(new_roles) > 1 else ""} '
+                           f'{formats.human_join([f"**{role.name}**" for role in new_roles], final="and")} successfully set.')
 
     @chartroles.command(name='add')
     async def add_chartroles(self, ctx: commands.Context, *role_ids: int):
@@ -144,8 +148,8 @@ class Sadmin(commands.Cog):
         else:
             self.bot.server_configs[ctx.guild.id]['chartroles'] += new_roles
             self.bot.server_configs[ctx.guild.id]['chartroles'].sort(reverse=True)
-            await ctx.send(f'Role{"s" if len(new_roles) > 1 else ""} {", ".join(f"**{role.name}**" for role in new_roles[:-1])}'
-                           f' and **{new_roles[-1].name}** successfully added.')
+            await ctx.send(f'Role{"s" if len(new_roles) > 1 else ""} '
+                           f'{formats.human_join([f"**{role.name}**" for role in new_roles], final="and")} successfully added.')
 
     @chartroles.command(name='remove', aliases=['delete'])
     async def remove_chartroles(self, ctx: commands.Context, *role_ids: Optional[int]):
@@ -168,8 +172,8 @@ class Sadmin(commands.Cog):
                            f' so use `{ctx.prefix}chartroles` to check the current list.')
         else:
             self.bot.server_configs[ctx.guild.id]['chartroles'] = [role for role in current_roles if role not in to_delete]
-            await ctx.send(f'Role{"s" if len(to_delete) > 1 else ""} {", ".join(f"**{role.name}**" for role in to_delete[:-1])}'
-                           f' and **{to_delete[-1].name}** successfully removed.')
+            await ctx.send(f'Role{"s" if len(to_delete) > 1 else ""} '
+                           f'{formats.human_join([f"**{role.name}**" for role in to_delete], final="and")} successfully removed.')
 
     @chartroles.command(name='clear')
     async def clear_chartroles(self, ctx: commands.Context):
@@ -190,8 +194,8 @@ class Sadmin(commands.Cog):
             await ctx.send(f'Failed, {e} while saving the new roles to the database.')
         else:
             self.bot.server_configs[ctx.guild.id]['chartroles'] = []
-            await ctx.send(f'Role{"s" if len(current_roles) > 1 else ""} {", ".join(f"**{role.name}**" for role in current_roles[:-1])}'
-                           f' and **{current_roles[-1].name}** successfully removed.')
+            await ctx.send(f'Role{"s" if len(current_roles) > 1 else ""} '
+                           f'{formats.human_join([f"**{role.name}**" for role in current_roles], final="and")} successfully removed.')
 
 
 def setup(bot: commands.Bot):

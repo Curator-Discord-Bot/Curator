@@ -8,3 +8,4 @@ emoji==0.5.4
 asyncpg==0.20.1
 parsedatetime==2.5
 python-dateutil==2.8.1
+aio-timers==0.0.1
