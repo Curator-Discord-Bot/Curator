@@ -59,7 +59,7 @@ class Decode(commands.Cog):
     @commands.group(invoke_without_command=True)
     async def atbash(self, ctx: commands.Context):
         await ctx.send(
-            f'Decode or encode atbash cipher! See `{ctx.prefix}alphabet encode <message>` or `{ctx.prefix}alphabet decode <message>`.')
+            f'Decode or encode atbash ciper! See `{ctx.prefix}atbash encode <message>` or `{ctx.prefix}atbash decode <message>`.')
 
     @atbash.command(name='encode', aliases=['decode'])
     async def atbashencode(self, ctx: commands.Context, *, message: str):

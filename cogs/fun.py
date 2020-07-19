@@ -1,6 +1,9 @@
+import string
+
 import discord
+from asyncio import sleep as slp
 from discord.ext import commands
-from random import choice
+from random import choice, randint
 import requests
 from .utils.messages import hello, collect
 
@@ -60,6 +63,46 @@ class Fun(commands.Cog):
     async def secret(self, ctx: commands.Context):
         e = discord.Embed(title='**Top Secret**', description='[Don\' tell me you didn\'t ask for it.](https://www.youtube.com/watch?v=dQw4w9WgXcQ)')
         await ctx.send(embed=e)
+
+    @commands.command()
+    async def deleteme(self, ctx: commands.Context):
+        name = ctx.author.display_name
+
+        if 'bot' in name.lower():
+            await ctx.send(f'I don\'t take commands from bots. Hehe.')
+        else:
+            r = randint(0, 1)
+
+            if r == 0:
+                e = discord.Embed(description='The action can\'t be completed because the file is open in Curator.\n\nClose the file and try again.')
+                e.set_footer(text='\u02C4 Fewer details')
+                e.set_thumbnail(url=self.bot.user.avatar_url)
+                e.set_author(name='File In Use')
+                e.add_field(name='Curator.bot', value='File type: BOT File\nSize: 1.38 TB\nBans: 3.7K')
+                e.add_field(name=':wink:', value='[T__r__y Again](https://www.youtube.com/watch?v=dQw4w9WgXcQ)', inline=False)
+                e.add_field(name=':innocent:', value='[Cancel](https://www.youtube.com/watch?v=dQw4w9WgXcQ)', inline=True)
+                await ctx.send(embed=e)
+
+            elif r == 1:
+                if ctx.message.guild is None:
+                    await ctx.send('There\'s no one here to delete.')
+                    return
+                if ctx.message.guild.owner is not None and ctx.author.id == ctx.message.guild.owner.id:
+                    await ctx.send('I couldn\'t possibly delete the server owner...')
+                    return
+                if 'deleted' in name.lower():
+                    await ctx.send('You are already deleted... Why are you here?')
+                    return
+                
+                await ctx.send(f'Deleting {name}.')
+                letters = 'abcdefghijklmnopqrstuvwxyz'
+                numbers = '0123456789'
+                tag = ''.join(choice(numbers) for i in range(4)) + ''.join(choice(letters) for i in range(2)) + ''.join(choice(numbers) for i in range(2))
+
+                await ctx.author.edit(nick=(f'Deleted User {tag}.'))
+                await ctx.send(f'Successfully deleted {name}.')
+                await slp(60)
+                await ctx.author.edit(nick=name)
 
 
 def setup(bot: commands.Bot):
