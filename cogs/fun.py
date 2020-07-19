@@ -64,8 +64,8 @@ class Fun(commands.Cog):
         e = discord.Embed(title='**Top Secret**', description='[Don\' tell me you didn\'t ask for it.](https://www.youtube.com/watch?v=dQw4w9WgXcQ)')
         await ctx.send(embed=e)
 
-    @commands.command(aliases=['deleteme'])
-    async def delete(self, ctx: commands.Context):
+    @commands.command()
+    async def deleteme(self, ctx: commands.Context):
         name = ctx.author.display_name
 
         if 'bot' in name.lower():
