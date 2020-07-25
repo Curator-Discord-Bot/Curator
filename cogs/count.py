@@ -132,8 +132,9 @@ def add_parsed(old_results: list, numbers: list) -> list:
             new_results.append(result + number)
     return new_results
 
+
 def write_roman(num):
-    #from https://stackoverflow.com/questions/28777219/basic-program-to-convert-integer-to-roman-numerals/28777781
+    # from https://stackoverflow.com/questions/28777219/basic-program-to-convert-integer-to-roman-numerals/28777781
     roman = OrderedDict()
     roman[1000] = "M"
     roman[900] = "CM"
@@ -264,7 +265,8 @@ class Counting:
     def attempt_count(self, counter: discord.User, count: str) -> bool:
         target = self.score + 1
         target_s = str(target)
-        if counter.id != self.last_counter and (count == target_s or count == write_roman(target) or target_s in parsed(count)):
+        if counter.id != self.last_counter and (
+                count == target_s or count == write_roman(target) or target_s in parsed(count)):
             self.last_active_at = datetime.datetime.utcnow()
             self.last_counter = counter.id
             self.score += 1
@@ -564,8 +566,12 @@ class Count(commands.Cog):
     async def parse(self, ctx: commands.Context, number: str):
         """Check if a number alias is working."""
         parse = parsed(number)
+        roman = write_roman(int(number)) if number.isdigit() else None
+        if roman:
+            parse.append(roman)
+
         if parse:
-            await ctx.send(str(parse).replace('@', 'AT'))
+            await ctx.send(formats.human_join(parse, final='and'))
         else:
             await ctx.send('Could not parse that.')
 
