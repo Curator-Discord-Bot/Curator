@@ -16,11 +16,13 @@ def primes(n):
     return [2] + [i for i in range(3, n, 2) if sieve[i]]
 
 
-def factors(n):
+def factorize(n):
+    last = 2
     while n > 1:
-        for i in range(2, n + 1):
+        for i in range(last, n + 1):
             if n % i == 0:
                 n //= i
+                last = i
                 yield i
                 break
 
@@ -42,7 +44,7 @@ def continued_fraction(a, b, base=10):
 
 def pi(digits=10):
     cf = continued_fraction(lambda k: 0 if k == 0 else 2 * k - 1,
-                                lambda k: 4 if k == 1 else (k - 1) ** 2, 10)
+                            lambda k: 4 if k == 1 else (k - 1) ** 2, 10)
     a = ''
     for k, digit in zip(range(0, digits), cf):
         a += str(digit)
@@ -55,18 +57,28 @@ class Math(commands.Cog):
 
     @commands.group(invoke_without_command=True)
     async def math(self, ctx: commands.Context):
+        """Math and number commands."""
         await ctx.send(f'A collection of useful math commands! See `{ctx.prefix}help math`.')
 
-    @math.command()
+    @math.command(usage='<number>')
     async def primes(self, ctx: commands.Context, number: int):
-        await ctx.send(human_join([str(i) for i in primes(number)], final='and'))
+        """Compute all the prime numbers up to the input value."""
+        if number > 10000:
+            await ctx.send('There\'s a limit at 10000.')
+        else:
+            await ctx.send(human_join([str(i) for i in primes(number)], final='and'))
 
-    @math.command(aliases=['factorize', 'factorise'])
-    async def factors(self, ctx: commands.Context, number: int):
-        await ctx.send(human_join([str(i) for i in factors(number)], final='and'))
+    @math.command(aliases=['factorise'], usage='<number>')
+    async def factorize(self, ctx: commands.Context, number: int):
+        """Computes the prime factors of a number."""
+        if number > 100000:
+            await ctx.send('There\'s a limit at 100000.')
+        else:
+            await ctx.send(human_join([str(i) for i in factorize(number)], final='and'))
 
-    @math.command()
+    @math.command(usage='<digits>')
     async def pi(self, ctx: commands.Context, digits: Optional[int]):
+        """Displays pi with a given number of digits."""
         if digits is None or digits < 1:
             digits = 100
         elif digits > 1999:
