@@ -2,6 +2,7 @@ import datetime
 import itertools
 from collections import OrderedDict
 from typing import Optional
+import re
 
 import asyncpg
 import discord
@@ -97,6 +98,8 @@ number_aliases = {
     '\u96F6': ['0'],
 }
 
+roman_re = re.compile('^(?=[MDCLXVI])M*(C[MD]|D?C{0,3})(X[CL]|L?X{0,3})(I[XV]|V?I{0,3})$')
+
 running_counts = {}
 finished_counts = {}
 
@@ -159,6 +162,18 @@ def write_roman(num):
                 break
 
     return ''.join([i for i in roman_num(num)])
+
+
+def from_roman(num):
+    # from https://stackoverflow.com/questions/19308177/converting-roman-numerals-to-integers-in-python
+    roman_numerals = {'I': 1, 'V': 5, 'X': 10, 'L': 50, 'C': 100, 'D': 500, 'M': 1000}
+    result = 0
+    for i, c in enumerate(num):
+        if (i + 1) == len(num) or roman_numerals[c] >= roman_numerals[num[i + 1]]:
+            result += roman_numerals[c]
+        else:
+            result -= roman_numerals[c]
+    return result
 
 
 async def fetch_counter_record(discord_id, connection) -> asyncpg.Record:
@@ -566,7 +581,8 @@ class Count(commands.Cog):
     async def parse(self, ctx: commands.Context, number: str):
         """Check if a number alias is working."""
         parse = parsed(number)
-        roman = write_roman(int(number)) if number.isdigit() else None
+        roman = from_roman(number) if roman_re.fullmatch(number) else None
+
         if roman:
             parse.append(roman)
 
