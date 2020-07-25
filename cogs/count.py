@@ -1,5 +1,6 @@
 import datetime
 import itertools
+from collections import OrderedDict
 from typing import Optional
 
 import asyncpg
@@ -91,7 +92,9 @@ number_aliases = {
     'OK_hand': ['69'],
     'Cancer': ['69'],
     'hundred_points': ['100', '00'],
-    'input_numbers': ['1234']
+    'input_numbers': ['1', '2', '3', '4'],
+    '\u3007': ['0'],
+    '\u96F6': ['0'],
 }
 
 running_counts = {}
@@ -128,6 +131,33 @@ def add_parsed(old_results: list, numbers: list) -> list:
         for result in old_results:
             new_results.append(result + number)
     return new_results
+
+def write_roman(num):
+    #from https://stackoverflow.com/questions/28777219/basic-program-to-convert-integer-to-roman-numerals/28777781
+    roman = OrderedDict()
+    roman[1000] = "M"
+    roman[900] = "CM"
+    roman[500] = "D"
+    roman[400] = "CD"
+    roman[100] = "C"
+    roman[90] = "XC"
+    roman[50] = "L"
+    roman[40] = "XL"
+    roman[10] = "X"
+    roman[9] = "IX"
+    roman[5] = "V"
+    roman[4] = "IV"
+    roman[1] = "I"
+
+    def roman_num(num):
+        for r in roman.keys():
+            x, y = divmod(num, r)
+            yield roman[r] * x
+            num -= (r * x)
+            if num <= 0:
+                break
+
+    return ''.join([i for i in roman_num(num)])
 
 
 async def fetch_counter_record(discord_id, connection) -> asyncpg.Record:
@@ -197,7 +227,7 @@ class Counter:
 
 class Counting:
     __slots__ = ('id', 'guild', 'channel', 'started_by', 'started_at', 'score', 'contributors', 'last_active_at',
-                 'last_counter', 'timed_out', 'duration', 'ruined_by')
+                 'last_counter', 'timed_out', 'duration', 'ruined_by', 'mode')
 
     def __init__(self, *, record):
         self.id = record['id']
@@ -211,6 +241,7 @@ class Counting:
         self.last_counter = record['last_counter']
         self.timed_out = False
         self.ruined_by = None
+        self.mode = 'any'
 
     @classmethod
     def temporary(cls, *, guild, channel, started_by, started_at, score=0, contributors=None, last_active_at,
@@ -231,7 +262,9 @@ class Counting:
         return cls(record=pseudo)
 
     def attempt_count(self, counter: discord.User, count: str) -> bool:
-        if str(self.score + 1) in parsed(count) and counter.id != self.last_counter:
+        target = self.score + 1
+        target_s = str(target)
+        if counter.id != self.last_counter and (count == target_s or count == write_roman(target) or target_s in parsed(count)):
             self.last_active_at = datetime.datetime.utcnow()
             self.last_counter = counter.id
             self.score += 1
