@@ -280,7 +280,7 @@ class Counting:
     def attempt_count(self, counter: discord.User, count: str) -> bool:
         target = self.score + 1
         target_s = str(target)
-        if counter.id != self.last_counter and (
+        if (counter.id != self.last_counter) and (
                 count == target_s or count == write_roman(target) or target_s in parsed(count)):
             self.last_active_at = datetime.datetime.utcnow()
             self.last_counter = counter.id

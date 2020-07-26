@@ -40,7 +40,7 @@ class Decode(commands.Cog):
         regex = r"^[a-zA-Z ]+$"
         if re.fullmatch(regex, message):
             big_a = ord('A')
-            m = ' '.join([str(ord(i)-big_a+1) for i in message if i is not ' '])
+            m = ' '.join([str(ord(i)-big_a+1) for i in message if i != ' '])
             await ctx.send(m)
         else:
             await ctx.send('The message should only contain letter a-Z and space is ignored.')
