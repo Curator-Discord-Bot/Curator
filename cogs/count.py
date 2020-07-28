@@ -587,7 +587,7 @@ class Count(commands.Cog):
             parse.append(roman)
 
         if parse:
-            await ctx.send(formats.human_join(parse, final='and'))
+            await ctx.send(formats.human_join(sorted(parse), final='and'))
         else:
             await ctx.send('Could not parse that.')
 
