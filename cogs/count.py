@@ -587,7 +587,7 @@ class Count(commands.Cog):
         """Check if a number alias is working."""
         parse = parsed(number)
         roman = from_roman(number) if roman_re.fullmatch(number) else None
-        binary = int(number, 2) if binary_re.fullmatch(number) else None
+        binary = str(int(number, 2)) if binary_re.fullmatch(number) else None
 
         if roman:
             parse.append(roman)
