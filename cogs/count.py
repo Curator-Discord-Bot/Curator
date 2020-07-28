@@ -132,7 +132,9 @@ def add_parsed(old_results: list, numbers: list) -> list:
     new_results = []
     for number in numbers:
         for result in old_results:
-            new_results.append(result + number)
+            s = result + number
+            if len(s) > 0 and s[0] != '0':
+                new_results.append(s)
     return new_results
 
 
