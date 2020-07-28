@@ -287,7 +287,7 @@ class Counting:
         target = self.score + 1
         target_s = str(target)
         if (counter.id != self.last_counter) and (
-                count == target_s or count == write_roman(target) or count == bin(target)[2:] or count == f'{target:X}'[2:] or target_s in parsed(count)):
+                count == target_s or count == write_roman(target) or count == bin(target)[2:] or count == hex(target)[2:].upper() or target_s in parsed(count)):
             self.last_active_at = datetime.datetime.utcnow()
             self.last_counter = counter.id
             self.score += 1
@@ -589,7 +589,7 @@ class Count(commands.Cog):
         parse = parsed(number)
         roman = from_roman(number) if roman_re.fullmatch(number) else None
         binary = int(number, 2) if binary_re.fullmatch(number) else None
-        hex = int(number, 16) if hex_re.fullmatch(number) else None
+        hex_result = int(number, 16) if hex_re.fullmatch(number) else None
 
         if roman:
             parse.append(roman)
@@ -597,11 +597,11 @@ class Count(commands.Cog):
         if binary:
             parse.append(binary)
 
-        if hex:
-            parse.append(hex)
+        if hex_result:
+            parse.append(hex_result)
 
         if parse:
-            await ctx.send(formats.human_join(sorted([int(i) for i in parse]), final='and'))
+            await ctx.send(formats.human_join([str(i) for i in sorted([int(i) for i in parse])], final='and'))
         else:
             await ctx.send('Could not parse that.')
 
