@@ -82,9 +82,10 @@ number_aliases = {
     'eight_o’clock': ['8', '20'],
     'pool_8_ball': ['8'],
     'sun': ['8'],
+    '\U267EFE0F': ['8'],
     'keycap_9': ['9'],
     'nine_o’clock': ['9', '21'],
-    'mantelpiece_clock': ['9'],
+    'mantelpiece_clock': ['9', '21'],
     'keycap_10': ['10'],
     'ten_o’clock': ['10', '22'],
     'eleven_o’clock': ['11', '23'],
@@ -99,6 +100,7 @@ number_aliases = {
 }
 
 roman_re = re.compile('^(?=[MDCLXVI])M*(C[MD]|D?C{0,3})(X[CL]|L?X{0,3})(I[XV]|V?I{0,3})$')
+binary_re = re.compile('^[01]+$')
 
 running_counts = {}
 finished_counts = {}
@@ -283,7 +285,7 @@ class Counting:
         target = self.score + 1
         target_s = str(target)
         if (counter.id != self.last_counter) and (
-                count == target_s or count == write_roman(target) or target_s in parsed(count)):
+                count == target_s or count == write_roman(target) or count == bin(target)[2:] or target_s in parsed(count)):
             self.last_active_at = datetime.datetime.utcnow()
             self.last_counter = counter.id
             self.score += 1
@@ -584,9 +586,13 @@ class Count(commands.Cog):
         """Check if a number alias is working."""
         parse = parsed(number)
         roman = from_roman(number) if roman_re.fullmatch(number) else None
+        binary = int(number, 2) if binary_re.fullmatch(number) else None
 
         if roman:
             parse.append(roman)
+
+        if binary:
+            parse.append(binary)
 
         if parse:
             await ctx.send(formats.human_join(sorted(parse), final='and'))
