@@ -143,6 +143,13 @@ class FourInARow(commands.Cog):
         self.empty_tile = TileType('Empty', bot.get_emoji(738068784211820612))
         self.blue_tile = TileType('Blue', bot.get_emoji(738070670583398480))
         self.red_tile = TileType('Red', bot.get_emoji(738070670243790919))
+        self.green_tile = TileType('Green', bot.get_emoji(738324385534050346))
+        self.orange_tile = TileType('Orange', bot.get_emoji(738324385626324997))
+        self.pink_tile = TileType('Pink', bot.get_emoji(738324385622130699))
+        self.purple_tile = TileType('Purple', bot.get_emoji(738324385856749568))
+        self.aqua_tile = TileType('Aqua', bot.get_emoji(738324385865400361))
+        self.color_tiles = [self.blue_tile, self.red_tile, self.green_tile, self.orange_tile, self.pink_tile, self.purple_tile, self.aqua_tile]
+
         self.column_reactions = {
             '1️⃣': 0,
             '2️⃣': 1,
@@ -173,7 +180,7 @@ class FourInARow(commands.Cog):
     async def start(self, ctx: commands.Context, target: Optional[discord.User]):
         """Starts a game of four in a row"""
         message: discord.Message = await ctx.send('Starting a game of Four In A Row!\nReact below to select a color.')
-        tiles: List[TileType] = [self.blue_tile, self.red_tile]
+        tiles: List[TileType] = [t for t in self.color_tiles]
 
         for tile in tiles:
             await message.add_reaction(tile.emoji)
@@ -228,6 +235,8 @@ class FourInARow(commands.Cog):
                     content=message.content + f'\n{user.name} picked {tile.name}{tile.emoji}.\nThe game is now ready to start!')
                 await message.clear_reactions()
                 await slp(5)
+
+        await self.start_game(message, player_one, player_two)
 
     async def start_game(self, message: discord.Message, player_one: Player, player_two: Player):
         if not (message and player_one and player_two):
