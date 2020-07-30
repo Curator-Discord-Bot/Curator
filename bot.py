@@ -8,6 +8,7 @@ from asyncpg.pool import Pool
 from cogs.utils import context
 from cogs.utils.db import Table
 import os
+from platform import node
 import datetime
 
 CONFIG_FILE = 'curator.conf'
@@ -105,7 +106,7 @@ class Curator(commands.Bot):
 
             # Safety measure to safely logout extra instances.
             if message.author.id == 261156531989512192 and message.content == 'logout':
-                await message.channel.send(f'Okay, I will logout. My prefix was `{self.command_prefix}`, and I was running on `{os.environ["COMPUTERNAME"]}`.')
+                await message.channel.send(f'Okay, I will logout. My prefix was `{self.command_prefix}`, and I was running on `{node()}`.')
                 await self.logout()
                 return
             elif message.content == 'prefix':
