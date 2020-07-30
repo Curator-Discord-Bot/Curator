@@ -1,5 +1,5 @@
 import asyncio
-
+from asyncio import sleep as slp
 import discord
 from discord.ext import commands
 from typing import Optional, Union, List
@@ -41,6 +41,9 @@ class FIAR:
 
     def current_player(self):
         return self.player_one if self.turn % 2 == 0 else self.player_two
+
+    def other_player(self):
+        return self.player_one if self.turn % 2 == 1 else self.player_two
 
     def insert(self, column: int):
         target = column % FIAR.WIDTH
@@ -159,7 +162,9 @@ class FourInARow(commands.Cog):
             6: '7️⃣'
         }
 
-    @commands.group(invoke_without_command=True, aliases=['connectfour', 'connect4', 'fourup', 'plotfour', 'findfour', 'fourinaline', 'dropfour', 'gravitrips'])
+    @commands.group(invoke_without_command=True,
+                    aliases=['connectfour', 'connect4', 'fourup', 'plotfour', 'findfour', 'fourinaline', 'dropfour',
+                             'gravitrips'])
     async def fourinarow(self, ctx: commands.Context):
         """The base command for four in a row"""
         await ctx.send(f'This is the base command. See `{ctx.prefix}help fourinarow` for help on other commands.')
@@ -222,47 +227,50 @@ class FourInARow(commands.Cog):
                 await message.edit(
                     content=message.content + f'\n{user.name} picked {tile.name}{tile.emoji}.\nThe game is now ready to start!')
                 await message.clear_reactions()
+                await slp(5)
 
-        if player_one and player_two:
-            game = FIAR(self.empty_tile, player_one, player_two)
+    async def start_game(self, message: discord.Message, player_one: Player, player_two: Player):
+        if not (message and player_one and player_two):
+            return
 
-            def check(reaction: discord.reaction.Reaction, user: Union[discord.Member, discord.User]) -> bool:
-                if user.id != game.current_player().discord_id or message.id != reaction.message.id:
-                    return False
-                key = str(reaction)
-                if key in self.column_reactions.keys() and game.fullness[self.column_reactions[key]] < FIAR.HEIGHT:
-                    return True
-                else:
-                    print('Failed', type(reaction), reaction)
+        game = FIAR(self.empty_tile, player_one, player_two)
+
+        def check(reaction: discord.reaction.Reaction, user: Union[discord.Member, discord.User]) -> bool:
+            if user.id != game.current_player().discord_id or message.id != reaction.message.id:
                 return False
+            key = str(reaction)
+            if key in self.column_reactions.keys() and game.fullness[self.column_reactions[key]] < FIAR.HEIGHT:
+                return True
+            return False
 
-            while not game.is_full():
-                numbers = ''.join(self.column_reactions.keys())
+        while not game.is_full():
+            numbers = ''.join(self.column_reactions.keys())
+            await message.edit(
+                content=f'**Turn {game.turn + 1}**\n{game.current_player().tile.emoji}<@{game.current_player().discord_id}>\'s turn.\n{numbers}\n{game.emoji_board()}\n{numbers}')
+
+            for i in range(min(len(self.column_reactions.keys()), FIAR.WIDTH)):
+                if game.fullness[i] < FIAR.HEIGHT:
+                    await message.add_reaction(self.inverse_column_reactions[i])
+
+            try:
+                reaction: discord.reaction.Reaction
+                user: Union[discord.Member, discord.User]
+                reaction, user = await self.bot.wait_for('reaction_add', timeout=60.0, check=check)
+            except asyncio.TimeoutError:
                 await message.edit(
-                    content=f'**Turn {game.turn + 1}**\n{game.current_player().tile.emoji}<@{game.current_player().discord_id}>\'s turn.\n{numbers}\n{game.emoji_board()}\n{numbers}')
+                    content=f'**Game Ended on turn {game.turn + 1}.**\n{game.emoji_board()}\n<@{game.current_player().discord_id}> took too long to move, so the game goes to <@{game.other_player().discord_id}>\nThanks for playing!')
+                await message.clear_reactions()
+                return
+            else:
+                game.insert(self.column_reactions[str(reaction)])
+                await message.clear_reactions()
 
-                for i in range(min(len(self.column_reactions.keys()), FIAR.WIDTH)):
-                    if game.fullness[i] < FIAR.HEIGHT:
-                        await message.add_reaction(self.inverse_column_reactions[i])
-
-                try:
-                    reaction: discord.reaction.Reaction
-                    user: Union[discord.Member, discord.User]
-                    reaction, user = await self.bot.wait_for('reaction_add', timeout=60.0, check=check)
-                except asyncio.TimeoutError:
-                    await message.edit(content=message.content + '\nTook too long to move, so the game ended.')
-                    await message.clear_reactions()
+                if game.winner:
+                    await message.edit(
+                        content=f'**<@{game.winner.discord_id}> won in {game.turn} turns!**\n{game.emoji_board()}\nThanks for playing!')
                     return
-                else:
-                    game.insert(self.column_reactions[str(reaction)])
-                    await message.clear_reactions()
 
-                    if game.winner:
-                        await message.edit(
-                            content=f'**<@{game.winner.discord_id}> won in {game.turn} turns!**\n{game.emoji_board()}')
-                        return
-
-            await message.edit(content=f'**No winner!**\n{game.emoji_board()}')
+        await message.edit(content=f'**No winner...**\n{game.emoji_board()}\n Thanks for playing {game.player_one.discord_id} and {game.player_two.discord_id}!')
 
 
 def setup(bot: commands.Bot):
