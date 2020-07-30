@@ -21,6 +21,7 @@ INITIAL_EXTENSIONS = (
     'cogs.count',
     'cogs.tictactoe',
     'cogs.minecraft',
+    'cogs.reminder',
     'cogs.fun',
     'cogs.decode',
     'cogs.info',
