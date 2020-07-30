@@ -234,7 +234,7 @@ class FourInARow(commands.Cog):
                 await message.edit(
                     content=message.content + f'\n{user.name} picked {tile.name}{tile.emoji}.\nThe game is now ready to start!')
                 await message.clear_reactions()
-                await slp(5)
+                await slp(2)
 
         await self.start_game(message, player_one, player_two)
 
