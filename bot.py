@@ -19,7 +19,6 @@ INITIAL_EXTENSIONS = (
     'cogs.profile',
     'cogs.count',
     'cogs.tictactoe',
-    'cogs.reminder',
     'cogs.minecraft',
     'cogs.fun',
     'cogs.decode',
@@ -129,12 +128,13 @@ class Curator(commands.Bot):
         if message.author.bot:
             return
 
-        logchannel = self.server_configs[message.guild.id]['logchannel']
-        if logchannel:
-            await logchannel.send(
-                f'A message by {message.author} was deleted in {message.channel.mention} on {message.guild}:'
-                f'\n{f"`{message.content}`" if len(message.content) >= 1 else "**No text**"}'
-                f'\n{"Attachments: " + str([attachment.url for attachment in message.attachments]) if message.attachments else ""}')
+        if message.guild:
+            logchannel = self.server_configs[message.guild.id]['logchannel']
+            if logchannel:
+                await logchannel.send(
+                    f'A message by {message.author} was deleted in {message.channel.mention} on {message.guild}:'
+                    f'\n{f"`{message.content}`" if len(message.content) >= 1 else "**No text**"}'
+                    f'\n{"Attachments: " + str([attachment.url for attachment in message.attachments]) if message.attachments else ""}')
 
     async def process_commands(self, message):
         ctx: context.Context = await self.get_context(message, cls=context.Context)
@@ -142,9 +142,10 @@ class Curator(commands.Bot):
         if ctx.command is None:
             return
 
-        logchannel = self.server_configs[message.guild.id]['logchannel']
-        if logchannel:
-            await logchannel.send(f'{message.author} used command: {message.content.replace("@", "AT")}')
+        if message.guild:
+            logchannel = self.server_configs[message.guild.id]['logchannel']
+            if logchannel:
+                await logchannel.send(f'{message.author} used command: {message.content.replace("@", "AT")}')
 
         try:
             await self.invoke(ctx)
