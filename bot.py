@@ -35,7 +35,7 @@ INITIAL_EXTENSIONS = (
 
 class Curator(commands.Bot):
 
-    def __init__(self, client_id, command_prefix=',', dm_dump=474922467626975233, description=''):
+    def __init__(self, client_id, command_prefix=',', dm_dump=None, description=''):
         super().__init__(command_prefix=command_prefix, dm_dump=dm_dump, description=description)
 
         self.client_id = client_id
@@ -66,7 +66,8 @@ class Curator(commands.Bot):
 
     async def on_ready(self):
         await self.get_server_configs()
-        self.dm_dump = self.get_channel(self.dm_dump)
+        if self.dm_dump:
+            self.dm_dump = self.get_channel(self.dm_dump)
 
         print(f'Logged in as {self.user.name}')
         print(f'At UTC: {datetime.datetime.utcnow()}')
@@ -96,8 +97,22 @@ class Curator(commands.Bot):
         if message.channel.type == discord.ChannelType.private:
             if message.author == self.user:
                 return
-            await self.dm_dump.send(f'**{message.author}** ({message.author.id}): {message.content}\n'
+
+            if self.dm_dump:
+                await self.dm_dump.send(f'**{message.author}** ({message.author.id}): {message.content}\n'
                                     f'{"Attachments: " + str([attachment.url for attachment in message.attachments]) if message.attachments else ""}')
+
+            print(f'DM from {message.author.name}: {message.content}')
+
+            # Safety measure to safely logout extra instances.
+            if message.author.id == 261156531989512192 and message.content == 'logout':
+                await message.channel.send(f'Okay, I will logout. My prefix was {self.command_prefix}, and I was running on {os.environ["COMPUTERNAME"]}.')
+                await self.logout()
+                return
+            elif message.content == 'prefix':
+                await message.channel.send(f'My prefix is {self.command_prefix}. Use it responsibly.')
+                return
+
             self.last_dm = message.author
 
         elif message.guild.id == 468366604313559040 and message.author.id == 665938966452764682 \
