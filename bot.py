@@ -27,7 +27,8 @@ INITIAL_EXTENSIONS = (
     'cogs.random',
     'cogs.admin',
     'cogs.sadmin',
-    'cogs.math'
+    'cogs.math',
+    'cogs.fourinarow'
 )
 
 
