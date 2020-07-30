@@ -24,6 +24,7 @@ class Player:
 
 
 class FIAR:
+    winner: Player
     WIDTH: int = 7
     HEIGHT: int = 6
 
@@ -158,7 +159,7 @@ class FourInARow(commands.Cog):
             6: '7️⃣'
         }
 
-    @commands.group(invoke_without_command=True)
+    @commands.group(invoke_without_command=True, aliases=['connectfour', 'connect4', 'fourup', 'plotfour', 'findfour', 'fourinaline', 'dropfour', 'gravitrips'])
     async def fourinarow(self, ctx: commands.Context):
         """The base command for four in a row"""
         await ctx.send(f'This is the base command. See `{ctx.prefix}help fourinarow` for help on other commands.')
@@ -255,7 +256,7 @@ class FourInARow(commands.Cog):
 
                     if game.winner:
                         await message.edit(
-                            content=f'**<@{game.current_player().discord_id}> won in {game.turn} turns!**\n{game.emoji_board()}')
+                            content=f'**<@{game.winner.discord_id}> won in {game.turn} turns!**\n{game.emoji_board()}')
                         return
 
             await message.edit(content=f'**No winner!**\n{game.emoji_board()}')
