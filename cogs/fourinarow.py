@@ -174,7 +174,7 @@ class FourInARow(commands.Cog):
             await message.add_reaction(tile.emoji)
 
         def check(reaction: discord.reaction.Reaction, user: Union[discord.Member, discord.User]) -> bool:
-            if user.bot:
+            if user.bot or message.id != reaction.message.id:
                 return False
 
             for tile in tiles:
@@ -197,6 +197,8 @@ class FourInARow(commands.Cog):
             for t in tiles:
                 if t.emoji == reaction.emoji:
                     tile = t
+                    tiles.remove(t)
+
             player_one = Player(user.id, tile)
             await message.edit(content=message.content + f'\n{user.name} picked {tile.name}{tile.emoji}.')
             await message.clear_reaction(reaction.emoji)
@@ -215,6 +217,7 @@ class FourInARow(commands.Cog):
                 for t in tiles:
                     if t.emoji == reaction.emoji:
                         tile = t
+                        tiles.clear()
                 player_two = Player(user.id, tile)
                 await message.edit(
                     content=message.content + f'\n{user.name} picked {tile.name}{tile.emoji}.\nThe game is now ready to start!')
@@ -224,7 +227,7 @@ class FourInARow(commands.Cog):
             game = FIAR(self.empty_tile, player_one, player_two)
 
             def check(reaction: discord.reaction.Reaction, user: Union[discord.Member, discord.User]) -> bool:
-                if user.id != game.current_player().discord_id:
+                if user.id != game.current_player().discord_id or message.id != reaction.message.id:
                     return False
                 key = str(reaction)
                 if key in self.column_reactions.keys() and game.fullness[self.column_reactions[key]] < FIAR.HEIGHT:
