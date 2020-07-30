@@ -28,7 +28,8 @@ INITIAL_EXTENSIONS = (
     'cogs.admin',
     'cogs.sadmin',
     'cogs.math',
-    'cogs.fourinarow'
+    'cogs.fourinarow',
+    'cogs.emojis'
 )
 
 
