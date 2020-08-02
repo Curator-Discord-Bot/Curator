@@ -232,6 +232,7 @@ class FourInARow(commands.Cog):
         except asyncio.TimeoutError:
             await message.edit(
                 content=f'{ctx.author.name} wanted to start a game of Four In A Row, but it timed out...')
+            await message.clear_reactions()
             return
         else:
             tile = None
