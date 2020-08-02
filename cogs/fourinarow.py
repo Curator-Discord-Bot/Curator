@@ -138,17 +138,22 @@ class FIAR:
 
 
 class FourInARow(commands.Cog):
+    __slots__ = (
+    'empty_tile', 'blue_tile', 'red_tile', 'green_tile', 'orange_tile', 'pink_tile', 'purple_tile', 'aqua_tile',
+    'color_tiles', 'column_reactions', 'inverse_column_reactions')
+
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.empty_tile = TileType('Empty', bot.get_emoji(738068784211820612))
-        self.blue_tile = TileType('Blue', bot.get_emoji(738070670583398480))
-        self.red_tile = TileType('Red', bot.get_emoji(738070670243790919))
-        self.green_tile = TileType('Green', bot.get_emoji(738324385534050346))
-        self.orange_tile = TileType('Orange', bot.get_emoji(738324385626324997))
-        self.pink_tile = TileType('Pink', bot.get_emoji(738324385622130699))
-        self.purple_tile = TileType('Purple', bot.get_emoji(738324385856749568))
-        self.aqua_tile = TileType('Aqua', bot.get_emoji(738324385865400361))
-        self.color_tiles = [self.blue_tile, self.red_tile, self.green_tile, self.orange_tile, self.pink_tile, self.purple_tile, self.aqua_tile]
+
+        self.empty_tile = None
+        self.blue_tile = None
+        self.red_tile = None
+        self.green_tile = None
+        self.orange_tile = None
+        self.pink_tile = None
+        self.purple_tile = None
+        self.aqua_tile = None
+        self.color_tiles = None
 
         self.column_reactions = {
             '1️⃣': 0,
@@ -168,6 +173,18 @@ class FourInARow(commands.Cog):
             5: '6️⃣',
             6: '7️⃣'
         }
+
+    def init_tiles(self):
+        self.empty_tile = TileType('Empty', self.bot.get_emoji(738068784211820612))
+        self.blue_tile = TileType('Blue', self.bot.get_emoji(738070670583398480))
+        self.red_tile = TileType('Red', self.bot.get_emoji(738070670243790919))
+        self.green_tile = TileType('Green', self.bot.get_emoji(738324385534050346))
+        self.orange_tile = TileType('Orange', self.bot.get_emoji(738324385626324997))
+        self.pink_tile = TileType('Pink', self.bot.get_emoji(738324385622130699))
+        self.purple_tile = TileType('Purple', self.bot.get_emoji(738324385856749568))
+        self.aqua_tile = TileType('Aqua', self.bot.get_emoji(738324385865400361))
+        self.color_tiles = [self.blue_tile, self.red_tile, self.green_tile, self.orange_tile, self.pink_tile,
+                            self.purple_tile, self.aqua_tile]
 
     @commands.group(invoke_without_command=True,
                     aliases=['connectfour', 'connect4', 'fourup', 'plotfour', 'findfour', 'fourinaline', 'dropfour',
@@ -309,6 +326,10 @@ class FourInARow(commands.Cog):
 
         await message.edit(
             content=f'**No winner...**\n{game.emoji_board()}\nThanks for playing {game.player_one.discord_id} and {game.player_two.discord_id}!')
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+        self.init_tiles()
 
 
 def setup(bot: commands.Bot):
