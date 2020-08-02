@@ -239,9 +239,8 @@ class FourInARow(commands.Cog):
                 if t.emoji == reaction.emoji:
                     tile = t
                     tiles.remove(t)
-            users.remove(user.id)
-
             if challenge:
+                users.remove(user.id)
                 if user.id == ctx.author.id:
                     player_two = user.id
                 else:
@@ -266,9 +265,8 @@ class FourInARow(commands.Cog):
                     if t.emoji == reaction.emoji:
                         tile = t
                         tiles.clear()
-                users.clear()
-
                 if challenge:
+                    users.clear()
                     if user.id == ctx.author.id:
                         player_two = user.id
                     else:
