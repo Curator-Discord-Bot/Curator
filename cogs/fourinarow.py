@@ -333,4 +333,6 @@ class FourInARow(commands.Cog):
 
 
 def setup(bot: commands.Bot):
-    bot.add_cog(FourInARow(bot))
+    cog = FourInARow(bot)
+    cog.init_tiles()
+    bot.add_cog(cog)
