@@ -177,16 +177,27 @@ class FourInARow(commands.Cog):
         await ctx.send(f'This is the base command. See `{ctx.prefix}help fourinarow` for help on other commands.')
 
     @fourinarow.command()
+    async def tiles(self, ctx: commands.Context):
+        await ctx.send(''.join([str(i.emoji) for i in self.color_tiles]))
+
+    @fourinarow.command(aliases=['challenge'], usage='[target]')
     async def start(self, ctx: commands.Context, target: Optional[discord.User]):
-        """Starts a game of four in a row"""
+        """Starts a game of four in a row that anyone can join,
+        or challenge somebody by supplying a user."""
         message: discord.Message = await ctx.send('Starting a game of Four In A Row!\nReact below to select a color.')
         tiles: List[TileType] = [t for t in self.color_tiles]
+        challenge = target is not None
+        users = [ctx.author.id, target.id] if challenge else None
+
+        if challenge and ctx.author.id == target.id:
+            await ctx.send('You can\'t send yourself a challenge.')
+            return
 
         for tile in tiles:
             await message.add_reaction(tile.emoji)
 
         def check(reaction: discord.reaction.Reaction, user: Union[discord.Member, discord.User]) -> bool:
-            if user.bot or message.id != reaction.message.id:
+            if user.bot or message.id != reaction.message.id or (challenge and user.id not in users):
                 return False
 
             for tile in tiles:
@@ -211,8 +222,15 @@ class FourInARow(commands.Cog):
                 if t.emoji == reaction.emoji:
                     tile = t
                     tiles.remove(t)
+            users.remove(user.id)
 
-            player_one = Player(user.id, tile)
+            if challenge:
+                if user.id == ctx.author.id:
+                    player_two = user.id
+                else:
+                    player_one = user.id
+            else:
+                player_one = Player(user.id, tile)
             await message.edit(content=message.content + f'\n{user.name} picked {tile.name}{tile.emoji}.')
             await message.clear_reaction(reaction.emoji)
 
@@ -231,7 +249,16 @@ class FourInARow(commands.Cog):
                     if t.emoji == reaction.emoji:
                         tile = t
                         tiles.clear()
-                player_two = Player(user.id, tile)
+                users.clear()
+
+                if challenge:
+                    if user.id == ctx.author.id:
+                        player_two = user.id
+                    else:
+                        player_one = user.id
+                else:
+                    player_two = Player(user.id, tile)
+
                 await message.edit(
                     content=message.content + f'\n{user.name} picked {tile.name}{tile.emoji}.\nThe game is now ready to start!')
                 await message.clear_reactions()
@@ -280,7 +307,8 @@ class FourInARow(commands.Cog):
                         content=f'**<@{game.winner.discord_id}> won in {game.turn} turns!**\n{game.emoji_board()}\nBetter luck next time, <@{game.other_player().discord_id}>\nThanks for playing!')
                     return
 
-        await message.edit(content=f'**No winner...**\n{game.emoji_board()}\n Thanks for playing {game.player_one.discord_id} and {game.player_two.discord_id}!')
+        await message.edit(
+            content=f'**No winner...**\n{game.emoji_board()}\nThanks for playing {game.player_one.discord_id} and {game.player_two.discord_id}!')
 
 
 def setup(bot: commands.Bot):
