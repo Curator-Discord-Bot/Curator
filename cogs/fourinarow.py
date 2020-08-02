@@ -320,7 +320,7 @@ class FourInARow(commands.Cog):
 
                 if game.winner:
                     await message.edit(
-                        content=f'**<@{game.winner.discord_id}> won in {game.turn} turns!**\n{game.emoji_board()}\nBetter luck next time, <@{game.other_player().discord_id}>\nThanks for playing!')
+                        content=f'**<@{game.winner.discord_id}> won in {game.turn} turns!**\n{game.emoji_board()}\nBetter luck next time, <@{game.current_player().discord_id}>\nThanks for playing!')
                     return
 
         await message.edit(
