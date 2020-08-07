@@ -3,6 +3,7 @@ import string
 import discord
 from asyncio import sleep as slp
 from discord.ext import commands
+from typing import Optional
 from random import choice, randint
 import requests
 from .utils.messages import hello, collect
@@ -103,6 +104,32 @@ class Fun(commands.Cog):
                 await ctx.send(f'Successfully deleted {name}.')
                 await slp(60)
                 await ctx.author.edit(nick=name)
+
+    @commands.command(aliases=['hamdog'])
+    async def chomp(self, ctx: commands.Context, amount: Optional[float]):
+        if not amount:
+            if len(ctx.message.content.split()) == 1:
+                await ctx.send('<a:hamdog:741335292597895781>' + 3 * '<a:ham:741335318891855902>')
+            elif ctx.message.content.split()[1] == '0':
+                await ctx.send('No hamburgers?:worried:')
+        elif amount < 0:
+            if not amount.is_integer():
+                await ctx.send('I only chomp out full burgers.')
+            elif amount < -75:
+                await ctx.send('My stomach is not that full!')
+            else:
+                amount = -int(amount)
+                await ctx.send('<a:godham:741367312380330026>' + amount * '<a:mah:741367328465354772>')
+        else:
+            if not amount.is_integer():
+                await ctx.send('I only chomp on full burgers.')
+            elif amount > 75:
+                await ctx.send('The kitchen is too slow:neutral_face:')
+            else:
+                amount = int(amount)
+                await ctx.send('<a:hamdog:741335292597895781>' + amount * '<a:ham:741335318891855902>')
+
+
 
 
 def setup(bot: commands.Bot):

@@ -187,8 +187,8 @@ class FourInARow(commands.Cog):
                             self.purple_tile, self.aqua_tile]
 
     @commands.group(invoke_without_command=True,
-                    aliases=['connectfour', 'connect4', 'fourup', 'plotfour', 'findfour', 'fourinaline', 'dropfour',
-                             'gravitrips'])
+                    aliases=['connectfour', 'connect4', 'c4', 'fourup', 'plotfour', 'findfour', 'fourinaline',
+                             'dropfour', 'gravitrips'])
     async def fourinarow(self, ctx: commands.Context):
         """The base command for four in a row"""
         await ctx.send(f'This is the base command. See `{ctx.prefix}help fourinarow` for help on other commands.')
