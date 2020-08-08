@@ -3,13 +3,14 @@ from asyncio import sleep as slp
 import discord
 from discord.ext import commands
 from typing import Optional, Union, List
+from random import randint
 
 
 class TileType:
     name: str
     emoji: Optional[discord.Emoji]
 
-    def __init__(self, name: str, emoji: str):
+    def __init__(self, name: str, emoji: discord.Emoji):
         self.name = name
         self.emoji = emoji
 
@@ -24,7 +25,7 @@ class Player:
 
 
 class FIAR:
-    winner: Player
+    winner: Optional[Player]
     WIDTH: int = 7
     HEIGHT: int = 6
 
