@@ -33,7 +33,7 @@ class Minecraft(commands.Cog):
     @commands.group(invoke_without_command=True, aliases=['mojang', 'mc'])
     async def minecraft(self, ctx: commands.Context):
         """Minecraft commands."""
-        await ctx.send(f'Try {ctx.prefix}help mc')
+        await ctx.send(f'Try ```{ctx.prefix}help mc```')
 
     @minecraft.command()
     async def status(self, ctx: commands.Context):
@@ -142,6 +142,15 @@ class Minecraft(commands.Cog):
         embed = discord.Embed(title='Face')
         embed.set_image(url=f'https://crafatar.com/avatars/{get_uuid(username)}?overlay')
         await ctx.send(embed=embed)
+
+    @minecraft.command(aliases=['nh', 'prevnames'])
+    async def namehistory(self, ctx: commands.Context, username):
+        """Get a player's previous usernames."""
+        r = requests.get(f'https://api.mojang.com/user/profiles/{get_uuid(username)}/names')
+        j = r.json()
+        await ctx.send(j)
+
+        print(j)
 
 
 def setup(bot: commands.Bot):
