@@ -236,7 +236,7 @@ class Admin(commands.Cog):
         """Evaluates a code"""
 
         env = {
-            'bot': self.bot,
+            'curator': self.bot,
             'ctx': ctx,
             'channel': ctx.channel,
             'author': ctx.author,
