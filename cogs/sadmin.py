@@ -9,6 +9,7 @@ class Serverconfigs(db.Table):
     guild = db.Column(db.Integer(big=True), primary_key=True)
     logchannel = db.Column(db.Integer(big=True))
     chartroles = db.Column(db.Array(sql_type=db.Integer(big=True)), default='{}')
+    ticketcategory = db.Column(db.Integer(big=True))
 
 
 class Sadmin(commands.Cog):
@@ -18,8 +19,7 @@ class Sadmin(commands.Cog):
         self.bot = bot
 
     async def cog_check(self, ctx):
-        if ('manage_guild', True) in ctx.author.guild_permissions or \
-           ctx.author.id in [261156531989512192, 314792415733088260] or await self.bot.is_owner(ctx.author):
+        if ('manage_guild', True) in ctx.author.guild_permissions or ctx.author.id in self.bot.admins:
             return True
         else:
             await ctx.send('Only people with "Manage Server" permissions can use commands from this category.')
@@ -27,10 +27,13 @@ class Sadmin(commands.Cog):
 
     @commands.group(aliases=['logging', 'logs', 'log'], invoke_without_command=True)
     async def logchannel(self, ctx: commands.Context):
-        """Commands for the logging channel."""
+        """Commands for the logging channel.
+
+        This channel will be used to log deleted messages and used commands.
+        """
         current_channel = self.bot.server_configs[ctx.guild.id]['logchannel']
         if current_channel:
-            await ctx.send(f'The current logging channel is{current_channel.mention}, '
+            await ctx.send(f'The current logging channel is {current_channel.mention}, '
                            f'use `{ctx.prefix}logchannel set <channel>` to change it, '
                            f'or `{ctx.prefix}logchannel remove` to stop logging.')
         else:
@@ -61,7 +64,7 @@ class Sadmin(commands.Cog):
             self.bot.server_configs[ctx.guild.id]['logchannel'] = new_channel
             await ctx.send('Logging channel successfully set.')
 
-    @logchannel.command(name='remove', aliases=['delete', 'stop'])
+    @logchannel.command(name='remove', aliases=['delete', 'stop', 'disable'])
     async def remove_log(self, ctx: commands.Context):
         """Stop logging."""
         current_channel = self.bot.server_configs[ctx.guild.id]['logchannel']
@@ -86,7 +89,7 @@ class Sadmin(commands.Cog):
             self.bot.server_configs[ctx.guild.id]['logchannel'] = None
             await ctx.send('Logging channel successfully removed.')
 
-    @commands.group(invoke_without_command=True)
+    @commands.group(aliases=['croles'], invoke_without_command=True)
     async def chartroles(self, ctx: commands.Context):
         """Commands for the list of roles to be used in information charts."""
         current_roles = self.bot.server_configs[ctx.guild.id]['chartroles']
@@ -100,7 +103,7 @@ class Sadmin(commands.Cog):
                            f' use `{ctx.prefix}chartroles set <role_ids>` to set some.')
 
     @chartroles.command('set', aliases=['choose', 'select'])
-    async def set_chartroles(self, ctx: commands.Context, *role_ids: int):
+    async def set_croles(self, ctx: commands.Context, *role_ids: int):
         """Set a list of roles to be used in information charts.
 
         Provide the role IDs as arguments.
@@ -120,7 +123,7 @@ class Sadmin(commands.Cog):
         try:
             connection: asyncpg.pool = self.bot.pool
             query = 'UPDATE serverconfigs SET chartroles = $1 WHERE guild = $2;'
-            await connection.fetchval(query, [role_id for role_id in role_ids], ctx.guild.id)
+            await connection.fetchval(query, role_ids, ctx.guild.id)
         except Exception as e:
             await ctx.send(f'Failed, {e} while saving the new roles to the database.')
         else:
@@ -129,7 +132,7 @@ class Sadmin(commands.Cog):
                            f'{formats.human_join([f"**{role.name}**" for role in new_roles], final="and")} successfully set.')
 
     @chartroles.command(name='add')
-    async def add_chartroles(self, ctx: commands.Context, *role_ids: int):
+    async def add_croles(self, ctx: commands.Context, *role_ids: int):
         """Add roles to the list to be used in information charts.
 
         Provide the role IDs as arguments.
@@ -142,7 +145,7 @@ class Sadmin(commands.Cog):
         try:
             connection: asyncpg.pool = self.bot.pool
             query = 'UPDATE serverconfigs SET chartroles = array_cat(chartroles, $1) WHERE guild = $2;'
-            await connection.fetchval(query, [role_id for role_id in role_ids], ctx.guild.id)
+            await connection.fetchval(query, role_ids, ctx.guild.id)
         except Exception as e:
             await ctx.send(f'Failed, {e} while saving the new roles to the database.')
         else:
@@ -152,7 +155,7 @@ class Sadmin(commands.Cog):
                            f'{formats.human_join([f"**{role.name}**" for role in new_roles], final="and")} successfully added.')
 
     @chartroles.command(name='remove', aliases=['delete'])
-    async def remove_chartroles(self, ctx: commands.Context, *role_ids: Optional[int]):
+    async def remove_croles(self, ctx: commands.Context, *role_ids: Optional[int]):
         """Remove roles from the list to be used in information charts.
 
         Provide the role IDs as arguments.
@@ -176,7 +179,7 @@ class Sadmin(commands.Cog):
                            f'{formats.human_join([f"**{role.name}**" for role in to_delete], final="and")} successfully removed.')
 
     @chartroles.command(name='clear')
-    async def clear_chartroles(self, ctx: commands.Context):
+    async def clear_croles(self, ctx: commands.Context):
         """Clear the entire list of roles to be used in information charts."""
         current_roles = self.bot.server_configs[ctx.guild.id]['chartroles']
         if len(current_roles) == 0:
@@ -196,6 +199,75 @@ class Sadmin(commands.Cog):
             self.bot.server_configs[ctx.guild.id]['chartroles'] = []
             await ctx.send(f'Role{"s" if len(current_roles) > 1 else ""} '
                            f'{formats.human_join([f"**{role.name}**" for role in current_roles], final="and")} successfully removed.')
+
+    @commands.group(aliases=['ticketcat', 'tcat', 'supporttickets', 'sticket', 'stc'], invoke_without_command=True)
+    async def ticketcategory(self, ctx: commands.Context):
+        """Commands for the support tickets.
+
+        Members can open support tickets to privately talk with staff. Channels of closed tickets will not be immediately deleted.
+        """
+        current_category = self.bot.server_configs[ctx.guild.id]['ticket_category']
+        if current_category:
+            await ctx.send(f'The current support ticket category is **{current_category}**, '
+                           f'use `{ctx.prefix}ticketcategory set <category_id>` to change it, '
+                           f'or `{ctx.prefix}ticketcategory remove` to disable support tickets on this server.')
+        else:
+            await ctx.send(f'You currently don\'t have support tickets enabled, use `{ctx.prefix}ticketcategory '
+                           f'set <category_id>` to set a category and enable the ticket system.')
+
+    @ticketcategory.command(name='set', aliases=['choose', 'select'])
+    async def set_tcat(self, ctx: commands.Context, new_category_id: int):
+        """Set the logging channel.
+2
+        Provide the id of the category you want to set for support tickets.
+        """
+        current_category = self.bot.server_configs[ctx.guild.id]['ticket_category']
+        new_category = self.bot.get_channel(new_category_id)
+        print(new_category)
+        if not new_category:
+            return await ctx.send('Please provide a valid category ID.')
+
+        if current_category:
+            prompt_text = f'This will change the support ticket category from **{current_category}** to **{new_category}**,' \
+                          f' are you sure?'
+            confirm = await ctx.prompt(prompt_text, reacquire=False)
+            if not confirm:
+                return await ctx.send('Cancelled.')
+
+        try:
+            connection: asyncpg.pool = self.bot.pool
+            query = 'UPDATE serverconfigs SET ticketcategory = $1 WHERE guild = $2'
+            await connection.fetchval(query, new_category.id, ctx.guild.id)
+        except Exception as e:
+            await ctx.send(f'Failed, {e} while saving the support ticket category to the database.')
+        else:
+            self.bot.server_configs[ctx.guild.id]['ticket_category'] = new_category
+            await ctx.send('Support ticket category successfully set.')
+
+    @ticketcategory.command(name='remove', aliases=['delete', 'stop', 'disable'])
+    async def remove_tcat(self, ctx: commands.Context):
+        """Disable support tickets."""
+        current_category = self.bot.server_configs[ctx.guild.id]['ticket_category']
+        if not current_category:
+            return await ctx.send(f'You currently don\'t have support tickets enabled, use `{ctx.prefix}ticketcategory '
+                                  f'set <category_id>` to set a category and enable the ticket system.')
+
+        prompt_text = f'This will remove **{current_category}** as support ticket category and thus disable the' \
+                      f' ticket system, are you sure? You can always set a category again with' \
+                      f' `{ctx.prefix}ticketcategory set <channel_id>`.'
+        confirm = await ctx.prompt(prompt_text, reacquire=False)
+        if not confirm:
+            return await ctx.send('Cancelled.')
+
+        try:
+            connection: asyncpg.pool = self.bot.pool
+            query = 'UPDATE serverconfigs SET ticketcategory = NULL WHERE guild = $1'
+            await connection.fetchval(query, ctx.guild.id)
+        except Exception as e:
+            await ctx.send(f'Failed, {e} while removing the support ticket category from the database.')
+        else:
+            self.bot.server_configs[ctx.guild.id]['ticket_category'] = None
+            await ctx.send('Support ticket category successfully removed.')
 
 
 def setup(bot: commands.Bot):

@@ -44,6 +44,8 @@ Create a file called `curator.conf` and fill in the credentials:
 ClientId=<client_id>
 # Token from 'Bot' tab of your Discord Application
 Token=<bot_token>
+# List of Discord IDs of people with access to the admin commands (including your own), seperated by a comma with no spaces
+Admins=314792415733088260,261156531989512192
 # PostgreSQL URI to connect to a database the bot can use
 PostgreSQL=postgres://<username>:<password>@<server>:<port>/<database>
 # The size of the pool, the bot will use to communicate with the database
@@ -53,6 +55,7 @@ CommandPrefix=!
 # The id of the channel used to forward received DMs to
 DMDump=<channel_id>
 ```
+Be very careful with who you give admin access, as this is very powerful.
 
 ### Initialize the database
 

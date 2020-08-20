@@ -6,6 +6,8 @@ from discord.ext import commands
 from typing import Optional
 from random import choice, randint
 import requests
+import matplotlib.pyplot as plt
+from io import BytesIO
 from .utils.messages import hello, collect
 
 
@@ -128,6 +130,46 @@ class Fun(commands.Cog):
             else:
                 amount = int(amount)
                 await ctx.send('<a:hamdog:741335292597895781>' + amount * '<a:ham:741335318891855902>')
+
+    @commands.command()
+    async def randomizer(self, ctx: commands.Context, iterations: Optional[int]):
+        """A randomizer that bases its chances on it's previous results."""
+        results = ["red", "blue"]
+        red_percentages = [50]
+        for i in range(iterations if iterations else 100):
+            results.append(choice(results))
+            red_percentages.append(results.count("red") / len(results) * 100)
+
+        try:
+            await ctx.send(f'```List of percentages: {red_percentages}```')
+        except discord.HTTPException:
+            await ctx.send('The list of percentages is too long to send, go enjoy the graph.')
+        plt.figure()
+        plt.plot(red_percentages, color="red")
+        plt.title('Percentages of red over time')
+        plt.xlabel('Iterations')
+        plt.ylabel('Percentage')
+        buf = BytesIO()
+        plt.savefig(buf, format="png")
+        buf.seek(0)
+        plt.close()
+        await ctx.send(file=discord.File(buf, 'line.png'))
+
+        try:
+            await ctx.send(f'```List of results: {results}```')
+        except discord.HTTPException:
+            await ctx.send('The list of results is too long to send, go enjoy the graph.')
+        plt.figure()
+        plt.bar(1, results.count("red"), color=["red"])
+        plt.bar(2, results.count("blue"), color=["blue"])
+        plt.title('Colour selection amounts.')
+        plt.ylabel('Selections')
+        plt.xticks([1, 2], ["Red", "Blue"])
+        buf = BytesIO()
+        plt.savefig(buf, format="png")
+        buf.seek(0)
+        plt.close()
+        await ctx.send(file=discord.File(buf, 'bars.png'))
 
 
 

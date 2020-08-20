@@ -10,7 +10,7 @@ class Learning(commands.Cog):
         self.bot = bot
 
     async def cog_check(self, ctx):
-        return ctx.author.id in [261156531989512192, 314792415733088260] or await self.bot.is_owner(ctx.author)
+        return ctx.author.id in self.bot.admins
 
     @commands.command()
     async def hi(self, ctx: commands.Context):

@@ -10,7 +10,7 @@ class Debug(commands.Cog):
         self.bot = bot
 
     async def cog_check(self, ctx):
-        return ctx.author.id in [261156531989512192, 314792415733088260] or await self.bot.is_owner(ctx.author)
+        return ctx.author.id in self.bot.admins
 
     @commands.command(hidden=True)
     async def print(self, ctx: commands.Context, *, text):
@@ -40,9 +40,11 @@ class Debug(commands.Cog):
         """Print the current server configurations for every server."""
         # print(self.bot.server_configs)
         print({f'{self.bot.get_guild(key).name} ({key})': {'logchannel': f'{value["logchannel"].name} ({value["logchannel"].id})' if value["logchannel"] else None,
-                                                           'chartroles': [f'{role.name} ({role.id})' for role in value['chartroles']]}
+                                                           'chartroles': [f'{role.name} ({role.id})' for role in value['chartroles']],
+                                                           'ticket_category': f'{value["ticket_category"].name} ({value["ticket_category"].id})' if value["ticket_category"] else None}
                for (key, value) in self.bot.server_configs.items()})
         await ctx.send('Check the Python printer output for your results')
+        # Pleas do not reformat this code
 
     @commands.command(hidden=True)
     async def mentions(self, ctx: commands.Context):
@@ -59,6 +61,15 @@ class Debug(commands.Cog):
     async def nameof(self, ctx: commands.Context, user_id: int):
         user = await self.bot.fetch_user(user_id)
         await ctx.send(user.name)
+
+    @commands.command(hidden=True)
+    async def channelbyid(self, ctx: commands.Context, id: int):
+        channel = self.bot.get_channel(id)
+        print(channel)
+        print(channel.type)
+        await ctx.send(channel.name)
+        await ctx.send(channel.type)
+        await ctx.send('Also check the Python printer output for your results.')
 
 
 def setup(bot: commands.Bot):

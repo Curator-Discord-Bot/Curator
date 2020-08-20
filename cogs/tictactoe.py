@@ -1,8 +1,7 @@
 import discord
 from discord.ext import commands
 from aio_timers import Timer
-import emoji
-
+from emoji import demojize
 
 running_games = {}
 
@@ -119,12 +118,12 @@ class Tictactoe(commands.Cog):
             game = running_games[reaction.message.channel.id]
             if game:
                 if reaction.message.id == game.game_message.id and user != self.bot.user:
-                    await game.play(emoji.demojize(str(reaction))[-2], user, reaction)
+                    await game.play(demojize(str(reaction))[-2], user, reaction)
 
     @commands.command(hidden=True)
     async def printtttgames(self, ctx: commands.Context):
         """Print the currently running games of Tic Tac Toe."""
-        if ctx.author.id in [261156531989512192, 314792415733088260] or await self.bot.is_owner(ctx.author):
+        if ctx.author.id in self.bot.admins:
             print(running_games)
             await ctx.send('Check the Python printer output for your results.')
         else:

@@ -24,13 +24,12 @@ from os import kill
 from .profile import UserConnection, fetch_user_record
 from . import profile
 
+from cogs.utils.paginator import TextPages
 from .utils.messages import on_load, on_unload, on_reload, refuse_logout, on_logout, logout_log
 
 # to expose to the eval command
 import datetime
 from collections import Counter
-
-from .utils import messages
 
 
 async def get_guild_by_id(bot, ctx, ID):
@@ -116,7 +115,7 @@ class Admin(commands.Cog):
         return content.strip('` \n')
 
     async def cog_check(self, ctx):
-        return ctx.author.id in [261156531989512192, 314792415733088260] or await self.bot.is_owner(ctx.author)
+        return ctx.author.id in self.bot.admins
 
     def get_syntax_error(self, e):
         if e.text is None:
@@ -293,8 +292,6 @@ class Admin(commands.Cog):
     @commands.command(hidden=True)
     async def sh(self, ctx, *, command):
         """Runs a shell command."""
-        from cogs.utils.paginator import TextPages
-
         async with ctx.typing():
             stdout, stderr = await self.run_process(command)
 
@@ -403,7 +400,7 @@ class Admin(commands.Cog):
     async def reply(self, ctx: commands.Context, *, message):
         """Send a DM to the user you last received a DM from."""
         if self.bot.last_dm:
-            await self.dm(ctx, self.bot.last_dm, message=message)
+            await ctx.invoke(self.dm, self.bot.last_dm, message=message)
         else:
             await ctx.send(f'There is no last user stored, try `{ctx.prefix}dm <user> <message>`.')
 

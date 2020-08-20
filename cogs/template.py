@@ -7,6 +7,10 @@ class Template(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
+    async def cog_check(self, ctx):
+        """This gets executed every time a command from this cog is used, return False to cancel the command. This function is not required."""
+        pass
+
     @commands.group(invoke_without_command=True, name='template')
     async def base(self, ctx: commands.Context):
         """The base command for _"""
@@ -14,7 +18,7 @@ class Template(commands.Cog):
 
     @base.command(name='template')
     async def echo(self, ctx: commands.Context, *, msg: str):
-        """A template command."""
+        """A template command (of the base group)."""
         await slp(1)
         await ctx.send(msg)
 

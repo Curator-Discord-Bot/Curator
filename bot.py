@@ -10,6 +10,7 @@ from cogs.utils.db import Table
 import os
 from platform import node
 import datetime
+from cogs.utils.formats import human_join
 
 CONFIG_FILE = 'curator.conf'
 DESCRIPTION = 'A bot written by Ruukas and RJTimmerman.'
@@ -30,16 +31,18 @@ INITIAL_EXTENSIONS = (
     'cogs.sadmin',
     'cogs.math',
     'cogs.fourinarow',
-    'cogs.emojis'
+    'cogs.emojis',
+    'cogs.support'
 )
 
 
 class Curator(commands.Bot):
 
-    def __init__(self, client_id, command_prefix=',', dm_dump=None, description=''):
-        super().__init__(command_prefix=command_prefix, dm_dump=dm_dump, description=description)
+    def __init__(self, client_id, command_prefix=',', admins=None, dm_dump=None, description=''):
+        super().__init__(command_prefix=command_prefix, description=description)
 
         self.client_id = client_id
+        self.admins = admins
         self.server_configs = {}
         self.dm_dump = dm_dump
         self.last_dm = None
@@ -66,6 +69,8 @@ class Curator(commands.Bot):
                 print(f'Extension {extension} failed to load: {e}')
 
     async def on_ready(self):
+        appinfo = await self.application_info()
+        self.admins = self.admins if self.admins else [appinfo.owner.id]
         await self.get_server_configs()
         if self.dm_dump:
             self.dm_dump = self.get_channel(self.dm_dump)
@@ -73,6 +78,7 @@ class Curator(commands.Bot):
         print(f'Logged in as {self.user.name}')
         print(f'At UTC: {datetime.datetime.utcnow()}')
         print(f'User-ID: {self.user.id}')
+        print(f'With admin{"s" if len(self.admins) > 1 else ""} {human_join([self.get_user(id) for id in self.admins], final="and")}')
         print(f'Command Prefix: {self.command_prefix}')
         print('-' * len(str(self.user.id)))
 
@@ -83,7 +89,8 @@ class Curator(commands.Bot):
             for row in rows:
                 self.server_configs[row['guild']] = {'logchannel': self.get_channel(row['logchannel']),
                                                      'chartroles': sorted([self.get_guild(row['guild']).get_role(role_id)
-                                                                           for role_id in row['chartroles']], reverse=True)}
+                                                                           for role_id in row['chartroles']], reverse=True),
+                                                     'ticket_category': self.get_channel(row['ticketcategory'])}
         except Exception as e:
             print(f'Failed getting the server configurations: {e}')
             await self.logout()
@@ -92,7 +99,7 @@ class Curator(commands.Bot):
             if guild.id not in self.server_configs.keys():
                 query = 'INSERT INTO serverconfigs (guild) VALUES ($1);'
                 await self.pool.fetchval(query, guild.id)
-                self.server_configs[guild.id] = {'logchannel': None, 'chartroles': []}
+                self.server_configs[guild.id] = {'logchannel': None, 'chartroles': [], 'ticket_category': None}
 
     async def on_message(self, message: discord.Message):
         if message.channel.type == discord.ChannelType.private:
@@ -135,7 +142,7 @@ class Curator(commands.Bot):
             if logchannel:
                 await logchannel.send(
                     f'A message by {message.author} was deleted in {message.channel.mention} on {message.guild}:'
-                    f'\n{f"`{message.content}`" if len(message.content) >= 1 else "**No text**"}'
+                    f'\n{f"```{message.content}```" if len(message.content) >= 1 else "**No text**"}'
                     f'\n{"Attachments: " + str([attachment.url for attachment in message.attachments]) if message.attachments else ""}')
 
     async def process_commands(self, message):
@@ -168,6 +175,7 @@ def get_config():
     try:
         config['client_id'] = int(configparser.get('Default', 'ClientId'))
         config['token'] = configparser.get('Default', 'Token')
+        config['admins'] = [int(id) for id in configparser.get('Default', 'Admins').split(',')]
         config['postgresql'] = configparser.get('Default', 'PostgreSQL')
         config['poolsize'] = int(configparser.get('Default', 'PoolSize'))
         config['command_prefix'] = configparser.get('Default', 'CommandPrefix')
@@ -195,7 +203,7 @@ def run_bot():
         sys.exit(1)
 
     bot = Curator(config['client_id'], description=DESCRIPTION,
-                  command_prefix=config['command_prefix'], dm_dump=config['dm_dump'])
+                  command_prefix=config['command_prefix'], admins=config['admins'], dm_dump=config['dm_dump'])
     bot.pool = pool
     bot.run(config['token'])
 
