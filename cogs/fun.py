@@ -134,6 +134,9 @@ class Fun(commands.Cog):
     @commands.command()
     async def randomizer(self, ctx: commands.Context, iterations: Optional[int]):
         """A randomizer that bases its chances on it's previous results."""
+        if iterations > 10000:
+            return await ctx.send('Try a lower number. (The max will be changed after testing)')
+        
         results = ["red", "blue"]
         red_percentages = [50]
         for i in range(iterations if iterations else 100):
