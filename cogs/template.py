@@ -28,5 +28,5 @@ def setup(bot: commands.Bot):
 
 
 def teardown():
-    """Code to be executed when the cog unloads. This function is not required."""
+    """Code to be executed when the cog unloads. Cannot be a coroutine. This function is not required."""
     pass

@@ -32,7 +32,8 @@ INITIAL_EXTENSIONS = (
     'cogs.math',
     'cogs.fourinarow',
     'cogs.emojis',
-    'cogs.support'
+    'cogs.support'#,
+    #'cogs.roleselector' ! Do not load yet
 )
 
 
