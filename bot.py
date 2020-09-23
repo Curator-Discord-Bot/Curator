@@ -114,7 +114,7 @@ class Curator(commands.Bot):
             print(f'DM from {message.author.name}: {message.content}')
 
             # Safety measure to safely logout extra instances.
-            if message.author.id == 261156531989512192 and message.content == 'logout':
+            if self.is_owner(message.author) and message.content == 'logout':
                 await message.channel.send(f'Okay, I will logout. My prefix was `{self.command_prefix}`, and I was running on `{node()}`.')
                 await self.logout()
                 return

@@ -9,8 +9,9 @@ from .utils import db, formats
 
 
 class Rolemenus(db.Table):
-    guild = db.Column(db.Integer(big=True), primary_key=True)
-    message = db.Column(db.Array(sql_type=db.Integer(big=True)), default='{}')
+    guild = db.Column(db.Integer(big=True))
+    message = db.Column(db.Array(sql_type=db.Integer(big=True)), primary_key=True)
+    description = db.Column(db.String, default='')
     roles = db.Column(db.Array(sql_type=db.Integer(big=True)), default='{}')
     emojis = db.Column(db.Array(sql_type=db.String), default='{}')
     allow_multiple = db.Column(db.Boolean, default=True)
@@ -26,30 +27,41 @@ def make_message(description, roles, emojis):
     return message
 
 
+async def get_menu_from_link(ctx, url):
+    IDs = url.split('/')[-3:]
+    if IDs[0] not in menus.keys():
+        return None
+    if str(IDs[1])+','+str(IDs[2]) not in menus[IDs[0]].keys():
+        return None
+    return menus[IDs[0]][str(IDs[1])+','+str(IDs[2])]
+
+
 class SelectionMenu:
-    def __init__(self, message, roles, emojis, allow_multiple=True, status=True):
+    def __init__(self, message, description, roles, emojis, allow_multiple=True, status=True, issues=None):
         self.message = message
+        self.description = description
         self.roles = roles
         self.emojis = emojis
         self.allow_multiple = allow_multiple
         self.status = status
+        self.issues = issues
 
-    async def reaction_received(self, reaction, member):
-        if reaction.emoji not in self.emojis:
-            await reaction.remove(member)
+    async def reaction_received(self, emoji, member):
+        if emoji not in self.emojis:
+            await self.message.remove_reaction(emoji, member)
             return
 
         if not member.dm_channel:
             await member.create_dm()
 
-        role = self.roles[self.emojis.index(reaction.emoji)]
+        role = self.roles[self.emojis.index(emoji)]
         if role in member.roles:
-            await reaction.remove(member)
+            await self.message.remove_reaction(emoji, member)
             return await member.dm_channel.send(f'**{self.message.guild}:** you already have the **{role}** role.')
         if not self.allow_multiple:
             for r in self.roles:
                 if r in member.roles:
-                    await reaction.remove(member)
+                    await self.message.remove_reaction(emoji, member)
                     return await member.dm_channel.send(f'**{self.message.guild}:** you already have a role from this'
                                                         f' menu, you must first remove **{r}** if you want **{role}**.')
 
@@ -65,6 +77,9 @@ class SelectionMenu:
                                               f' and my highest role needs to be higher than the roles you want me to add.')
             await member.dm_channel.send(f'**{self.message.guild}:** I don\'t have permission to give you the **{role}**'
                                          f' role. I have contacted the server owner about this.')
+
+    async def reaction_removed(self, reaction, user):
+        pass
 
 
 class RoleSelector(commands.Cog):
@@ -136,40 +151,129 @@ class RoleSelector(commands.Cog):
         menu_message = await channel.send(make_message(description, roles, emojis))
         for emoji in emojis:
             await menu_message.add_reaction(emoji)
-        await ctx.send(f'Here it is: {menu_message.jump_url}')
 
-        menus[ctx.guild.id][str(channel.id) + str(menu_message.id)] = SelectionMenu(menu_message, roles, emojis,
-                                                                                    allow_multiple=allow_multiple)
+        query = 'INSERT INTO rolemenus VALUES ($1, $2, $3, $4, $5, $6);'
+        await self.bot.pool.fetchval(query, ctx.guild.id, [channel.id, menu_message.id], description, [role.id for role in roles], [str(emoji.id) if type(emoji) == discord.Emoji or type(emoji) == discord.PartialEmoji else emoji for emoji in emojis], allow_multiple)
+
+        await ctx.send(f'Here it is: {menu_message.jump_url}')
+        menus[ctx.guild.id][str(channel.id)+','+str(menu_message.id)] = SelectionMenu(menu_message, description, roles, emojis, allow_multiple=allow_multiple)
+
+    @role_selector.command()
+    async def info(self, ctx: commands.Context, message_url):
+        menu = await get_menu_from_link(ctx, message_url)
+        if not menu:
+            return await ctx.send('Please provide a valid message URL.')
+
+        embed = discord.Embed(title='Selector Information', description=menu.description)
+        embed.add_field(name='Roles', value=formats.human_join([role.name for role in menu.roles], final='and'))
+
+        await ctx.send(embed=embed)
 
     @commands.Cog.listener()
-    async def on_reaction_add(self, reaction, user):
-        if reaction.message.guild.id in menus.keys():
-            if str(reaction.message.channel.id) + str(reaction.message.id) in menus[reaction.message.guild.id].keys():
-                await menus[reaction.message.guild.id][str(reaction.message.channel.id) +
-                                                       str(reaction.message.id)].reaction_received(reaction, user)
+    async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
+        emoji, message, user = await self.info_from_payload(payload)
+        if user == self.bot.user:
+            return
+
+        if message.guild.id in menus.keys():
+            if str(message.channel.id) + ',' + str(message.id) in menus[message.guild.id].keys():
+                await menus[message.guild.id][str(message.channel.id)+','+str(message.id)].reaction_received(emoji, user)
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent):
+        emoji, message, user = await self.info_from_payload(payload)
+        if message.guild.id in menus.keys():
+            if str(message.channel.id) + ',' + str(message.id) in menus[message.guild.id].keys():
+                await menus[message.guild.id][str(message.channel.id)+','+str(message.id)].reaction_removed(emoji, user)
+
+    async def info_from_payload(self, payload: discord.RawReactionActionEvent):
+        guild: discord.Guild = self.bot.get_guild(payload.guild_id)
+        channel: discord.TextChannel = guild.get_channel(payload.channel_id)
+        message: discord.Message = await channel.fetch_message(payload.message_id)
+        emoji = payload.emoji
+        if emoji.is_custom_emoji():
+            emoji = await guild.fetch_emoji(emoji.id)
+        else:
+            emoji = emoji.name
+        member = guild.get_member(payload.user_id)
+        return emoji, message, member
 
     async def get_menus(self):
-        # Get menus from database
+        """Get menus from database."""
+        print('Getting role menus from database.')
         query = 'SELECT * FROM rolemenus'
-        rows = await self.bot.loop.fetch(query)
+        rows = await self.bot.pool.fetch(query)
         for menu in rows:
-            if menu['guild'] not in menus.keys():
+            guild = self.bot.get_guild(menu['guild'])
+            if not guild:
+                print(f'Guild with id {menu["guild"]} not found. You can use the `unguild` command to clear '
+                      f'everything from this guild from the database.')
+                continue
+
+            channel = guild.get_channel(menu['message'][0])
+            if not channel:
+                print(f'Channel with id {menu["message"][0]} not found in guild "{guild}" ({guild.id}). Contact the '
+                      f'guild owner ({guild.owner}) to check if I still have permission to this channel, or you can '
+                      f'use the `unchannel` command to clear everything from this channel from the database.')
+                continue
+
+            try:
+                menu_message = await channel.fetch_message(menu['message'][1])
+            except:
+                print(f'Couldn\'t find a role menu message (https://discordapp.com/channels/{guild.id}/{channel.id}/'
+                      f'{menu["message"][1]}) in guild "{guild}" in channel "{channel}". Contact the guild owner '
+                      f'({guild.ower}) to check if this message was removed. You can remove this menu from the database with the command '
+                      f'`sql DELETE FROM rolemenus WHERE message = \'{{{channel.id}, {menu["message"][1]}}}\'`.')
+                continue
+
+            if guild.id not in menus.keys():
                 menus[menu['guild']] = {}
-            menu_message = await self.bot.get_channel(menu['message'][0]).fetch_message(menu['message'][1])
-            roles = [menu_message.get_role(role_id) for role_id in menu['roles']]
+
+            issues = []  # A list of issues with getting roles or emojis. If this list is not empty, the status of this menu will be "False".
+
+            roles = []
+            for role_id in menu['roles']:
+                role = guild.get_role(role_id)
+                if not role:
+                    print(f'Couldn\'t find role with id {role_id} for menu {menu_message.jump_url} in guild "{guild}" '
+                          f'in channel "{channel}". Contact the server owner ({guild.owner}) to see if they removed '
+                          f'this role. You can remove this menu from the database with the command '
+                          f'`sql DELETE FROM rolemenus WHERE message = \'{{{channel.id}, {menu_message.id}}}\'`.')
+                    issues.append(['role', role_id])
+                    roles.append(None)
+                else:
+                    roles.append(role)
+
             emojis = []
-            skip = False
             for emoji_id in menu['emojis']:
-                if emoji_id in amoji.EMOJI_UNICODE:
+                if emoji_id in amoji.EMOJI_UNICODE.values():
                     emojis.append(amoji.emojize(emoji_id))
                 else:
+                    emoji_id = str(emoji_id)
                     try:
-                        emojis.append(emoji_id)
-                    except discord.NotFound:
-                        # Contact server owner in
+                        emojis.append(await guild.fetch_emoji(emoji_id))
+                    except:
+                        print(f'Couldn\'t find emoji with id {emoji_id} for menu {menu_message.jump_url} in guild '
+                              f'"{guild}" in channel "{channel}". Contact the server owner ({guild.owner}) to see if '
+                              f'they removed this emoji. You can remove this menu from the database with the command '
+                              f'`sql DELETE FROM rolemenus WHERE message = \'{{{channel.id}, {menu_message.id}}}\'`.')
+                        issues.append(['emoji', emoji_id])
                         emojis.append(None)
-            status = False if None in roles + emojis else True
-            menus[menu['guild']][str(menu['message'][0]) + str(menu['message'][1])] = SelectionMenu(menu_message, roles, emojis, allow_multiple=menu['allow_multiple'], status=status)
+
+            status = True if len(issues) == 0 else False
+            menus[guild.id][str(channel.id)+','+str(menu_message.id)] = SelectionMenu(menu_message, menu['description'], roles, emojis, allow_multiple=menu['allow_multiple'], status=status, issues=issues)
+        print('Finished getting role menus from database.')
+
+    @commands.command(hidden=True)
+    async def printmenus(self, ctx: commands.Context):
+        """Print all role menus."""
+        if ctx.author.id in self.bot.admins:
+            for guild in menus.values():
+                for menu in guild.values():
+                    print(menu.message, menu.roles, menu.emojis, menu.allow_multiple, menu.status, menu.issues)
+            await ctx.send('Check the Python printer output for your results.')
+        else:
+            await ctx.send('You do not have access to this command.')
 
 
 def setup(bot: commands.Bot):

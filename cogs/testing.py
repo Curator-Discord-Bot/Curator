@@ -4,6 +4,7 @@ import time
 import asyncio
 from aio_timers import Timer
 from typing import Union
+import emoji
 
 
 class Learning(commands.Cog):
@@ -91,6 +92,33 @@ class Learning(commands.Cog):
 
         await self.bot.wait_for('reaction_add', check=check)
         await ctx.send('Got it')
+
+    @commands.command()
+    async def waitforraw(self, ctx: commands.Context):
+        msg = await ctx.send('React')
+
+        async def check(payload):
+            guild = self.bot.get_guild(payload.guild_id)
+            channel = guild.get_channel(payload.channel_id)
+            message = await channel.fetch_message(payload.message_id)
+            return message == msg
+
+        payload = await self.bot.wait_for('raw_reaction_add', check=check)
+        await ctx.send(payload.emoji.name)
+        print(payload.emoji.name)
+
+    @commands.command()
+    async def atest(self, ctx: commands.Context, role: discord.Role):
+        msg = await ctx.send('Give the go')
+
+        def check(message):
+            return message.author == ctx.author and message.content == 'Go'
+
+        await self.bot.wait_for('message', check=check)
+        print(role)
+        role2 = ctx.guild.get_role(role.id)
+        print(role2)
+        await ctx.send(role == role2)
 
 
 def setup(bot: commands.Bot):

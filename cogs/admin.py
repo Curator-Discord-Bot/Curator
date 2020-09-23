@@ -497,6 +497,14 @@ class Admin(commands.Cog):
                     await ctx.send(f'Message "{message.content}" by {message.author.name} deleted in server'
                                    f' "{channel.guild.name}" in channel "{channel.mention}"')
 
+    @commands.command(hidden=True)
+    async def unguild(self, ctx: commands.Context, guild_id: int):
+        pass
+
+    @commands.command(hidden=True)
+    async def unchannel(self, ctx: commands.Context, channel_id: int):
+        pass
+
 
 def setup(curator: bot.Curator):
     curator.add_cog(Admin(curator))
