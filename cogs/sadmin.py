@@ -22,7 +22,7 @@ class Sadmin(commands.Cog):
         if ('manage_guild', True) in ctx.author.guild_permissions or ctx.author.id in self.bot.admins:
             return True
         else:
-            if not ctx.message.content.startswith(f'{ctx.prefix}help '):
+            if not (ctx.message.content == f'{ctx.prefix}help' or ctx.message.content.startswith(f'{ctx.prefix}help ')):
                 await ctx.send('Only people with "Manage Server" permissions can use commands from this category.')
             return False
 
