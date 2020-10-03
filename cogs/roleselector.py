@@ -14,6 +14,7 @@ class Rolemenus(db.Table):
     description = db.Column(db.String, default='')
     roles = db.Column(db.Array(sql_type=db.Integer(big=True)), default='{}')
     emojis = db.Column(db.Array(sql_type=db.String), default='{}')
+    role_descs = db.Column(db.Array(sql_type=db.String), default='{}')
     allow_multiple = db.Column(db.Boolean, default=True)
 
 
@@ -37,11 +38,12 @@ async def get_menu_from_link(ctx, url):
 
 
 class SelectionMenu:
-    def __init__(self, message, description, roles, emojis, allow_multiple=True, status=True, issues=None):
+    def __init__(self, message, description, roles, emojis, role_descs, allow_multiple=True, status=True, issues=None):
         self.message = message
         self.description = description
         self.roles = roles
         self.emojis = emojis
+        self.role_descs = role_descs  # description text per role
         self.allow_multiple = allow_multiple
         self.status = status
         self.issues = issues
@@ -153,10 +155,10 @@ class RoleSelector(commands.Cog):
             await menu_message.add_reaction(emoji)
 
         query = 'INSERT INTO rolemenus VALUES ($1, $2, $3, $4, $5, $6);'
-        await self.bot.pool.fetchval(query, ctx.guild.id, [channel.id, menu_message.id], description, [role.id for role in roles], [str(emoji.id) if type(emoji) == discord.Emoji or type(emoji) == discord.PartialEmoji else emoji for emoji in emojis], allow_multiple)
+        await self.bot.pool.fetchval(query, ctx.guild.id, [channel.id, menu_message.id], description, [role.id for role in roles], [str(emoji.id) if type(emoji) == discord.Emoji or type(emoji) == discord.PartialEmoji else emoji for emoji in emojis], role_descs, allow_multiple)
 
         await ctx.send(f'Here it is: {menu_message.jump_url}')
-        menus[ctx.guild.id][str(channel.id)+','+str(menu_message.id)] = SelectionMenu(menu_message, description, roles, emojis, allow_multiple=allow_multiple)
+        menus[ctx.guild.id][str(channel.id)+','+str(menu_message.id)] = SelectionMenu(menu_message, description, roles, emojis, role_descs, allow_multiple=allow_multiple)
 
     @role_selector.command()
     async def info(self, ctx: commands.Context, message_url):
@@ -200,69 +202,73 @@ class RoleSelector(commands.Cog):
 
     async def get_menus(self):
         """Get menus from database."""
-        print('Getting role menus from database.')
-        query = 'SELECT * FROM rolemenus'
-        rows = await self.bot.pool.fetch(query)
-        for menu in rows:
-            guild = self.bot.get_guild(menu['guild'])
-            if not guild:
-                print(f'Guild with id {menu["guild"]} not found. You can use the `unguild` command to clear '
-                      f'everything from this guild from the database.')
-                continue
+        try:
+            print('Getting role menus from database.')
+            query = 'SELECT * FROM rolemenus'
+            rows = await self.bot.pool.fetch(query)
+            for menu in rows:
+                guild = self.bot.get_guild(menu['guild'])
+                if not guild:
+                    print(f'Guild with id {menu["guild"]} not found. You can use the `unguild` command to clear '
+                          f'everything from this guild from the database.')
+                    continue
 
-            channel = guild.get_channel(menu['message'][0])
-            if not channel:
-                print(f'Channel with id {menu["message"][0]} not found in guild "{guild}" ({guild.id}). Contact the '
-                      f'guild owner ({guild.owner}) to check if I still have permission to this channel, or you can '
-                      f'use the `unchannel` command to clear everything from this channel from the database.')
-                continue
+                channel = guild.get_channel(menu['message'][0])
+                if not channel:
+                    print(f'Channel with id {menu["message"][0]} not found in guild "{guild}" ({guild.id}). Contact the '
+                          f'guild owner ({guild.owner}) to check if I still have permission to this channel, or you can '
+                          f'use the `unchannel` command to clear everything from this channel from the database.')
+                    continue
 
-            try:
-                menu_message = await channel.fetch_message(menu['message'][1])
-            except:
-                print(f'Couldn\'t find a role menu message (https://discordapp.com/channels/{guild.id}/{channel.id}/'
-                      f'{menu["message"][1]}) in guild "{guild}" in channel "{channel}". Contact the guild owner '
-                      f'({guild.ower}) to check if this message was removed. You can remove this menu from the database with the command '
-                      f'`sql DELETE FROM rolemenus WHERE message = \'{{{channel.id}, {menu["message"][1]}}}\'`.')
-                continue
+                try:
+                    menu_message = await channel.fetch_message(menu['message'][1])
+                except:
+                    print(f'Couldn\'t find a role menu message (https://discordapp.com/channels/{guild.id}/{channel.id}/'
+                          f'{menu["message"][1]}) in guild "{guild}" in channel "{channel}". Contact the guild owner '
+                          f'({guild.ower}) to check if this message was removed. You can remove this menu from the database with the command '
+                          f'`sql DELETE FROM rolemenus WHERE message = \'{{{channel.id}, {menu["message"][1]}}}\'`.')
+                    continue
 
-            if guild.id not in menus.keys():
-                menus[menu['guild']] = {}
+                if guild.id not in menus.keys():
+                    menus[menu['guild']] = {}
 
-            issues = []  # A list of issues with getting roles or emojis. If this list is not empty, the status of this menu will be "False".
+                issues = []  # A list of issues with getting roles or emojis. If this list is not empty, the status of this menu will be "False".
 
-            roles = []
-            for role_id in menu['roles']:
-                role = guild.get_role(role_id)
-                if not role:
-                    print(f'Couldn\'t find role with id {role_id} for menu {menu_message.jump_url} in guild "{guild}" '
-                          f'in channel "{channel}". Contact the server owner ({guild.owner}) to see if they removed '
-                          f'this role. You can remove this menu from the database with the command '
-                          f'`sql DELETE FROM rolemenus WHERE message = \'{{{channel.id}, {menu_message.id}}}\'`.')
-                    issues.append(['role', role_id])
-                    roles.append(None)
-                else:
-                    roles.append(role)
-
-            emojis = []
-            for emoji_id in menu['emojis']:
-                if emoji_id in amoji.EMOJI_UNICODE.values():
-                    emojis.append(amoji.emojize(emoji_id))
-                else:
-                    emoji_id = str(emoji_id)
-                    try:
-                        emojis.append(await guild.fetch_emoji(emoji_id))
-                    except:
-                        print(f'Couldn\'t find emoji with id {emoji_id} for menu {menu_message.jump_url} in guild '
-                              f'"{guild}" in channel "{channel}". Contact the server owner ({guild.owner}) to see if '
-                              f'they removed this emoji. You can remove this menu from the database with the command '
+                roles = []
+                for role_id in menu['roles']:
+                    role = guild.get_role(role_id)
+                    if not role:
+                        print(f'Couldn\'t find role with id {role_id} for menu {menu_message.jump_url} in guild "{guild}" '
+                              f'in channel "{channel}". Contact the server owner ({guild.owner}) to see if they removed '
+                              f'this role. You can remove this menu from the database with the command '
                               f'`sql DELETE FROM rolemenus WHERE message = \'{{{channel.id}, {menu_message.id}}}\'`.')
-                        issues.append(['emoji', emoji_id])
-                        emojis.append(None)
+                        issues.append(['role', role_id])
+                        roles.append(None)
+                    else:
+                        roles.append(role)
 
-            status = True if len(issues) == 0 else False
-            menus[guild.id][str(channel.id)+','+str(menu_message.id)] = SelectionMenu(menu_message, menu['description'], roles, emojis, allow_multiple=menu['allow_multiple'], status=status, issues=issues)
-        print('Finished getting role menus from database.')
+                emojis = []
+                for emoji_id in menu['emojis']:
+                    if emoji_id in amoji.EMOJI_UNICODE.values():
+                        emojis.append(amoji.emojize(emoji_id))
+                    else:
+                        emoji_id = str(emoji_id)
+                        try:
+                            emojis.append(await guild.fetch_emoji(emoji_id))
+                        except:
+                            print(f'Couldn\'t find emoji with id {emoji_id} for menu {menu_message.jump_url} in guild '
+                                  f'"{guild}" in channel "{channel}". Contact the server owner ({guild.owner}) to see if '
+                                  f'they removed this emoji. You can remove this menu from the database with the command '
+                                  f'`sql DELETE FROM rolemenus WHERE message = \'{{{channel.id}, {menu_message.id}}}\'`.')
+                            issues.append(['emoji', emoji_id])
+                            emojis.append(None)
+
+                status = True if len(issues) == 0 else False
+                menus[guild.id][str(channel.id)+','+str(menu_message.id)] = SelectionMenu(menu_message, menu['description'], roles, emojis, menu['role_descs'], allow_multiple=menu['allow_multiple'], status=status, issues=issues)
+            print('Finished getting role menus from database.')
+        except (OSError, discord.ConnectionClosed, asyncpg.PostgresConnectionError):
+            self._task.cancel()
+            self._task = self.bot.loop.create_task(self.get_menus())
 
     @commands.command(hidden=True)
     async def printmenus(self, ctx: commands.Context):
