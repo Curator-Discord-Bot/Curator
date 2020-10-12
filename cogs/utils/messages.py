@@ -1,5 +1,6 @@
 from random import choice
 from discord.ext.commands import Context
+from discord import Guild
 
 
 def on_ready() -> str:
@@ -29,9 +30,13 @@ def on_logout(ctx: Context) -> str:
                    'Noooooooooooooooo...', f'Okay, master {ctx.author.name}'))
 
 
-def logout_log(bot_name) -> str:
+def logout_log(bot_name: str) -> str:
     return choice(
         ('Logged out', 'I\'m out!', 'I was successfully killed', 'Terminated', f'{bot_name} has left the chat.'))
+
+
+def on_join(guild: Guild) -> str:
+    return choice('Hey!', f'Welcome, {guild.me.mention}!', f'Hello people of {guild}!')
 
 
 def hello(ctx: Context) -> str:
