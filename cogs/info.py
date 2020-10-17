@@ -58,6 +58,11 @@ class Info(commands.Cog):
         await ctx.send(f'{user}: this account was created at {user.created_at}.',
                        embed=discord.Embed(title='Avatar').set_image(url=user.avatar_url))
 
+    @commands.command()
+    async def roleid(self, ctx: commands.Context, role: discord.Role):
+        """Get the ID of a role"""
+        await ctx.send(role.id)
+
 
 def setup(bot: commands.Bot):
     bot.add_cog(Info(bot))

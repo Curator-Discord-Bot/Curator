@@ -7,6 +7,7 @@ import asyncio
 from asyncpg.pool import Pool
 from cogs.utils import context
 from cogs.utils.db import Table
+from cogs.utils.messages import on_join
 import os
 from platform import node
 import datetime
@@ -32,14 +33,18 @@ INITIAL_EXTENSIONS = (
     'cogs.math',
     'cogs.fourinarow',
     'cogs.emojis',
-    'cogs.support'
+    'cogs.support'#,
+    #'cogs.roleselector' ! Do not load yet
 )
+
+intents = discord.Intents.default()
+intents.members = True
 
 
 class Curator(commands.Bot):
 
     def __init__(self, client_id, command_prefix=',', admins=None, dm_dump=None, description=''):
-        super().__init__(command_prefix=command_prefix, description=description)
+        super().__init__(command_prefix=command_prefix, description=description, intents=intents)
 
         self.client_id = client_id
         self.admins = admins
@@ -101,6 +106,14 @@ class Curator(commands.Bot):
                 await self.pool.fetchval(query, guild.id)
                 self.server_configs[guild.id] = {'logchannel': None, 'chartroles': [], 'ticket_category': None}
 
+    async def on_guild_join(self, guild: discord.Guild):
+        query = 'INSERT INTO serverconfigs (guild) VALUES ($1);'
+        await self.pool.fetchval(query, guild.id)
+        self.server_configs[guild.id] = {'logchannel': None, 'chartroles': [], 'ticket_category': None}
+        if guild.system_channel:
+            if guild.system_channel_flags.join_notifications and guild.system_channel.permissions_for(guild.me).send_messages:
+                await guild.system_channel.send(on_join(guild))
+
     async def on_message(self, message: discord.Message):
         if message.channel.type == discord.ChannelType.private:
             if message.author == self.user:
@@ -113,7 +126,7 @@ class Curator(commands.Bot):
             print(f'DM from {message.author.name}: {message.content}')
 
             # Safety measure to safely logout extra instances.
-            if message.author.id == 261156531989512192 and message.content == 'logout':
+            if self.is_owner(message.author) and message.content == 'logout':
                 await message.channel.send(f'Okay, I will logout. My prefix was `{self.command_prefix}`, and I was running on `{node()}`.')
                 await self.logout()
                 return
