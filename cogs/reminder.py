@@ -197,9 +197,8 @@ class Reminder(commands.Cog):
 
     async def check_idlerpg(self, message: discord.Message) -> bool:
         m = message.content.lower()
-        if not m.startswith('$') or not m.endswith('r'):
+        if not (m.startswith('$') and m.endswith('r')):
             return False
-
         elif m.startswith('$steal '):
             await self.sudo(message, 'r 1h steal')
         elif m.startswith('$pray '):
@@ -212,6 +211,8 @@ class Reminder(commands.Cog):
                                      f'{60 - int(now.strftime("%S"))}s daily')
         elif m.startswith('$adventure ') or m.startswith('$a '):
             await self.sudo(message, f'r {m.split()[1]}h adventure')
+        elif m.startswith('$trickortreat ') or m.startswith('$tot '):
+            await self.sudo(message, 'r 3h trick or treat')
         else:
             return False
 
