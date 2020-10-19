@@ -1,4 +1,4 @@
-from __future__ import annotations
+#from __future__ import annotations
 
 import discord
 from discord.ext import commands
@@ -42,7 +42,7 @@ def make_message(description, roles, emojis, role_descs, status=True) -> str:
     return message
 
 
-async def get_menu_from_link(ctx, url) -> Optional[SelectionMenu]:
+async def get_menu_from_link(ctx, url):  # -> Optional[SelectionMenu]:
     IDs = url.split('/')[-3:]
     IDs[0] = int(IDs[0])
     if IDs[0] not in menus.keys() or (int(IDs[0]) != ctx.guild.id and ctx.author.id not in ctx.bot.admins):
