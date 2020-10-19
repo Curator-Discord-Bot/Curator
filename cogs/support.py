@@ -6,6 +6,8 @@ from datetime import datetime
 import emoji
 from .utils.formats import human_join
 
+from bot import is_bot_admin
+
 
 open_tickets = {}
 closed_tickets = {}
@@ -142,22 +144,18 @@ class Support(commands.Cog):
         await ctx.send(embed=make_message(ticket))
 
     @commands.command(hidden=True)
+    @is_bot_admin()
     async def printotickets(self, ctx: commands.Context):
         """Print all open tickets."""
-        if ctx.author.id in self.bot.admins:
-            print(open_tickets)
-            await ctx.send('Check the Python printer output for your results.')
-        else:
-            await ctx.send('You do not have access to this command.')
+        print(open_tickets)
+        await ctx.send('Check the Python printer output for your results.')
 
     @commands.command(hidden=True)
+    @is_bot_admin()
     async def printctickets(self, ctx: commands.Context):
-        """Print all closed tickets"""
-        if ctx.author.id in self.bot.admins:
-            print(closed_tickets)
-            await ctx.send('Check the Python printer output for your results.')
-        else:
-            await ctx.send('You do not have access to this command.')
+        """Print all closed tickets."""
+        print(closed_tickets)
+        await ctx.send('Check the Python printer output for your results.')
 
 
 def setup(bot: commands.Bot):

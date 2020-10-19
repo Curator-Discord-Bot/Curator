@@ -32,40 +32,40 @@ import datetime
 from collections import Counter
 
 
-async def get_guild_by_id(bot, ctx, ID):
+async def get_guild_by_id(bot, ctx, ID) -> Optional[discord.Guild]:
     guild = bot.get_guild(ID)
     if guild is None:
         await ctx.send('I could not find the server:grimacing:')
-        return False
+        return None
     else:
         return guild
 
 
-async def get_channel_by_id(bot, ctx, ID):
+async def get_channel_by_id(bot, ctx, ID) -> Optional[discord.TextChannel]:
     channel = bot.get_channel(ID)
     if channel is None:
         await ctx.send('I could not find the channel:grimacing:')
-        return False
+        return None
     else:
         return channel
 
 
-async def get_message_by_id(channel, ctx, ID):
+async def get_message_by_id(channel, ctx, ID) -> Optional[discord.Message]:
     try:
         message = await channel.fetch_message(ID)
     except discord.NotFound:
         await ctx.send('I couldn\'t find the message')
-        return False
+        return None
     except discord.Forbidden:
         await ctx.send('I don\'t have permission to get to the message')
-        return False
+        return None
     except discord.HTTPException:
         await ctx.send('I failed in getting to the message')
-        return False
+        return None
     except Exception as e:
         await ctx.send(f'There\'s been a problem while getting the message that\'s not of type "NotFound", "Forbidden"'
                        f' or "HTTPException", but {e}.')
-        return False
+        return None
     else:
         return message
 
@@ -114,8 +114,12 @@ class Admin(commands.Cog):
         # remove `foo`
         return content.strip('` \n')
 
-    async def cog_check(self, ctx):
-        return ctx.author.id in self.bot.admins
+    async def cog_check(self, ctx: commands.Context):
+        if ctx.author.id in self.bot.admins:
+            return True
+        if not ctx.command.name == 'help':
+            await ctx.send(f'This command is only for the bot admin{"" if len(self.bot.admins) == 1 else "s"}.')
+        return False
 
     def get_syntax_error(self, e):
         if e.text is None:
@@ -278,7 +282,7 @@ class Admin(commands.Cog):
                 await ctx.send(f'```py\n{value}{ret}\n```')
 
     @commands.command(hidden=True)
-    async def sudo(self, ctx, channel: Optional[GlobalChannel], who: discord.User, *, command: str):
+    async def sudo(self, ctx, channel: Optional[GlobalChannel], who: Union[discord.Member, discord.User], *, command: str):
         """Run a command as another user optionally in another channel."""
         msg = copy.copy(ctx.message)
         channel = channel or ctx.channel
@@ -398,28 +402,28 @@ class Admin(commands.Cog):
 
     @commands.command(hidden=True)
     async def reply(self, ctx: commands.Context, *, message):
-        """Send a DM to the user you last received a DM from."""
+        """Send a DM to the user I last received a DM from."""
         if self.bot.last_dm:
             await ctx.invoke(self.dm, self.bot.last_dm, message=message)
         else:
             await ctx.send(f'There is no last user stored, try `{ctx.prefix}dm <user> <message>`.')
 
     @commands.command(hidden=True)
-    async def send(self, ctx: commands.Context, channel_id: int, *, message):
+    async def send(self, ctx: commands.Context, channel: discord.TextChannel, *, message):
         """Send a message in a channel."""
-        channel = await get_channel_by_id(self.bot, ctx, channel_id)
-        if channel:
-            try:
-                await channel.send(message)
-            except discord.Forbidden:
-                await ctx.send('I don\'t have permission to send this message:grimacing:')
-            except discord.HTTPException:
-                await ctx.send('I failed in sending the message:grimacing:')
-            except Exception as e:
-                await ctx.send(f'There\'s been a problem that\'s not of type "Forbidden" or "HTTPException", but {e}.')
-            else:
-                await ctx.send(f'Message sent in server "{channel.guild.name}" in channel "{channel.mention}":'
-                               f' {channel.last_message.jump_url}')
+        #channel = await get_channel_by_id(self.bot, ctx, channel_id)
+        #if channel:
+        try:
+            await channel.send(message)
+        except discord.Forbidden:
+            await ctx.send('I don\'t have permission to send this message:grimacing:')
+        except discord.HTTPException:
+            await ctx.send('I failed in sending the message:grimacing:')
+        except Exception as e:
+            await ctx.send(f'There\'s been a problem that\'s not of type "Forbidden" or "HTTPException", but {e}.')
+        else:
+            await ctx.send(f'Message sent in server "{channel.guild.name}" in channel "{channel.mention}":'
+                           f' {channel.last_message.jump_url}')
 
     @commands.command(hidden=True)
     async def edit(self, ctx: commands.Context, message_link, *, new_message):

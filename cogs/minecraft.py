@@ -30,7 +30,7 @@ class Minecraft(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @commands.group(invoke_without_command=True, aliases=['mojang', 'mc'])
+    @commands.group(aliases=['mojang', 'mc'], invoke_without_command=True)
     async def minecraft(self, ctx: commands.Context):
         """Minecraft commands."""
         await ctx.send(f'Try ```{ctx.prefix}help mc```')
