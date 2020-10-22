@@ -9,6 +9,10 @@ class Decode(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
+    def formatted_result(self, r):
+        r = r.replace('@', 'AT')
+        return f'`{r}`'
+
     @commands.group(invoke_without_command=True)
     async def base64(self, ctx: commands.Context):
         await ctx.send(
@@ -27,7 +31,7 @@ class Decode(commands.Cog):
         base64_bytes = base64_message.encode('ascii')
         message_bytes = base64.b64decode(base64_bytes)
         result = message_bytes.decode('ascii')
-        await ctx.send(result.replace('@', 'AT'))
+        await ctx.send(self.formatted_result(result))
 
     @commands.group(invoke_without_command=True)
     async def alphabet(self, ctx: commands.Context):
