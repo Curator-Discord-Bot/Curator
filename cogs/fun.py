@@ -187,6 +187,10 @@ class Fun(commands.Cog):
 
         await ctx.send(amount * '<:LOG:767104818778341377>')
 
+    @commands.command(aliases=['cat'])
+    async def catloop(self, ctx: commands.Context):
+        await ctx.send(files=[discord.File('media/catloop/cat1.gif'), discord.File('media/catloop/cat2.gif')])
+
 
 def setup(bot: commands.Bot):
     bot.add_cog(Fun(bot))

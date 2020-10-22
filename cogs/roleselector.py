@@ -1,4 +1,4 @@
-#from __future__ import annotations
+from __future__ import annotations
 
 import discord
 from discord.ext import commands
@@ -42,7 +42,7 @@ def make_message(description, roles, emojis, role_descs, status=True) -> str:
     return message
 
 
-async def get_menu_from_link(ctx, url):  # -> Optional[SelectionMenu]:
+async def get_menu_from_link(ctx, url) -> Optional[SelectionMenu]:
     IDs = url.split('/')[-3:]
     IDs[0] = int(IDs[0])
     if IDs[0] not in menus.keys() or (int(IDs[0]) != ctx.guild.id and ctx.author.id not in ctx.bot.admins):
@@ -282,7 +282,7 @@ class RoleSelector(commands.Cog):
 
         if menu.issues:
             issue_list = '\n'.join([f'Couldn\'t find **{issue[0]}** with ID **{issue[1]}**' for issue in menu.issues])
-            return await ctx.send(f'You cannot do this because the menu is broken.\n_{issue_list}_\nUse `changemoji` and/or `removerole` to fix this.')
+            return await ctx.send(f'You cannot do this because the menu is broken.\n_{issue_list}_\nUse `changeemoji` and/or `removerole` to fix this.')
 
         menu.status = True
         query = 'UPDATE rolemenus SET enabled = True WHERE message = $1;'
