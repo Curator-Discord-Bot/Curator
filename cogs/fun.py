@@ -14,7 +14,7 @@ from .utils.messages import hello, collect
 class Fun(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-
+        self.DeletedUserNames = {}
     @commands.command()
     async def hello(self, ctx: commands.Context):
         await ctx.send(hello(ctx))
@@ -93,7 +93,7 @@ class Fun(commands.Cog):
                 if ctx.message.guild.owner is not None and ctx.author.id == ctx.message.guild.owner.id:
                     await ctx.send('I couldn\'t possibly delete the server owner...')
                     return
-                if 'deleted' in name.lower():
+                if self.DeletedUserNames[ctx.message.author.id] == name:
                     await ctx.send('You are already deleted... Why are you here?')
                     return
                 
@@ -104,6 +104,7 @@ class Fun(commands.Cog):
 
                 await ctx.author.edit(nick=(f'Deleted User {tag}'))
                 await ctx.send(f'Successfully deleted {name}.')
+                self.DeletedUserNames[ctx.message.author.id] = f'Deleted User {tag}'
                 await slp(60)
                 await ctx.author.edit(nick=name)
 
