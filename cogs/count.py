@@ -11,7 +11,8 @@ import emoji
 from random import choice
 
 import bot
-from .utils import db, formats
+from .utils import db
+from .utils.formats import human_join
 
 
 class Counts(db.Table):
@@ -188,17 +189,8 @@ async def fetch_counter_record(discord_id, connection) -> asyncpg.Record:
         discord_id)
 
 
-def is_count_channel(channel: discord.TextChannel):
-    return 'count' in channel.name.lower()
-
-
-async def check_channel(channel: discord.TextChannel, message=False) -> bool:
-    if not is_count_channel(channel):
-        if message:
-            await channel.send(
-                'Count commands are intended for use only in channels that contain "count" in the name...')
-        return False
-    return True
+def is_count_channel(configs, channel: discord.TextChannel) -> bool:
+    return ('count' in channel.name.lower() and not configs[channel.guild.id]['count_channels']) or channel in configs[channel.guild.id]['count_channels']
 
 
 class CounterProfile:
@@ -361,7 +353,7 @@ class Count(commands.Cog):
         self.bot = curator
 
     async def check_count(self, message: discord.Message) -> bool:
-        if is_count_channel(message.channel):
+        if is_count_channel(self.bot.server_configs, message.channel):
             if 'check' in message.content.lower():
                 await message.add_reaction(
                     choice(('\u2705', '\u2611', '\u2714')) if message.channel.id in running_counts.keys()
@@ -400,7 +392,7 @@ class Count(commands.Cog):
     @count.command(aliases=['begin'])
     async def start(self, ctx: commands.Context):
         """Use this to start a counting game!"""
-        if is_count_channel(ctx.channel):
+        if is_count_channel(self.bot.server_configs, ctx.channel):
             query = 'SELECT score FROM counts WHERE guild = $1 ORDER BY score DESC LIMIT 3;'
             top = [count['score'] for count in await self.bot.pool.fetch(query, ctx.guild.id)]
             running_counts[ctx.channel.id] = Counting.temporary(guild=ctx.guild.id, channel=ctx.channel.id,
@@ -408,55 +400,50 @@ class Count(commands.Cog):
                                                                 started_at=datetime.datetime.utcnow(),
                                                                 last_active_at=datetime.datetime.utcnow())
             await ctx.send(f'Count has been started. Try for top three: '
-                           f'{formats.human_join([str(i) for i in top]) if top and len(top) == 3 else "good luck"}!')
+                           f'{human_join([str(i) for i in top]) if top and len(top) == 3 else "good luck"}!')
         else:
-            await ctx.send("You can't start a count outside of the count channel.")
+            await ctx.send("You can't start a count outside of a count channel.")
 
-    # noinspection PyUnreachableCode
-    @count.command(aliases=['unfail', 'repair', 'revert'])
-    async def restore(self, ctx: commands.Context):
-        """Unfail a count.
+    @count.group(aliases=['channel'], invoke_without_command=True)
+    async def channels(self, ctx: commands.Context):
+        """Commands to set/remove counting channels.
 
-        For if a count fails due to a bug.
+        Counting channels are channels where counts can be played.
+        If there are no channels set, any channel with "count" in the name is available.
         """
-        return await ctx.send('Not working correctly yet.')
-        if ctx.author.id in [261156531989512192, 314792415733088260, 183374539743428608,
-                             341795028642824192] or await self.bot.is_owner(ctx.author):
-            if ctx.channel.id in finished_counts.keys():
-                running_counts[ctx.channel.id] = finished_counts[ctx.channel.id]['count']
-                count = running_counts[ctx.channel.id]
-                connection: asyncpg.pool = self.bot.pool
+        await ctx.send(f'The counting game is currently available in '
+                       f'{human_join([channel.mention for channel in ctx.guild.text_channels if is_count_channel(self.bot.server_configs, channel)], final="and")}.\n'
+                       f'{f"You can create your own list with `{ctx.prefix}count channels add/remove`." if not self.bot.server_configs[ctx.guild.id]["count_channels"] else f"You can remove channels with `{ctx.prefix}count channels remove`."}')
 
-                for discord_id, contribution in count.contributors.items():
-                    async with Counter(await fetch_counter_record(discord_id, connection), connection) as counter:
-                        counter.last_count = finished_counts[ctx.channel.id]['last_counts'][counter.user_id]
-                        counter.total_score -= contribution
-                        counter.counts_participated -= 1
-                        counter.best_count = finished_counts[ctx.channel.id]['best_counts'][counter.user_id]
-                        if counter.user_id == count.started_by:
-                            counter.counts_started -= 1
-                        if counter.user_id == count.ruined_by:
-                            counter.counts_ruined -= 1
-                            counter.best_ruin = finished_counts[ctx.channel.id]['ruiner_best']
+    @channels.command(name='add', aliases=['set', 'include'])
+    async def add_channel(self, ctx: commands.Context, channel: discord.TextChannel):
+        """Add or set a counting channel.
 
-                query = 'DELETE FROM counts WHERE id = $1'
-                await connection.fetchval(query, count.id)
+        Provide a channel mention, ID or name.
+        If a counting channel is set, channels with "count" in their name won't be able to be used anymore.
+        """
+        if channel in self.bot.server_configs[ctx.guild.id]['count_channels']:
+            return await ctx.send('This is already a channel on the list.')
 
-                await ctx.send('Successful! Sorry for failing, this bug will be fixed soon.')
-                await ctx.send(str(count.score))
-            else:
-                await ctx.send('There is no count data to reset to.')
-        else:
-            await ctx.send(
-                'You cannot use this command, ask someone with the right permissions to use this, if the count failed by a bug.')
+        query = 'UPDATE serverconfigs SET countchannels = array_append(countchannels, $1) WHERE guild = $2;'
+        await self.bot.pool.fetchval(query, channel.id, ctx.guild.id)
+        self.bot.server_configs[ctx.guild.id]['count_channels'].append(channel)
+        await ctx.send(f'Successfully added {channel.mention}.')
+
+    @channels.command(name='remove', aliases=['delete'])
+    async def remove_channel(self, ctx: commands.Context, channel: discord.TextChannel):
+        """Remove a counting channel.
+
+        Provide a channel mention, ID or name.
+        If there are no counting channels left, every channel with "count" in the name will be available.
+        """
 
     @count.command()
     async def profile(self, ctx: commands.Context, *, user: Optional[discord.User]):
         """Get your counter profile.
 
         This holds information about your total score, the number of games you've contributed to, the number of games you have started, the number of games you ruined, and the IDs of you're best game, the highest count you ruined and the last game you participated in.
-        """
-        # The sentence above is not formatted into multiple lines because the line breaks get shown in the help message
+        """  # The sentence above is not formatted into multiple lines because the line breaks get shown in the help message
         user: discord.User = user or ctx.author
         async with Counter(await fetch_counter_record(user.id, self.bot.pool), self.bot.pool) as counter:
             embed = discord.Embed(title=f'{user.name} - counting profile')
@@ -488,7 +475,7 @@ class Count(commands.Cog):
         You can add a number as an argument to only get the aliases of that number.
         """
         try:
-            await ctx.send('\n'.join(f'{emoji.emojize(f":{key}:")}: {formats.human_join(value)}'
+            await ctx.send('\n'.join(f'{emoji.emojize(f":{key}:")}: {human_join(value)}'
                                      for key, value in number_aliases.items() if not number or number in value))
         except discord.HTTPException:
             await ctx.send(f'{number} has no aliases.')
@@ -606,7 +593,7 @@ class Count(commands.Cog):
         #     parse.append(hex_result)
 
         if parse:
-            await ctx.send(formats.human_join([str(i) for i in sorted([int(i) for i in parse])], final='and'))
+            await ctx.send(human_join([str(i) for i in sorted([int(i) for i in parse])], final='and'))
         else:
             await ctx.send('Could not parse that.')
 

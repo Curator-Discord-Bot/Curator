@@ -133,8 +133,11 @@ class Fun(commands.Cog):
 
     @commands.command()
     async def randomizer(self, ctx: commands.Context, iterations: Optional[int]):
-        """A randomizer that bases its chances on it's previous results."""
-        if iterations > 10000:
+        """A randomizer that bases its chances on it's previous results.
+
+        You can provide the number of iterations, default is 100, max is currently 10000.
+        """
+        if iterations and iterations > 10000:
             return await ctx.send('Try a lower number. (The max will be changed after testing)')
         
         results = ["red", "blue"]
@@ -174,7 +177,19 @@ class Fun(commands.Cog):
         plt.close()
         await ctx.send(file=discord.File(buf, 'bars.png'))
 
+    @commands.command(name='LOG', aliases=['LOGGER', 'LOGGERS'])
+    async def log_meme(self, ctx: commands.Context, amount: Optional[int]):
+        amount = amount if amount or amount == 0 else 1
+        if amount < 1:
+            return await ctx.send('It must be at least one.')
+        if amount > 80:
+            return await ctx.send('The forest isn\'t that big:grimacing:')
 
+        await ctx.send(amount * '<:LOG:767104818778341377>')
+
+    @commands.command(aliases=['cat'])
+    async def catloop(self, ctx: commands.Context):
+        await ctx.send(files=[discord.File('media/catloop/cat1.gif'), discord.File('media/catloop/cat2.gif')])
 
 
 def setup(bot: commands.Bot):

@@ -33,17 +33,16 @@ INITIAL_EXTENSIONS = (
     'cogs.math',
     'cogs.fourinarow',
     'cogs.emojis',
-    'cogs.support'#,
-    #'cogs.roleselector' ! Do not load yet
+    'cogs.support',
+    'cogs.roleselector'
 )
-
-intents = discord.Intents.default()
-intents.members = True
 
 
 class Curator(commands.Bot):
 
     def __init__(self, client_id, command_prefix=',', admins=None, dm_dump=None, description=''):
+        intents = discord.Intents.default()
+        intents.members = True
         super().__init__(command_prefix=command_prefix, description=description, intents=intents)
 
         self.client_id = client_id
@@ -79,6 +78,9 @@ class Curator(commands.Bot):
         await self.get_server_configs()
         if self.dm_dump:
             self.dm_dump = self.get_channel(self.dm_dump)
+            #if not self.dm_dump:
+            #    owner = await self.fetch_user(self.owner_id)
+            #    await owner.dm_channel.send('I couldn\'t find the channel to forward DMs to.')
 
         print(f'Logged in as {self.user.name}')
         print(f'At UTC: {datetime.datetime.utcnow()}')
@@ -95,7 +97,11 @@ class Curator(commands.Bot):
                 self.server_configs[row['guild']] = {'logchannel': self.get_channel(row['logchannel']),
                                                      'chartroles': sorted([self.get_guild(row['guild']).get_role(role_id)
                                                                            for role_id in row['chartroles']], reverse=True),
-                                                     'ticket_category': self.get_channel(row['ticketcategory'])}
+                                                     'ticket_category': self.get_channel(row['ticketcategory']),
+                                                     'count_channels': [self.get_channel(channel_id) for channel_id
+                                                                        in row['countchannels']],
+                                                     'self_roles': [self.get_guild(row['guild']).get_role(role_id)
+                                                                    for role_id in row['self_roles']]}
         except Exception as e:
             print(f'Failed getting the server configurations: {e}')
             await self.logout()
@@ -104,12 +110,14 @@ class Curator(commands.Bot):
             if guild.id not in self.server_configs.keys():
                 query = 'INSERT INTO serverconfigs (guild) VALUES ($1);'
                 await self.pool.fetchval(query, guild.id)
-                self.server_configs[guild.id] = {'logchannel': None, 'chartroles': [], 'ticket_category': None}
+                self.server_configs[guild.id] = {'logchannel': None, 'chartroles': [], 'ticket_category': None,
+                                                 'count_channels': [], 'self_roles': []}
 
     async def on_guild_join(self, guild: discord.Guild):
         query = 'INSERT INTO serverconfigs (guild) VALUES ($1);'
         await self.pool.fetchval(query, guild.id)
-        self.server_configs[guild.id] = {'logchannel': None, 'chartroles': [], 'ticket_category': None}
+        self.server_configs[guild.id] = {'logchannel': None, 'chartroles': [], 'ticket_category': None,
+                                         'count_channels': [], 'self_roles': []}
         if guild.system_channel:
             if guild.system_channel_flags.join_notifications and guild.system_channel.permissions_for(guild.me).send_messages:
                 await guild.system_channel.send(on_join(guild))
@@ -121,7 +129,7 @@ class Curator(commands.Bot):
 
             if self.dm_dump:
                 await self.dm_dump.send(f'**{message.author}** ({message.author.id}): {message.content}\n'
-                                    f'{"Attachments: " + str([attachment.url for attachment in message.attachments]) if message.attachments else ""}')
+                                        f'{"Attachments: " + str([attachment.url for attachment in message.attachments]) if message.attachments else ""}')
 
             print(f'DM from {message.author.name}: {message.content}')
 
@@ -174,6 +182,49 @@ class Curator(commands.Bot):
         finally:
             # Just in case we have any outstanding DB connections
             await ctx.release()
+
+    async def on_command_error(self, ctx: commands.Context, error):
+        if isinstance(error, commands.MissingRequiredArgument):
+            return await ctx.send(f'Command is missing a required argument: `{error.param}`.')
+        if isinstance(error, commands.DisabledCommand):
+            return await ctx.send('This command is currently disabled.')
+        if isinstance(error, commands.TooManyArguments):
+            return await ctx.send(f'You provided too many arguments, use `{ctx.prefix}help {ctx.command}` for '
+                                  f'information on how to use this command.')
+        if isinstance(error, commands.CommandOnCooldown):
+            return await ctx.send(f'This command is on cooldown, try again in {error.retry_after} seconds.')
+        if isinstance(error, commands.MissingPermissions):
+            return await ctx.send(f'You are missing the permission{"s" if len(error.missing_perms) > 1 else ""} '
+                                  f'{human_join(error.missing_perms, final="and")}.')
+        if isinstance(error, commands.BotMissingPermissions):
+            return await ctx.send(f'I do not have the required permissions, I need {human_join(error.missing_perms, final="and")}.')
+        if isinstance(error, (commands.MissingRole, commands.MissingAnyRole)):
+            return await ctx.send(f'You need the **{error.missing_role}** role in order to use this command.'
+                                  if type(error) == commands.MissingRole else
+                                  f'You need one of the following roles to use this command: {human_join(f"**{role}**" for role in error.missing_roles)}.')
+        if isinstance(error, commands.NSFWChannelRequired):
+            return await ctx.send(f'{error.channel.mention} requires NSFW enabled to do this.')
+        # The ExtensionErrors are already caught in the corresponding Admin commands
+        await ctx.send(f'`{type(error)}: {error}`')
+        raise error
+
+
+def is_bot_admin():
+    """Decorator to check if someone is a bot admin."""
+    async def predicate(ctx: commands.Context):
+        return ctx.author.id in ctx.bot.admins
+
+    return commands.check(predicate)
+
+
+def owner_or_guild_permissions(**perms):
+    """Decorator to check if someone is a bot admin or has the necessary server permissions."""
+    original = commands.has_guild_permissions(**perms).predicate
+
+    async def extended_check(ctx: commands.Context):
+        return ctx.author.id in ctx.bot.admins or await original(ctx)
+
+    return commands.check(extended_check)
 
 
 def get_config():

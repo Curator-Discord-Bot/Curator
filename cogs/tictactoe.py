@@ -3,6 +3,8 @@ from discord.ext import commands
 from aio_timers import Timer
 from emoji import demojize
 
+from bot import is_bot_admin
+
 running_games = {}
 
 
@@ -121,13 +123,11 @@ class Tictactoe(commands.Cog):
                     await game.play(demojize(str(reaction))[-2], user, reaction)
 
     @commands.command(hidden=True)
+    @is_bot_admin()
     async def printtttgames(self, ctx: commands.Context):
         """Print the currently running games of Tic Tac Toe."""
-        if ctx.author.id in self.bot.admins:
-            print(running_games)
-            await ctx.send('Check the Python printer output for your results.')
-        else:
-            await ctx.send('You do not have access to this command.')
+        print(running_games)
+        await ctx.send('Check the Python printer output for your results.')
 
 
 def setup(bot: commands.Bot):

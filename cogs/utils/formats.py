@@ -1,3 +1,5 @@
+from datetime import datetime
+
 class plural:
     def __init__(self, value):
         self.value = value
@@ -23,6 +25,13 @@ def human_join(seq, delim=', ', final='or'):
         return f'{seq[0]} {final} {seq[1]}'
 
     return delim.join(seq[:-1]) + f' {final} {seq[-1]}'
+
+
+def human_date(dt: datetime):
+    """This function is very unnecessary and I know that, but I created it solely because I wanted to keep
+    roleselector.py line 533 in one line and that wasn't possible because I ran out of single and double quotations marks to use.
+    ~RJTimmerman"""
+    return dt.date().strftime('%d %B %Y')
 
 
 class TabularData:

@@ -9,7 +9,7 @@ class Debug(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    async def cog_check(self, ctx):
+    async def cog_check(self, ctx: commands.Context):
         return ctx.author.id in self.bot.admins
 
     @commands.command(hidden=True)

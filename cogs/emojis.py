@@ -1,7 +1,8 @@
-from typing import Union
-
 import discord
 from discord.ext import commands
+
+from typing import Union
+from emoji import EMOJI_UNICODE
 
 
 class Emojis(commands.Cog):
@@ -35,8 +36,11 @@ class Emojis(commands.Cog):
         elif t == discord.PartialEmoji:
             await ctx.send(f'{emoji}\nType: {t}\nName: {emoji.name}\nId: {emoji.id}\nAnimated: {emoji.animated}\nCustom Emoji: {emoji.is_custom_emoji()}\nUnicode Emoji: {emoji.is_unicode_emoji()}\nURL: {emoji.url}')
             return
+        elif emoji in EMOJI_UNICODE.values():
+            await ctx.send(f'{emoji}\nType: {t}\nNot much else to say about it. Maybe you wanna lookup it\'s unicode?\nTry `{ctx.prefix}emoji unicode {emoji}`')
+            return
         else:
-            await ctx.send(f'{emoji}\nType: {t}\nNot much else to say about it. Maybe you wanna lookup it\'s unicode?\nTry `{ctx.prefix}unicode {emoji}`')
+            await ctx.send('This is not an emoji.')
 
 
 
