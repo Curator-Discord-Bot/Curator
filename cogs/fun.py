@@ -11,10 +11,13 @@ from io import BytesIO
 from .utils.messages import hello, collect
 
 
+deleted_usernames = {}
+
+
 class Fun(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.DeletedUserNames = {}
+
     @commands.command()
     async def hello(self, ctx: commands.Context):
         await ctx.send(hello(ctx))
@@ -72,41 +75,38 @@ class Fun(commands.Cog):
         name = ctx.author.display_name
 
         if 'bot' in name.lower():
-            await ctx.send(f'I don\'t take commands from bots. Hehe.')
+            return await ctx.send(f'I don\'t take commands from bots. Hehe.')
+
+        if randint(0, 1):
+            e = discord.Embed(description='The action can\'t be completed because the file is open in Curator.\n\nClose the file and try again.')
+            e.set_footer(text='\u02C4 Fewer details')
+            e.set_thumbnail(url=self.bot.user.avatar_url)
+            e.set_author(name='File In Use')
+            e.add_field(name='Curator.bot', value='File type: BOT File\nSize: 1.38 TB\nBans: 3.7K')
+            e.add_field(name=':wink:', value='[T__r__y Again](https://www.youtube.com/watch?v=dQw4w9WgXcQ)', inline=False)
+            e.add_field(name=':innocent:', value='[Cancel](https://www.youtube.com/watch?v=dQw4w9WgXcQ)', inline=True)
+            await ctx.send(embed=e)
+
         else:
-            r = randint(0, 1)
+            if ctx.message.guild is None:
+                return await ctx.send('There\'s no one here to delete.')
+            if ctx.message.guild.owner is not None and ctx.author.id == ctx.message.guild.owner.id:
+                return await ctx.send('I couldn\'t possibly delete the server owner...')
+            if deleted_usernames[ctx.author.id] == name:
+                return await ctx.send('You are already deleted... Why are you here?')
 
-            if r == 0:
-                e = discord.Embed(description='The action can\'t be completed because the file is open in Curator.\n\nClose the file and try again.')
-                e.set_footer(text='\u02C4 Fewer details')
-                e.set_thumbnail(url=self.bot.user.avatar_url)
-                e.set_author(name='File In Use')
-                e.add_field(name='Curator.bot', value='File type: BOT File\nSize: 1.38 TB\nBans: 3.7K')
-                e.add_field(name=':wink:', value='[T__r__y Again](https://www.youtube.com/watch?v=dQw4w9WgXcQ)', inline=False)
-                e.add_field(name=':innocent:', value='[Cancel](https://www.youtube.com/watch?v=dQw4w9WgXcQ)', inline=True)
-                await ctx.send(embed=e)
+            await ctx.send(f'Deleting {name}.')
+            letters = 'abcdef'
+            numbers = '0123456789'
+            tag = ''.join(choice(numbers) for i in range(4)) + ''.join(choice(letters) for i in range(2)) + ''.join(choice(numbers) for i in range(2))
 
-            elif r == 1:
-                if ctx.message.guild is None:
-                    await ctx.send('There\'s no one here to delete.')
-                    return
-                if ctx.message.guild.owner is not None and ctx.author.id == ctx.message.guild.owner.id:
-                    await ctx.send('I couldn\'t possibly delete the server owner...')
-                    return
-                if self.DeletedUserNames[ctx.message.author.id] == name:
-                    await ctx.send('You are already deleted... Why are you here?')
-                    return
-                
-                await ctx.send(f'Deleting {name}.')
-                letters = 'abcdef'
-                numbers = '0123456789'
-                tag = ''.join(choice(numbers) for i in range(4)) + ''.join(choice(letters) for i in range(2)) + ''.join(choice(numbers) for i in range(2))
-
-                await ctx.author.edit(nick=(f'Deleted User {tag}'))
-                await ctx.send(f'Successfully deleted {name}.')
-                self.DeletedUserNames[ctx.message.author.id] = f'Deleted User {tag}'
-                await slp(60)
+            await ctx.author.edit(nick=f'Deleted User {tag}')
+            await ctx.send(f'Successfully deleted {name}.')
+            deleted_usernames[ctx.message.author.id] = f'Deleted User {tag}'
+            await slp(60)
+            if ctx.author.display_name == deleted_usernames[ctx.author.id]:
                 await ctx.author.edit(nick=name)
+            deleted_usernames.pop(ctx.author.id)
 
     @commands.command(aliases=['hamdog'])
     async def chomp(self, ctx: commands.Context, amount: Optional[float]):
