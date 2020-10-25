@@ -92,7 +92,7 @@ class Fun(commands.Cog):
                 return await ctx.send('There\'s no one here to delete.')
             if ctx.message.guild.owner is not None and ctx.author.id == ctx.message.guild.owner.id:
                 return await ctx.send('I couldn\'t possibly delete the server owner...')
-            if deleted_usernames[ctx.author.id] == name:
+            if ctx.author.id in deleted_usernames.keys() and deleted_usernames[ctx.author.id] == name:
                 return await ctx.send('You are already deleted... Why are you here?')
 
             await ctx.send(f'Deleting {name}.')
