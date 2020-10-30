@@ -95,18 +95,17 @@ class Fun(commands.Cog):
             if ctx.author.id in deleted_usernames.keys() and deleted_usernames[ctx.author.id] == name:
                 return await ctx.send('You are already deleted... Why are you here?')
 
-            await ctx.send(f'Deleting {name}.')
+            await ctx.send(f'Deleting {name.replace("@", "AT")}.')
             letters = 'abcdef'
             numbers = '0123456789'
             tag = ''.join(choice(numbers) for i in range(4)) + ''.join(choice(letters) for i in range(2)) + ''.join(choice(numbers) for i in range(2))
 
             await ctx.author.edit(nick=f'Deleted User {tag}')
-            await ctx.send(f'Successfully deleted {name}.')
+            await ctx.send(f'Successfully deleted {name.replace("@", "AT")}.')
             deleted_usernames[ctx.message.author.id] = f'Deleted User {tag}'
-            await slp(60)
-            if ctx.author.display_name == deleted_usernames[ctx.author.id]:
+            await slp(10)
+            if ctx.author.display_name == f'Deleted User {tag}':
                 await ctx.author.edit(nick=name)
-            deleted_usernames.pop(ctx.author.id)
 
     @commands.command(aliases=['hamdog'])
     async def chomp(self, ctx: commands.Context, amount: Optional[float]):

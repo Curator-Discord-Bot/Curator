@@ -375,6 +375,10 @@ class Count(commands.Cog):
 
             return False
 
+        if '69' in str(c.score):
+            await message.add_reaction('👌🏻')
+        if c.score % 100 == 0:
+            await message.add_reaction('💯')
         query = 'SELECT score FROM counts WHERE guild = $1 ORDER BY score DESC LIMIT 3;'
         top = [count['score'] for count in await self.bot.pool.fetch(query, message.guild.id)]
         for i, v in enumerate(top):
@@ -593,7 +597,7 @@ class Count(commands.Cog):
         #     parse.append(hex_result)
 
         if parse:
-            await ctx.send(human_join([str(i) for i in sorted([int(i) for i in parse])], final='and'))
+            await ctx.send(human_join([str(i) for i in sorted([int(i) for i in parse])]))
         else:
             await ctx.send('Could not parse that.')
 

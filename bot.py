@@ -184,6 +184,8 @@ class Curator(commands.Bot):
             await ctx.release()
 
     async def on_command_error(self, ctx: commands.Context, error):
+        if str(error).endswith('Must be 2000 or fewer in length.'):
+            return await ctx.send('Trying to send a message that\'s too long (max lenght is 2000 characters).')
         if isinstance(error, commands.MissingRequiredArgument):
             return await ctx.send(f'Command is missing a required argument: `{error.param}`.')
         if isinstance(error, commands.DisabledCommand):
@@ -198,6 +200,10 @@ class Curator(commands.Bot):
                                   f'{human_join(error.missing_perms, final="and")}.')
         if isinstance(error, commands.BotMissingPermissions):
             return await ctx.send(f'I do not have the required permissions, I need {human_join(error.missing_perms, final="and")}.')
+        if isinstance(error, commands.CheckFailure):
+            return  # Messages for this are done individually in the check functions themselves
+        if str(error).endswith('Missing Permissions'):
+            return await ctx.send(f'I am missing permissions.')
         if isinstance(error, (commands.MissingRole, commands.MissingAnyRole)):
             return await ctx.send(f'You need the **{error.missing_role}** role in order to use this command.'
                                   if type(error) == commands.MissingRole else

@@ -27,7 +27,7 @@ def refuse_logout() -> str:
 
 def on_logout(ctx: Context) -> str:
     return choice((':dizzy_face:', ':head_bandage:', ':dagger:', f'Et tu, {ctx.author.name}?', 'Murderer!',
-                   'Noooooooooooooooo...', f'Okay, master {ctx.author.name}'))
+                   'Noooooooooooooooo...', f'Okay, master {ctx.author.name}', 'If you insist.'))
 
 
 def logout_log(bot_name: str) -> str:
