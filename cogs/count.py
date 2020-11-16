@@ -106,7 +106,7 @@ binary_re = re.compile('^[01]+$')
 hex_re = re.compile('^[\dA-F]+$')
 
 running_counts = {}
-finished_counts = {}
+# finished_counts = {}
 
 """    Old parsing function
 def parsed(number: str) -> list:
@@ -317,8 +317,8 @@ class Counting:
 
         for discord_id, contribution in self.contributors.items():
             async with Counter(await fetch_counter_record(discord_id, connection), connection) as counter:
-                finished_counts[self.channel]['last_counts'][counter.user_id] = counter.last_count
-                finished_counts[self.channel]['best_counts'][counter.user_id] = counter.best_count
+                # finished_counts[self.channel]['last_counts'][counter.user_id] = counter.last_count
+                # finished_counts[self.channel]['best_counts'][counter.user_id] = counter.best_count
 
                 counter.last_count = self.id
                 counter.total_score += contribution
@@ -335,7 +335,7 @@ class Counting:
                     counter.counts_started += 1
 
                 if counter.user_id == self.ruined_by:
-                    finished_counts[self.channel]['ruiner_best'] = counter.best_ruin
+                    # finished_counts[self.channel]['ruiner_best'] = counter.best_ruin
 
                     counter.counts_ruined += 1
                     if counter.best_ruin is None:
@@ -366,8 +366,8 @@ class Count(commands.Cog):
         c: Counting = running_counts[message.channel.id]
 
         if not c.attempt_count(message.author, message.content.split()[0]):
-            finished_counts[message.channel.id] = {'count': running_counts[message.channel.id], 'last_counts': {},
-                                                   'best_counts': {}}
+            # finished_counts[message.channel.id] = {'count': running_counts[message.channel.id], 'last_counts': {},
+            #                                        'best_counts': {}}
             del (running_counts[message.channel.id])
             await message.channel.send(f'{message.author.mention} failed, and ruined the count for '
                                        f'{len(c.contributors.keys())} counters...\nThe count reached {c.score}.')

@@ -114,6 +114,7 @@ class Curator(commands.Bot):
                                                  'count_channels': [], 'self_roles': []}
 
     async def on_guild_join(self, guild: discord.Guild):
+        print(f'Joined "{guild}"! :D')
         query = 'INSERT INTO serverconfigs (guild) VALUES ($1);'
         await self.pool.fetchval(query, guild.id)
         self.server_configs[guild.id] = {'logchannel': None, 'chartroles': [], 'ticket_category': None,
@@ -121,6 +122,12 @@ class Curator(commands.Bot):
         if guild.system_channel:
             if guild.system_channel_flags.join_notifications and guild.system_channel.permissions_for(guild.me).send_messages:
                 await guild.system_channel.send(on_join(guild))
+
+    async def on_guild_remove(self, guild: discord.Guild):
+        print(f'Left "{guild}" :(')
+        query = 'DELETE FROM serverconfigs WHERE guild = $1'
+        await self.pool.fetchval(query, guild.id)
+        del(self.server_configs[guild.id])
 
     async def on_message(self, message: discord.Message):
         if message.channel.type == discord.ChannelType.private:
@@ -148,6 +155,7 @@ class Curator(commands.Bot):
                 and message.content.endswith('join the raid!'):
             await message.channel.send(f'{message.guild.get_role(695770028397690911).mention}, '
                                        f'grab your weapons and head to battle, for there is a raid!')
+            await message.add_reaction('<:diamond_sword:767112271704227850>')
 
         if message.author.bot:
             return
@@ -186,6 +194,14 @@ class Curator(commands.Bot):
     async def on_command_error(self, ctx: commands.Context, error):
         if str(error).endswith('Must be 2000 or fewer in length.'):
             return await ctx.send('Trying to send a message that\'s too long (max lenght is 2000 characters).')
+        if isinstance(error, commands.ConversionError):
+            return await ctx.send(f'I got an error while converting using converter {error.converter}: `{type(error)}: {error}`.')
+        if isinstance(error, commands.UnexpectedQuoteError):
+            return await ctx.send(f'I encountered quote mark `{error.quote}` inside a non-quoted string.')
+        if isinstance(error, commands.InvalidEndOfQuotedStringError):
+            return await ctx.send(f'I expected a space after the closing quote, but I found {error.char}.')
+        if isinstance(error, commands.ExpectedClosingQuoteError):
+            return await ctx.send(f'Expected closing quote character `{error.close_quote}`, but couldn\'t find it.')
         if isinstance(error, commands.MissingRequiredArgument):
             return await ctx.send(f'Command is missing a required argument: `{error.param}`.')
         if isinstance(error, commands.DisabledCommand):
@@ -193,6 +209,14 @@ class Curator(commands.Bot):
         if isinstance(error, commands.TooManyArguments):
             return await ctx.send(f'You provided too many arguments, use `{ctx.prefix}help {ctx.command}` for '
                                   f'information on how to use this command.')
+        if isinstance(error, commands.BadUnionArgument):
+            return await ctx.send(f'Failed converting {error.param} to all possible types.' +
+                                  (f'\nThe converter{"s" if len(error.converters) > 1 else ""} I tried '
+                                   f'{"were" if len(error.converters) > 1 else "was"} '
+                                   f'{human_join(error.converters, final="and")}.' if len(error.converters != 0) else "") +
+                                  (f'\nThe error{"s" if len(error.errors) else ""} caught from the failing conversion '
+                                   f'{"are" if len(error.errors) > 1 else "is"} '
+                                   f'{human_join([f"`{type(e)}: {e}`" for e in error.errors])}.' if len(error.errors != 0) else ""))
         if isinstance(error, commands.CommandOnCooldown):
             return await ctx.send(f'This command is on cooldown, try again in {error.retry_after} seconds.')
         if isinstance(error, commands.MissingPermissions):
@@ -210,6 +234,24 @@ class Curator(commands.Bot):
                                   f'You need one of the following roles to use this command: {human_join(f"**{role}**" for role in error.missing_roles)}.')
         if isinstance(error, commands.NSFWChannelRequired):
             return await ctx.send(f'{error.channel.mention} requires NSFW enabled to do this.')
+        if isinstance(error, commands.MessageNotFound):
+            return await ctx.send(f'I couldn\'t find message {error.argument}.')
+        if isinstance(error, commands.MemberNotFound):
+            return await ctx.send(f'I couldn\'t find member {error.argument}.')
+        if isinstance(error, commands.UserNotFound):
+            return await ctx.send(f'I couldn\'t find user {error.argument}.')
+        if isinstance(error, commands.ChannelNotFound):
+            return await ctx.send(f'I couldn\'t find channel {error.argument}.')
+        if isinstance(error, commands.ChannelNotReadable):
+            return await ctx.send(f'I do not have permissions to read messages in channel {error.argument}.')
+        if isinstance(error, commands.RoleNotFound):
+            return await ctx.send(f'I couldn\'t find role {error.argument}.')
+        if isinstance(error, commands.EmojiNotFound):
+            return await ctx.send(f'I couldn\'t find emoji {error.argument}.')
+        if isinstance(error, commands.PartialEmojiConversionFailure):
+            return await ctx.send(f'Converting {error.argument} to PartialEmoji failed.')
+        if isinstance(error, commands.BadBoolArgument):
+            return await ctx.send(f'The boolean argument {error.argument} was not convertable.')
         # The ExtensionErrors are already caught in the corresponding Admin commands
         await ctx.send(f'`{type(error)}: {error}`')
         raise error

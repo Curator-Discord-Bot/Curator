@@ -36,7 +36,7 @@ def logout_log(bot_name: str) -> str:
 
 
 def on_join(guild: Guild) -> str:
-    return choice('Hey!', f'Welcome, {guild.me.mention}!', f'Hello people of {guild}!')
+    return choice(('Hey!', f'Welcome, {guild.me.mention}!', f'Hello people of {guild}!'))
 
 
 def hello(ctx: Context) -> str:
