@@ -3,7 +3,7 @@ from discord.ext import commands
 
 
 class Kalaha():
-
+    pass
 
 
 class Kalah(commands.Cog):

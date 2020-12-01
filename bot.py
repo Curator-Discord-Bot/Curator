@@ -29,7 +29,7 @@ INITIAL_EXTENSIONS = (
     'cogs.info',
     'cogs.random',
     'cogs.admin',
-    'cogs.sadmin',
+    'cogs.moderation',
     'cogs.math',
     'cogs.fourinarow',
     'cogs.emojis',
@@ -127,7 +127,7 @@ class Curator(commands.Bot):
         print(f'Left "{guild}" :(')
         query = 'DELETE FROM serverconfigs WHERE guild = $1'
         await self.pool.fetchval(query, guild.id)
-        del(self.server_configs[guild.id])
+        del (self.server_configs[guild.id])
 
     async def on_message(self, message: discord.Message):
         if message.channel.type == discord.ChannelType.private:
@@ -161,18 +161,6 @@ class Curator(commands.Bot):
             return
 
         await self.process_commands(message)
-
-    async def on_message_delete(self, message: discord.Message):
-        if message.author.bot:
-            return
-
-        if message.guild:
-            logchannel = self.server_configs[message.guild.id]['logchannel']
-            if logchannel:
-                await logchannel.send(
-                    f'A message by {message.author} was deleted in {message.channel.mention} on {message.guild}:'
-                    f'\n{f"```{message.content}```" if len(message.content) >= 1 else "**No text**"}'
-                    f'\n{"Attachments: " + str([attachment.url for attachment in message.attachments]) if message.attachments else ""}')
 
     async def process_commands(self, message):
         ctx: context.Context = await self.get_context(message, cls=context.Context)

@@ -320,6 +320,11 @@ class Admin(commands.Cog):
             await ctx.send(str(e))
 
     @commands.command(hidden=True)
+    async def select(self, ctx, *, command):
+        """Runs a sql select query."""
+        await ctx.invoke(self.sql, command='select '+command)
+
+    @commands.command(hidden=True)
     async def mcuuid(self, ctx, who: discord.User, minecraft_uuid: str):
         """Link a Minecraft account to a Discord account."""
         minecraft_uuid = UUID(minecraft_uuid)

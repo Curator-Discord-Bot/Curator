@@ -35,11 +35,11 @@ def scan_data():
             oprnd = input('Enter an operand: ')
 
             try:  # prøver følgende:
-                return (optr, float(oprnd))
+                return optr, float(oprnd)
             except ValueError:  # ellers hvis der kommer valueerror, så gør den det her.
                 print('Error: Operand must be a number.')
     else:
-        return (optr, None)  # returner optr, men ingen operand. Returnes som en tuple, der indeholder to værdier
+        return optr, None  # returner optr, men ingen operand. Returns som en tuple, der indeholder to værdier
 
 
 def do_next_op(optr, oprnd, total):

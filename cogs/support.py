@@ -1,13 +1,13 @@
 import discord
 from discord.ext import commands
+import asyncpg
 from typing import Optional
 from copy import copy
 from datetime import datetime
 import emoji
 from .utils.formats import human_join
 
-from bot import is_bot_admin
-
+from bot import is_bot_admin, owner_or_guild_permissions
 
 open_tickets = {}
 closed_tickets = {}
@@ -156,6 +156,78 @@ class Support(commands.Cog):
         """Print all closed tickets."""
         print(closed_tickets)
         await ctx.send('Check the Python printer output for your results.')
+
+    @commands.group(aliases=['ticketcat', 'tcat', 'supporttickets', 'sticket', 'stc'], invoke_without_command=True)
+    @owner_or_guild_permissions(manage_roles=True)
+    async def ticketcategory(self, ctx: commands.Context):
+        """Commands for the support tickets.
+
+        Members can open support tickets to privately talk with staff. Channels of closed tickets will not be immediately deleted.
+        """
+        current_category = self.bot.server_configs[ctx.guild.id]['ticket_category']
+        if current_category:
+            await ctx.send(f'The current support ticket category is **{current_category}**, '
+                           f'use `{ctx.prefix}ticketcategory set <category_id>` to change it, '
+                           f'or `{ctx.prefix}ticketcategory remove` to disable support tickets on this server.')
+        else:
+            await ctx.send(f'You currently don\'t have support tickets enabled, use `{ctx.prefix}ticketcategory '
+                           f'set <category_id>` to set a category and enable the ticket system.')
+
+    @ticketcategory.command(name='set', aliases=['choose', 'select'])
+    @owner_or_guild_permissions(manage_roles=True)
+    async def set_tcat(self, ctx: commands.Context, new_category_id: int):
+        """Set the logging channel.
+2
+        Provide the id of the category you want to set for support tickets.
+        """
+        current_category = self.bot.server_configs[ctx.guild.id]['ticket_category']
+        new_category = self.bot.get_channel(new_category_id)
+        print(new_category)
+        if not new_category:
+            return await ctx.send('Please provide a valid category ID.')
+
+        if current_category:
+            prompt_text = f'This will change the support ticket category from **{current_category}** to **{new_category}**,' \
+                          f' are you sure?'
+            confirm = await ctx.prompt(prompt_text, reacquire=False)
+            if not confirm:
+                return await ctx.send('Cancelled.')
+
+        try:
+            connection: asyncpg.pool = self.bot.pool
+            query = 'UPDATE serverconfigs SET ticketcategory = $1 WHERE guild = $2;'
+            await connection.fetchval(query, new_category.id, ctx.guild.id)
+        except Exception as e:
+            await ctx.send(f'Failed, {e} while saving the support ticket category to the database.')
+        else:
+            self.bot.server_configs[ctx.guild.id]['ticket_category'] = new_category
+            await ctx.send('Support ticket category successfully set.')
+
+    @ticketcategory.command(name='remove', aliases=['delete', 'stop', 'disable'])
+    @owner_or_guild_permissions(manage_roles=True)
+    async def remove_tcat(self, ctx: commands.Context):
+        """Disable support tickets."""
+        current_category = self.bot.server_configs[ctx.guild.id]['ticket_category']
+        if not current_category:
+            return await ctx.send(f'You currently don\'t have support tickets enabled, use `{ctx.prefix}ticketcategory '
+                                  f'set <category_id>` to set a category and enable the ticket system.')
+
+        prompt_text = f'This will remove **{current_category}** as support ticket category and thus disable the' \
+                      f' ticket system, are you sure? You can always set a category again with' \
+                      f' `{ctx.prefix}ticketcategory set <channel_id>`.'
+        confirm = await ctx.prompt(prompt_text, reacquire=False)
+        if not confirm:
+            return await ctx.send('Cancelled.')
+
+        try:
+            connection: asyncpg.pool = self.bot.pool
+            query = 'UPDATE serverconfigs SET ticketcategory = NULL WHERE guild = $1;'
+            await connection.fetchval(query, ctx.guild.id)
+        except Exception as e:
+            await ctx.send(f'Failed, {e} while removing the support ticket category from the database.')
+        else:
+            self.bot.server_configs[ctx.guild.id]['ticket_category'] = None
+            await ctx.send('Support ticket category successfully removed.')
 
 
 def setup(bot: commands.Bot):

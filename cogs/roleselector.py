@@ -9,6 +9,7 @@ import emoji as amoji
 from datetime import datetime
 
 from .utils import db
+from .utils import selecting
 from.utils.formats import human_date, human_join
 
 from bot import is_bot_admin, owner_or_guild_permissions
@@ -689,6 +690,72 @@ class RoleSelector(commands.Cog):
         except discord.Forbidden:
             await ctx.send('I do not have the required permissions to remove that role from you. I need "Manage Roles" '
                            'permissions and my highest role needs to be higher than the roles I am supposed to add/remove.')
+
+    @commands.group(name='selfassign', aliases=['selfroles'], invoke_without_command=True)
+    @owner_or_guild_permissions(manage_roles=True)
+    async def self_assign(self, ctx: commands.Context):
+        """See which roles members can assign to themselves using a command. Use subcommands to change the list."""
+        current_roles = self.bot.server_configs[ctx.guild.id]['self_roles']
+        await ctx.send(f'Use `{ctx.prefix}help selfassign` to see the available subcommands. ' +
+                       ('There are currently no roles available for people to give themselves.'
+                        if not current_roles else
+                        f'The currently available role{"s are" if len(current_roles) > 1 else " is"} '
+                        f'{human_join([f"**{role}**" for role in current_roles], final="and")}.'))
+
+    @self_assign.command(name='set', aliases=['choose', 'select'])
+    @owner_or_guild_permissions(manage_roles=True)
+    async def set_selfroles(self, ctx: commands.Context, *roles: discord.Role):
+        """Set a list of roles that people can give themselves.
+
+        Provide the role IDs, mentions or names as arguments.
+        Duplicates will be ignored.
+        """
+        for role in roles:
+            if role >= ctx.author.top_role:
+                return await ctx.send(f'**{role}** role is (higher than) your highest role so you cannot make it available.')
+
+        await selecting.set_roles(ctx, self.bot, *2*['self_roles'], list(roles))
+
+    @self_assign.command(name='add', aliases=['include'])
+    @owner_or_guild_permissions(manage_roles=True)
+    async def add_selfroles(self, ctx: commands.Context, *new_roles: discord.Role):
+        """Add roles to the list that people can assign themselves.
+
+        Provide role IDs, mentions or names as arguments.
+        Duplicates and roles that are already on the list will be ignored.
+        """
+        for role in new_roles:
+            if role >= ctx.author.top_role:
+                return await ctx.send(f'**{role}** role is (higher than) your highest role so you cannot make it available.')
+
+        await selecting.add_roles(ctx, self.bot, *2*['self_roles'], list(new_roles))
+
+    @self_assign.command(name='remove', aliases=['delete'])
+    @owner_or_guild_permissions(manage_roles=True)
+    async def remove_selfroles(self, ctx: commands.Context, *roles: discord.Role):
+        """Remove roles from the list that members can take for themselves.
+
+        Provide role IDs, mentions or names as arguments.
+        Duplicates and roles that aren't in the list will be ignored.
+        """
+        for role in roles:
+            if role >= ctx.author.top_role:
+                return await ctx.send(f'**{role}** role is (higher than) your highest role so you cannot remove it from'
+                                      f' the list.')
+
+        await selecting.remove_roles(ctx, self.bot, *2*['self_roles'], list(roles))
+
+    @self_assign.command(name='clear', aliases=['wipe'])
+    @owner_or_guild_permissions(manage_roles=True)
+    async def clear_selfroles(self, ctx: commands.Context):
+        """Clear the entire list of roles that people can give themselves."""
+        current_roles = self.bot.server_configs[ctx.guild.id]['self_roles']
+        for role in current_roles:
+            if role >= ctx.author.top_role:
+                return await ctx.send(f'**{role}** role is (higher than) your highest role so you cannot remove it from'
+                                      f' the list. No roles have been removed.')
+
+        await selecting.clear_roles(ctx, self.bot, *2*['self_roles'])
 
 
 def setup(bot: commands.Bot):

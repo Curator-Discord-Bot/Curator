@@ -1,8 +1,13 @@
 import discord
 from discord.ext import commands
+import asyncpg
 import matplotlib.pyplot as plt
 from io import BytesIO
 from typing import Optional
+
+from bot import owner_or_guild_permissions
+from .utils.formats import human_join
+from .utils import selecting
 
 
 class Info(commands.Cog):
@@ -62,6 +67,59 @@ class Info(commands.Cog):
     async def roleid(self, ctx: commands.Context, role: discord.Role):
         """Get the ID of a role"""
         await ctx.send(role.id)
+
+    @commands.group(aliases=['croles', 'cr'], invoke_without_command=True)
+    @owner_or_guild_permissions(manage_roles=True)
+    async def chartroles(self, ctx: commands.Context):
+        """Commands for the list of roles to be used in information charts."""
+        current_roles = self.bot.server_configs[ctx.guild.id]['chartroles']
+        if current_roles:
+            await ctx.send(f'The current roles to be used in information charts are '
+                           f'{human_join([f"**{role.name}**" for role in current_roles], final="and")}'
+                           f' use `{ctx.prefix}help chartroles` for information on how to change them.')
+
+        else:
+            await ctx.send(f'You currently don\'t have any roles set to be used in information charts,'
+                           f' use `{ctx.prefix}chartroles set <role_ids>` to set some.')
+
+    @chartroles.command(name='set', aliases=['choose', 'select'])
+    @owner_or_guild_permissions(manage_roles=True)
+    async def set_croles(self, ctx: commands.Context, *roles: discord.Role):
+        """Set a list of roles to be used in information charts.
+
+        Provide the role IDs, mentions or names as arguments.
+        Duplicates will be ignored.
+        """
+        await selecting.set_roles(ctx, self.bot, *2*['chartroles'], list(roles))
+
+    @chartroles.command(name='add', aliases=['include'])
+    @owner_or_guild_permissions(manage_roles=True)
+    async def add_croles(self, ctx: commands.Context, *new_roles: discord.Role):
+        """Add roles to the list to be used in information charts.
+
+        Provide role IDs, mentions or names as arguments.
+        Duplicates and roles that are already on the list will be ignored.
+        """
+        await selecting.add_roles(ctx, self.bot, *2*['chartroles'], list(new_roles))
+
+    @chartroles.command(name='remove', aliases=['delete'])
+    @owner_or_guild_permissions(manage_roles=True)
+    async def remove_croles(self, ctx: commands.Context, *roles: discord.Role):
+        """Remove roles from the list to be used in information charts.
+
+        Provide role IDs, mentions or names as arguments.
+        Duplicates and roles that aren't in the list will be ignored.
+        """
+        await selecting.remove_roles(ctx, self.bot, *2*['chartroles'], list(roles))
+
+    @chartroles.command(name='clear', aliases=['wipe'])
+    @owner_or_guild_permissions(manage_roles=True)
+    async def clear_croles(self, ctx: commands.Context):
+        """Clear the entire list of roles to be used in information charts.
+
+        This means it will default back to using all the roles when you use a command that uses this list.
+        """
+        await selecting.clear_roles(ctx, self.bot, *2*['chartroles'])
 
 
 def setup(bot: commands.Bot):
