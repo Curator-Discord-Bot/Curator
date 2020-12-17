@@ -1,5 +1,4 @@
 import datetime
-import itertools
 from collections import OrderedDict
 from typing import Optional
 import re
@@ -190,7 +189,7 @@ async def fetch_counter_record(discord_id, connection) -> asyncpg.Record:
 
 
 def is_count_channel(configs, channel: discord.TextChannel) -> bool:
-    return ('count' in channel.name.lower() and not configs[channel.guild.id]['count_channels']) or channel in configs[channel.guild.id]['count_channels']
+    return ('count' in channel.name.lower() and not configs[channel.guild.id].count_channels) or channel in configs[channel.guild.id].count_channels
 
 
 class CounterProfile:
@@ -417,7 +416,7 @@ class Count(commands.Cog):
         """
         await ctx.send(f'The counting game is currently available in '
                        f'{human_join([channel.mention for channel in ctx.guild.text_channels if is_count_channel(self.bot.server_configs, channel)], final="and")}.\n'
-                       f'{f"You can create your own list with `{ctx.prefix}count channels add/remove`." if not self.bot.server_configs[ctx.guild.id]["count_channels"] else f"You can remove channels with `{ctx.prefix}count channels remove`."}')
+                       f'{f"You can create your own list with `{ctx.prefix}count channels add/remove`." if not self.bot.server_configs[ctx.guild.id].count_channels else f"You can remove channels with `{ctx.prefix}count channels remove`."}')
 
     @channels.command(name='add', aliases=['set', 'include'])
     async def add_channel(self, ctx: commands.Context, channel: discord.TextChannel):
@@ -426,12 +425,12 @@ class Count(commands.Cog):
         Provide a channel mention, ID or name.
         If a counting channel is set, channels with "count" in their name won't be able to be used anymore.
         """
-        if channel in self.bot.server_configs[ctx.guild.id]['count_channels']:
+        if channel in self.bot.server_configs[ctx.guild.id].count_channels:
             return await ctx.send('This is already a channel on the list.')
 
-        query = 'UPDATE serverconfigs SET countchannels = array_append(countchannels, $1) WHERE guild = $2;'
+        query = 'UPDATE serverconfigs SET count_channels = array_append(count_channels, $1) WHERE guild = $2;'
         await self.bot.pool.fetchval(query, channel.id, ctx.guild.id)
-        self.bot.server_configs[ctx.guild.id]['count_channels'].append(channel)
+        self.bot.server_configs[ctx.guild.id].count_channels.append(channel)
         await ctx.send(f'Successfully added {channel.mention}.')
 
     @channels.command(name='remove', aliases=['delete'])

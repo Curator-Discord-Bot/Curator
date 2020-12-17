@@ -38,13 +38,13 @@ class Debug(commands.Cog):
     @commands.command(hidden=True)
     async def printsc(self, ctx: commands.Context):
         """Print the current server configurations for every server."""
-        # print(self.bot.server_configs)
-        print({f'{self.bot.get_guild(key).name} ({key})': {'logchannel': f'{value["logchannel"].name} ({value["logchannel"].id})' if value["logchannel"] else None,
-                                                           'chartroles': [f'{role.name} ({role.id})' for role in value['chartroles']],
-                                                           'ticket_category': f'{value["ticket_category"].name} ({value["ticket_category"].id})' if value["ticket_category"] else None}
-               for (key, value) in self.bot.server_configs.items()})
+        print(self.bot.server_configs)
+        #print({f'{self.bot.get_guild(key).name} ({key})': {'logchannel': f'{value["logchannel"].name} ({value["logchannel"].id})' if value["logchannel"] else None,
+        #                                                   'chartroles': [f'{role.name} ({role.id})' for role in value['chartroles']],
+        #                                                   'ticket_category': f'{value["ticket_category"].name} ({value["ticket_category"].id})' if value["ticket_category"] else None}
+        #       for (key, value) in self.bot.server_configs.items()}) TODO re-write for new SererConfigs class
         await ctx.send('Check the Python printer output for your results')
-        # Pleas do not reformat this code
+        # Please do not reformat this code
 
     @commands.command(hidden=True)
     async def mentions(self, ctx: commands.Context):

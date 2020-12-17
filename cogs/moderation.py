@@ -12,9 +12,12 @@ class Serverconfigs(db.Table):
     guild = db.Column(db.Integer(big=True), primary_key=True)
     logchannel = db.Column(db.Integer(big=True))
     chartroles = db.Column(db.Array(sql_type=db.Integer(big=True)), default='{}')
-    ticketcategory = db.Column(db.Integer(big=True))
-    countchannels = db.Column(db.Array(sql_type=db.Integer(big=True)), default='{}')
+    ticket_category = db.Column(db.Integer(big=True))
+    count_channels = db.Column(db.Array(sql_type=db.Integer(big=True)), default='{}')
     self_roles = db.Column(db.Array(sql_type=db.Integer(big=True)), default='{}')
+    censor_words = db.Column(db.Array(sql_type=db.String), default='{}')
+    censor_message = db.Column(db.String)
+    raid_role = db.Column(db.Integer(big=True))
 
 
 class Moderation(commands.Cog):
@@ -30,7 +33,7 @@ class Moderation(commands.Cog):
 
         This channel will be used to log deleted messages and used commands.
         """
-        current_channel = self.bot.server_configs[ctx.guild.id]['logchannel']
+        current_channel = self.bot.server_configs[ctx.guild.id].logchannel
         if current_channel:
             await ctx.send(f'The current logging channel is {current_channel.mention}, '
                            f'use `{ctx.prefix}logchannel set <channel>` to change it, '
@@ -53,7 +56,7 @@ class Moderation(commands.Cog):
             else:
                 return await ctx.send(f'{new_channel} is not a valid channel.')
 
-        current_channel = self.bot.server_configs[ctx.guild.id]['logchannel']
+        current_channel = self.bot.server_configs[ctx.guild.id].logchannel
         if current_channel:
             prompt_text = f'This will change the logging channel from {current_channel.mention}' \
                           f' to {new_channel.mention}, are you sure?'
@@ -68,14 +71,14 @@ class Moderation(commands.Cog):
         except Exception as e:
             await ctx.send(f'Failed, {e} while saving the logging channel to the database.')
         else:
-            self.bot.server_configs[ctx.guild.id]['logchannel'] = new_channel
+            self.bot.server_configs[ctx.guild.id].logchannel = new_channel
             await ctx.send('Logging channel successfully set.')
 
     @logchannel.command(name='remove', aliases=['delete', 'stop', 'disable'])
     @owner_or_guild_permissions(manage_channels=True)
     async def remove_log(self, ctx: commands.Context):
         """Stop logging."""
-        current_channel = self.bot.server_configs[ctx.guild.id]['logchannel']
+        current_channel = self.bot.server_configs[ctx.guild.id].logchannel
         if not current_channel:
             return await ctx.send(
                 f'You currently don\'t have a logging channel, use `{ctx.prefix}logchannel set <channel>` to set one.')
@@ -94,7 +97,7 @@ class Moderation(commands.Cog):
         except Exception as e:
             await ctx.send(f'Failed, {e} while removing the logging channel from the database.')
         else:
-            self.bot.server_configs[ctx.guild.id]['logchannel'] = None
+            self.bot.server_configs[ctx.guild.id].logchannel = None
             await ctx.send('Logging channel successfully removed.')
 
     @commands.Cog.listener
@@ -103,12 +106,39 @@ class Moderation(commands.Cog):
             return
 
         if message.guild:
-            logchannel = self.bot.server_configs[message.guild.id]['logchannel']
+            logchannel = self.bot.server_configs[message.guild.id].logchannel
             if logchannel:
                 await logchannel.send(
                     f'A message by {message.author} was deleted in {message.channel.mention} on {message.guild}:'
                     f'\n{f"```{message.content}```" if len(message.content) >= 1 else "**No text**"}'
                     f'\n{"Attachments: " + str([attachment.url for attachment in message.attachments]) if message.attachments else ""}')
+
+    @commands.group(aliases=['cswords'])
+    async def censorwords(self, ctx: commands.Context):
+        pass
+
+    @censorwords.command(name='set', aliases=['choose', 'select'])
+    async def set_cswords(self, ctx: commands.Context):
+        pass
+
+    @censorwords.command(name='add', aliases=['include'])
+    async def add_cswords(self, ctx: commands.Context):
+        pass
+
+    @censorwords.command(name='remove', aliases=['delete'])
+    async def remove_cswords(self, ctx: commands.Context):
+        pass
+
+    @censorwords.command(name='clear', aliases=['wipe'])
+    async def clear_cswords(self, ctx: commands.Context):
+        pass
+
+    @commands.Cog.listener
+    async def on_message(self, message: discord.Message):
+        for word in self.bot.server_configs[message.guild.id].censor_words:
+            if word in message:
+                await message.delete()
+                return await message.channel.send(self.bot.server_configs[message.guild.id].censor_message or f'Do not use uncool words {message.author.mention}!')
 
 
 def setup(bot: commands.Bot):

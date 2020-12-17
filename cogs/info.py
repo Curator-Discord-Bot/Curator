@@ -10,6 +10,9 @@ from .utils.formats import human_join
 from .utils import selecting
 
 
+idle_rpg_raid_id = 665938966452764682
+
+
 class Info(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -28,7 +31,7 @@ class Info(commands.Cog):
         Server admins can set the roles that are used for this, by default it tales all roles on the server.
         You can provide roles (by name) to ignore while making the chart.
         """
-        roles = self.bot.server_configs[ctx.guild.id]['chartroles'].copy()
+        roles = self.bot.server_configs[ctx.guild.id].chartroles.copy()
         if len(roles) == 0:
             roles = sorted([role for role in await ctx.guild.fetch_roles() if role.name != '@everyone'], reverse=True)
         for role in roles.copy():
@@ -72,7 +75,7 @@ class Info(commands.Cog):
     @owner_or_guild_permissions(manage_roles=True)
     async def chartroles(self, ctx: commands.Context):
         """Commands for the list of roles to be used in information charts."""
-        current_roles = self.bot.server_configs[ctx.guild.id]['chartroles']
+        current_roles = self.bot.server_configs[ctx.guild.id].chartroles
         if current_roles:
             await ctx.send(f'The current roles to be used in information charts are '
                            f'{human_join([f"**{role.name}**" for role in current_roles], final="and")}'
@@ -90,7 +93,7 @@ class Info(commands.Cog):
         Provide the role IDs, mentions or names as arguments.
         Duplicates will be ignored.
         """
-        await selecting.set_roles(ctx, self.bot, *2*['chartroles'], list(roles))
+        await selecting.set_roles(ctx, self.bot, 'chartroles', list(roles))
 
     @chartroles.command(name='add', aliases=['include'])
     @owner_or_guild_permissions(manage_roles=True)
@@ -100,7 +103,7 @@ class Info(commands.Cog):
         Provide role IDs, mentions or names as arguments.
         Duplicates and roles that are already on the list will be ignored.
         """
-        await selecting.add_roles(ctx, self.bot, *2*['chartroles'], list(new_roles))
+        await selecting.add_roles(ctx, self.bot, 'chartroles', list(new_roles))
 
     @chartroles.command(name='remove', aliases=['delete'])
     @owner_or_guild_permissions(manage_roles=True)
@@ -110,7 +113,7 @@ class Info(commands.Cog):
         Provide role IDs, mentions or names as arguments.
         Duplicates and roles that aren't in the list will be ignored.
         """
-        await selecting.remove_roles(ctx, self.bot, *2*['chartroles'], list(roles))
+        await selecting.remove_roles(ctx, self.bot, 'chartroles', list(roles))
 
     @chartroles.command(name='clear', aliases=['wipe'])
     @owner_or_guild_permissions(manage_roles=True)
@@ -119,7 +122,31 @@ class Info(commands.Cog):
 
         This means it will default back to using all the roles when you use a command that uses this list.
         """
-        await selecting.clear_roles(ctx, self.bot, *2*['chartroles'])
+        await selecting.clear_roles(ctx, self.bot, 'chartroles')
+
+    @commands.command(aliases=['uncoolwords'])
+    async def badwords(self, ctx: commands.Context):
+        pass
+
+    @commands.group(name='idlerpgraid', aliases=['idleraid', 'rpgraid'])
+    async def idlerpg_raid_alert(self, ctx: commands.Context):
+        pass
+
+    @idlerpg_raid_alert.command(name='add', aliases=[])
+    async def set_idlerpg_raid_alert_role(self, ctx: commands.Context):
+        pass
+
+    @idlerpg_raid_alert.command(name='remove', aliases=[])
+    async def remove_idlerpg_raid_alert_role(self, ctx: commands.Context):
+        pass
+
+    @commands.Cog.listener
+    async def on_message(self, message: discord.Message):  # todo To be changed
+        if message.guild.id == 468366604313559040 and message.author.id == idle_rpg_raid_id \
+                and message.content.endswith('join the raid!'):
+            await message.channel.send(f'{message.guild.get_role(695770028397690911).mention}, '
+                                       f'grab your weapons and head to battle, for there is a raid!')
+            await message.add_reaction('<:diamond_sword:767112271704227850>')
 
 
 def setup(bot: commands.Bot):

@@ -5,6 +5,7 @@ import discord
 from discord.ext import commands
 import asyncio
 from asyncpg.pool import Pool
+from typing import Optional, List, Union
 from cogs.utils import context
 from cogs.utils.db import Table
 from cogs.utils.messages import on_join
@@ -38,8 +39,47 @@ INITIAL_EXTENSIONS = (
 )
 
 
-class Curator(commands.Bot):
+class ServerConfigs:
+    def __init__(self, bot, guild_id, row=None):
+        self.bot: Curator = bot
+        self.guild: discord.Guild = await self.get_guild(guild_id)
+        row = row or {'logchannel': None, 'chartroles': [], 'ticket_category': None, 'count_channels': [],
+                      'self_roles': [], 'censor_words': [], 'censor_message': None}
+        self.logchannel: Optional[discord.TextChannel] = self.get_channel(row['logchannel'])
+        self.chartroles: List[discord.Role] = sorted(list(filter(None, [self.get_role(role_id) for role_id in row['chartroles']])), reverse=True)
+        self.ticket_category: Optional[discord.CategoryChannel] = self.get_channel(row['ticket_category'])
+        self.count_channels: List[discord.TextChannel] = list(filter(None, [self.get_channel(channel_id) for channel_id in row['count_channels']]))
+        self.self_roles: List[discord.Role] = list(filter(None, [self.get_role(role_id) for role_id in row['self_roles']]))
+        self.censor_words: List[str] = row['censor_words']
+        self.censor_message: Optional[str] = row['censor_message']
 
+    async def get_guild(self, guild_id) -> discord.Guild:
+        guild = self.bot.get_guild(guild_id)
+        if not guild:
+            print(f'Couldn\'t find guild with ID {guild_id} while getting server configs, you can use the unguild'
+                  f'command to remove all data from this server from the database.')
+            raise Exception('GuildNotFound')
+        return guild
+
+    def get_channel(self, channel_id) -> Optional[Union[discord.TextChannel, discord.CategoryChannel]]:
+        if not channel_id:
+            return None
+        channel = self.bot.get_channel(channel_id)
+        if not channel:
+            print(f'Couldn\'t get channel with ID {channel_id} from server configs for guild {self.guild}.')
+        return channel
+
+    def get_role(self, role_id) -> discord.Role:
+        role = self.guild.get_role(role_id)
+        if not role:
+            print(f'Couldn\'t get role with ID {role_id} from server configs for guild {self.guild}.')
+        return role
+
+    class GuildNotFound(Exception):
+        pass
+
+
+class Curator(commands.Bot):
     def __init__(self, client_id, command_prefix=',', admins=None, dm_dump=None, description=''):
         intents = discord.Intents.default()
         intents.members = True
@@ -94,31 +134,28 @@ class Curator(commands.Bot):
             query = 'SELECT * FROM serverconfigs;'
             rows = await self.pool.fetch(query)
             for row in rows:
-                self.server_configs[row['guild']] = {'logchannel': self.get_channel(row['logchannel']),
-                                                     'chartroles': sorted([self.get_guild(row['guild']).get_role(role_id)
-                                                                           for role_id in row['chartroles']], reverse=True),
-                                                     'ticket_category': self.get_channel(row['ticketcategory']),
-                                                     'count_channels': [self.get_channel(channel_id) for channel_id
-                                                                        in row['countchannels']],
-                                                     'self_roles': [self.get_guild(row['guild']).get_role(role_id)
-                                                                    for role_id in row['self_roles']]}
+                try:
+                    self.server_configs[row['guild']] = ServerConfigs(self, row['guild'], row)
+                except ServerConfigs.GuildNotFound:
+                    pass
+                except Exception as e:
+                    print(f'Failed getting the server configurations for guild with id {row["guild"]}: {e}')
+                    await self.logout()
         except Exception as e:
-            print(f'Failed getting the server configurations: {e}')
+            print(f'Failed getting the server configurations from the database. {type(e)}: {e}')
             await self.logout()
 
         for guild in self.guilds:
             if guild.id not in self.server_configs.keys():
                 query = 'INSERT INTO serverconfigs (guild) VALUES ($1);'
                 await self.pool.fetchval(query, guild.id)
-                self.server_configs[guild.id] = {'logchannel': None, 'chartroles': [], 'ticket_category': None,
-                                                 'count_channels': [], 'self_roles': []}
+                self.server_configs[guild.id] = ServerConfigs(self, guild.id)
 
     async def on_guild_join(self, guild: discord.Guild):
         print(f'Joined "{guild}"! :D')
         query = 'INSERT INTO serverconfigs (guild) VALUES ($1);'
         await self.pool.fetchval(query, guild.id)
-        self.server_configs[guild.id] = {'logchannel': None, 'chartroles': [], 'ticket_category': None,
-                                         'count_channels': [], 'self_roles': []}
+        self.server_configs[guild.id] = ServerConfigs(self, guild.id)
         if guild.system_channel:
             if guild.system_channel_flags.join_notifications and guild.system_channel.permissions_for(guild.me).send_messages:
                 await guild.system_channel.send(on_join(guild))
@@ -151,12 +188,6 @@ class Curator(commands.Bot):
 
             self.last_dm = message.author
 
-        elif message.guild.id == 468366604313559040 and message.author.id == 665938966452764682 \
-                and message.content.endswith('join the raid!'):
-            await message.channel.send(f'{message.guild.get_role(695770028397690911).mention}, '
-                                       f'grab your weapons and head to battle, for there is a raid!')
-            await message.add_reaction('<:diamond_sword:767112271704227850>')
-
         if message.author.bot:
             return
 
@@ -169,7 +200,7 @@ class Curator(commands.Bot):
             return
 
         if message.guild:
-            logchannel = self.server_configs[message.guild.id]['logchannel']
+            logchannel = self.server_configs[message.guild.id].logchannel
             if logchannel:
                 await logchannel.send(f'{message.author} used command: {message.content.replace("@", "AT")}')
 

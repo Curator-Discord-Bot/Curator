@@ -17,7 +17,6 @@ class Ticket:
     def __init__(self, client):
         self.client = client
         self.channel = None
-        self.channel_members = None
         self.opened_at = datetime.utcnow()
         self.closed_at = None
         self.closed_by = None
@@ -25,10 +24,8 @@ class Ticket:
 
     async def create_channel(self, ctx, category):
         self.channel = await category.create_text_channel(f'Ticket {self.client.id}', topic=f'Ticket of {self.client}. Status: open',
-                                                          reason=f'Open support ticket with{self.client}.')
-        self.channel_members = self.channel.members
+                                                          reason=f'Open support ticket with {self.client}.')
         await self.channel.set_permissions(self.client, read_messages=True)
-        self.channel_members.append(self.client)
         await self.channel.send(f'This is a channel where you, {self.client.mention}, can privately talk with staff. '
                                 f'To end the conversation, use `{ctx.prefix}ticket close`.')
         await ctx.send(f'Successfully opened a new support ticket: {self.channel.mention}.')
@@ -50,6 +47,9 @@ class Ticket:
         await self.channel.delete(reason=f'Delete closed support ticket with {self.client}.')
         del (closed_tickets[channel_id])
 
+    async def refresh_channel(self):  # Sometime channel.members is not updated when permissions are changed, so this method ensures that the channel is refreshed in cache every time that channel.members is used
+        self.channel = self.channel.guild.get_channel(self.channel.id)
+
 
 class Support(commands.Cog):
     def __init__(self, bot: commands.Bot):
@@ -67,14 +67,14 @@ class Support(commands.Cog):
     @ticket.command()
     async def open(self, ctx: commands.Context):
         """Open a support ticket."""
-        if not self.bot.server_configs[ctx.guild.id]['ticket_category']:
+        if not self.bot.server_configs[ctx.guild.id].ticket_category:
             return await ctx.send('The ticket tool is disabled on this server, find another way to contact staff.')
 
         if ctx.author.id in open_tickets[ctx.guild.id].keys():
             return await ctx.send(f'You already have an open ticket: {open_tickets[ctx.guild.id][ctx.author.id].channel.mention}.')
 
         open_tickets[ctx.guild.id][ctx.author.id] = Ticket(ctx.author)
-        await open_tickets[ctx.guild.id][ctx.author.id].create_channel(ctx, self.bot.server_configs[ctx.guild.id]['ticket_category'])
+        await open_tickets[ctx.guild.id][ctx.author.id].create_channel(ctx, self.bot.server_configs[ctx.guild.id].ticket_category)
 
     @ticket.command()
     async def close(self, ctx: commands.Context, user_id: Optional[int]):
@@ -92,8 +92,9 @@ class Support(commands.Cog):
             await ticket.close_ticket(ctx.author)
 
         for ticket in open_tickets[ctx.guild.id].values():
+            ticket.refresh_channel()
             if ticket.client.id == user_id:
-                if ctx.author in ticket.channel_members:
+                if ctx.author in ticket.channel.members:
                     await cprompt()
                     return
                 else:
@@ -119,6 +120,7 @@ class Support(commands.Cog):
 
         def make_message(ticket):
             """Creates the information embed for a ticket."""
+            ticket.refresh_channel()
             embed = discord.Embed(title=f'Ticket information', description=f'**Status:** *{"open" if not ticket.closed_at else "closed"}*')
             embed.set_thumbnail(url=ticket.client.avatar_url)
             embed.add_field(name='Opened at (UTC)', value=ticket.opened_at)
@@ -128,12 +130,12 @@ class Support(commands.Cog):
             if ticket.closed_by:
                 embed.add_field(name='Closed by', value=ticket.closed_by)
             embed.add_field(name='Channel', value=ticket.channel.mention)
-            embed.add_field(name='People with access', value=human_join([str(member) for member in ticket.channel_members], final='and'))
+            embed.add_field(name='People with access', value=human_join([str(member) for member in ticket.channel.members], final='and'))
             return embed
 
         for ticket in open_tickets[ctx.guild.id].values():
             if ticket.client.id == user_id:
-                if ctx.author in ticket.channel_members:
+                if ctx.author in ticket.channel.members:
                     return await ctx.send(embed=make_message(ticket))
                 else:
                     return await ctx.send('You do not have access to this ticket.')
@@ -164,7 +166,7 @@ class Support(commands.Cog):
 
         Members can open support tickets to privately talk with staff. Channels of closed tickets will not be immediately deleted.
         """
-        current_category = self.bot.server_configs[ctx.guild.id]['ticket_category']
+        current_category = self.bot.server_configs[ctx.guild.id].ticket_category
         if current_category:
             await ctx.send(f'The current support ticket category is **{current_category}**, '
                            f'use `{ctx.prefix}ticketcategory set <category_id>` to change it, '
@@ -180,7 +182,7 @@ class Support(commands.Cog):
 2
         Provide the id of the category you want to set for support tickets.
         """
-        current_category = self.bot.server_configs[ctx.guild.id]['ticket_category']
+        current_category = self.bot.server_configs[ctx.guild.id].ticket_category
         new_category = self.bot.get_channel(new_category_id)
         print(new_category)
         if not new_category:
@@ -195,19 +197,19 @@ class Support(commands.Cog):
 
         try:
             connection: asyncpg.pool = self.bot.pool
-            query = 'UPDATE serverconfigs SET ticketcategory = $1 WHERE guild = $2;'
+            query = 'UPDATE serverconfigs SET ticket_category = $1 WHERE guild = $2;'
             await connection.fetchval(query, new_category.id, ctx.guild.id)
         except Exception as e:
             await ctx.send(f'Failed, {e} while saving the support ticket category to the database.')
         else:
-            self.bot.server_configs[ctx.guild.id]['ticket_category'] = new_category
+            self.bot.server_configs[ctx.guild.id].ticket_category = new_category
             await ctx.send('Support ticket category successfully set.')
 
     @ticketcategory.command(name='remove', aliases=['delete', 'stop', 'disable'])
     @owner_or_guild_permissions(manage_roles=True)
     async def remove_tcat(self, ctx: commands.Context):
         """Disable support tickets."""
-        current_category = self.bot.server_configs[ctx.guild.id]['ticket_category']
+        current_category = self.bot.server_configs[ctx.guild.id].ticket_category
         if not current_category:
             return await ctx.send(f'You currently don\'t have support tickets enabled, use `{ctx.prefix}ticketcategory '
                                   f'set <category_id>` to set a category and enable the ticket system.')
@@ -221,12 +223,12 @@ class Support(commands.Cog):
 
         try:
             connection: asyncpg.pool = self.bot.pool
-            query = 'UPDATE serverconfigs SET ticketcategory = NULL WHERE guild = $1;'
+            query = 'UPDATE serverconfigs SET ticket_category = NULL WHERE guild = $1;'
             await connection.fetchval(query, ctx.guild.id)
         except Exception as e:
             await ctx.send(f'Failed, {e} while removing the support ticket category from the database.')
         else:
-            self.bot.server_configs[ctx.guild.id]['ticket_category'] = None
+            self.bot.server_configs[ctx.guild.id].ticket_category = None
             await ctx.send('Support ticket category successfully removed.')
 
 

@@ -6,7 +6,6 @@ from discord.ext import commands
 import asyncio
 import traceback
 import discord
-import inspect
 import textwrap
 import importlib
 from contextlib import redirect_stdout
@@ -15,21 +14,17 @@ import os
 import re
 import sys
 import copy
-import time
 import subprocess
 from typing import Union, Optional
 import random
 import bot
 from os import kill
 from .profile import UserConnection, fetch_user_record
-from . import profile
 
 from cogs.utils.paginator import TextPages
 from .utils.messages import on_load, on_unload, on_reload, refuse_logout, on_logout, logout_log
 
 # to expose to the eval command
-import datetime
-from collections import Counter
 
 
 async def get_guild_by_id(bot, ctx, ID) -> Optional[discord.Guild]:

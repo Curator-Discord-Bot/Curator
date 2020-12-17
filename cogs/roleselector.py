@@ -660,7 +660,7 @@ class RoleSelector(commands.Cog):
     @commands.command(aliases=['iam', 'iwant', 'gimme'])
     async def giveme(self, ctx: commands.Context, role: discord.Role):
         """Give yourself a role from the list of roles you can give yourself."""
-        available_roles = self.bot.server_configs[ctx.guild.id]['self_roles']
+        available_roles = self.bot.server_configs[ctx.guild.id].self_roles
         if role not in available_roles:
             return await ctx.send(f'You can only give yourself {human_join([f"**{r}**" for r in available_roles], final="and")}.')
 
@@ -674,10 +674,10 @@ class RoleSelector(commands.Cog):
             await ctx.send('I do not have the required permissions to give you the role. I need "Manage Roles" '
                            'permissions and my highest role needs to be higher than the roles I am supposed to add/remove.')
 
-    @commands.command(aliases=['imnot'])
+    @commands.command(aliases=['imnot', 'removerole'])
     async def takerole(self, ctx: commands.Context, role: discord.Role):
         """Remove a role from yourself if it is on the list of self-assignable roles."""
-        available_roles = self.bot.server_configs[ctx.guild.id]['self_roles']
+        available_roles = self.bot.server_configs[ctx.guild.id].self_roles
         if role not in available_roles:
             return await ctx.send(f'You can only remove {human_join([f"**{r}**" for r in available_roles], final="and")} from yourself.')
 
@@ -692,10 +692,10 @@ class RoleSelector(commands.Cog):
                            'permissions and my highest role needs to be higher than the roles I am supposed to add/remove.')
 
     @commands.group(name='selfassign', aliases=['selfroles'], invoke_without_command=True)
-    @owner_or_guild_permissions(manage_roles=True)
+    #@owner_or_guild_permissions(manage_roles=True)
     async def self_assign(self, ctx: commands.Context):
         """See which roles members can assign to themselves using a command. Use subcommands to change the list."""
-        current_roles = self.bot.server_configs[ctx.guild.id]['self_roles']
+        current_roles = self.bot.server_configs[ctx.guild.id].self_roles
         await ctx.send(f'Use `{ctx.prefix}help selfassign` to see the available subcommands. ' +
                        ('There are currently no roles available for people to give themselves.'
                         if not current_roles else
@@ -714,7 +714,7 @@ class RoleSelector(commands.Cog):
             if role >= ctx.author.top_role:
                 return await ctx.send(f'**{role}** role is (higher than) your highest role so you cannot make it available.')
 
-        await selecting.set_roles(ctx, self.bot, *2*['self_roles'], list(roles))
+        await selecting.set_roles(ctx, self.bot, 'self_roles', list(roles))
 
     @self_assign.command(name='add', aliases=['include'])
     @owner_or_guild_permissions(manage_roles=True)
@@ -728,7 +728,7 @@ class RoleSelector(commands.Cog):
             if role >= ctx.author.top_role:
                 return await ctx.send(f'**{role}** role is (higher than) your highest role so you cannot make it available.')
 
-        await selecting.add_roles(ctx, self.bot, *2*['self_roles'], list(new_roles))
+        await selecting.add_roles(ctx, self.bot, 'self_roles', list(new_roles))
 
     @self_assign.command(name='remove', aliases=['delete'])
     @owner_or_guild_permissions(manage_roles=True)
@@ -743,19 +743,19 @@ class RoleSelector(commands.Cog):
                 return await ctx.send(f'**{role}** role is (higher than) your highest role so you cannot remove it from'
                                       f' the list.')
 
-        await selecting.remove_roles(ctx, self.bot, *2*['self_roles'], list(roles))
+        await selecting.remove_roles(ctx, self.bot, 'self_roles', list(roles))
 
     @self_assign.command(name='clear', aliases=['wipe'])
     @owner_or_guild_permissions(manage_roles=True)
     async def clear_selfroles(self, ctx: commands.Context):
         """Clear the entire list of roles that people can give themselves."""
-        current_roles = self.bot.server_configs[ctx.guild.id]['self_roles']
+        current_roles = self.bot.server_configs[ctx.guild.id].self_roles
         for role in current_roles:
             if role >= ctx.author.top_role:
                 return await ctx.send(f'**{role}** role is (higher than) your highest role so you cannot remove it from'
                                       f' the list. No roles have been removed.')
 
-        await selecting.clear_roles(ctx, self.bot, *2*['self_roles'])
+        await selecting.clear_roles(ctx, self.bot, 'self_roles')
 
 
 def setup(bot: commands.Bot):
