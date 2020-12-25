@@ -30,6 +30,7 @@ INITIAL_EXTENSIONS = (
     'cogs.info',
     'cogs.random',
     'cogs.admin',
+    'cogs.control',
     'cogs.moderation',
     'cogs.math',
     'cogs.fourinarow',
