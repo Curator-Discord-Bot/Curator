@@ -43,7 +43,7 @@ INITIAL_EXTENSIONS = (
 class ServerConfigs:
     def __init__(self, bot, guild_id, row=None):
         self.bot: Curator = bot
-        self.guild: discord.Guild = await self.get_guild(guild_id)
+        self.guild: discord.Guild = self.get_guild(guild_id)
         row = row or {'logchannel': None, 'chartroles': [], 'ticket_category': None, 'count_channels': [],
                       'self_roles': [], 'censor_words': [], 'censor_message': None}
         self.logchannel: Optional[discord.TextChannel] = self.get_channel(row['logchannel'])
@@ -54,7 +54,7 @@ class ServerConfigs:
         self.censor_words: List[str] = row['censor_words']
         self.censor_message: Optional[str] = row['censor_message']
 
-    async def get_guild(self, guild_id) -> discord.Guild:
+    def get_guild(self, guild_id) -> discord.Guild:
         guild = self.bot.get_guild(guild_id)
         if not guild:
             print(f'Couldn\'t find guild with ID {guild_id} while getting server configs, you can use the unguild'

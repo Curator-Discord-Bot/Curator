@@ -140,7 +140,7 @@ class Info(commands.Cog):
     async def remove_idlerpg_raid_alert_role(self, ctx: commands.Context):
         pass
 
-    @commands.Cog.listener
+    @commands.Cog.listener()
     async def on_message(self, message: discord.Message):  # todo To be changed
         if message.guild.id == 468366604313559040 and message.author.id == idle_rpg_raid_id \
                 and message.content.endswith('join the raid!'):

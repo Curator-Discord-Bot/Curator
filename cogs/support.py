@@ -84,7 +84,7 @@ class Support(commands.Cog):
         elif user_id and user_id not in open_tickets[ctx.guild.id].keys():
             return await ctx.send('There is no open ticket with this user.')
 
-        async def cprompt():
+        async def close_prompt():
             prompt_text = 'Are you sure you want to close this ticket?'
             confirm = await ctx.prompt(prompt_text, reacquire=False)
             if not confirm:
@@ -92,15 +92,15 @@ class Support(commands.Cog):
             await ticket.close_ticket(ctx.author)
 
         for ticket in open_tickets[ctx.guild.id].values():
-            ticket.refresh_channel()
+            await ticket.refresh_channel()
             if ticket.client.id == user_id:
                 if ctx.author in ticket.channel.members:
-                    await cprompt()
+                    await close_prompt()
                     return
                 else:
                     return await ctx.send('You do not have access to this ticket.')
             elif not user_id and ticket.channel == ctx.channel:
-                await cprompt()
+                await close_prompt()
                 return
 
     @commands.Cog.listener()

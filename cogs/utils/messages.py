@@ -1,6 +1,6 @@
 from random import choice
 from discord.ext.commands import Context
-from discord import Guild
+from discord import Guild, Message
 
 
 def on_ready() -> str:
@@ -44,6 +44,10 @@ def hello(ctx: Context) -> str:
     return choice(('Hey', 'Hello', 'Hi', 'Ey', 'Yo', 'Sup', ':wave:', 'Good to see you', 'Greetings', 'Peace')) + ', ' \
            + choice((ctx.author.name, 'dude', 'buddy', 'mate', choice(('bro', 'brother')), 'man', 'there', 'silly',
                      'you', 'master', 'traveler', 'fancypants', 'human', (role if len(role) > 0 else 'nobody'))) + '!'
+
+
+def censor_message(message: Message) -> str:
+    return choice((f'Do not use uncool words, {message.author.mention}!', f'You cannot say that, {message.author.mention}!'))
 
 
 def collect(ctx: Context) -> str:

@@ -4,6 +4,7 @@ import asyncpg
 from typing import Optional, Union
 from .utils import db
 from .utils.formats import human_join
+from .utils.messages import censor_message
 
 from bot import owner_or_guild_permissions
 
@@ -100,7 +101,7 @@ class Moderation(commands.Cog):
             self.bot.server_configs[ctx.guild.id].logchannel = None
             await ctx.send('Logging channel successfully removed.')
 
-    @commands.Cog.listener
+    @commands.Cog.listener()
     async def on_message_delete(self, message: discord.Message):
         if message.author.bot:
             return
@@ -133,12 +134,40 @@ class Moderation(commands.Cog):
     async def clear_cswords(self, ctx: commands.Context):
         pass
 
-    @commands.Cog.listener
+    @commands.group(aliases=[])
+    async def censormessage(self, ctx: commands.Context):
+        pass
+
+    @censormessage.command(name='set', aliases=['choose', 'select'])
+    async def set_cmessage(self, ctx: commands.Context, *, message):
+        """Set a custom message to be displayed when a member sends a censored word.
+
+        You can use {.attribute} anywhere inside the message to insert said attribute.
+        The most useful attributes are:
+        .name (get the user's name)
+        .display_name (get the member's display name, uses the server-specific nickname if they set one)
+        .mention (mentions the member)
+        Get a full list at https://discordpy.readthedocs.io/en/latest/api.html#member under **Attributes**.
+        """
+        pass
+
+    @censormessage.command(name='remove', aliases=['delete'])
+    async def remove_cmessage(self, ctx: commands.Context):
+        pass
+
+    @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
+        if message.author.bot:
+            return
+
         for word in self.bot.server_configs[message.guild.id].censor_words:
-            if word in message:
+            if word.lower() in message.content.lower():
                 await message.delete()
-                return await message.channel.send(self.bot.server_configs[message.guild.id].censor_message or f'Do not use uncool words {message.author.mention}!')
+                chosen_message = self.bot.server_configs[message.guild.id].censor_message
+                if chosen_message:
+                    return await message.channel.send(self.bot.server_configs[message.guild.id].chosen_message.format(message.author))
+                else:
+                    return await message.channel.send(censor_message(message))
 
 
 def setup(bot: commands.Bot):
