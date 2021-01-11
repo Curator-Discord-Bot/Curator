@@ -41,7 +41,7 @@ async def get_message_by_id(channel, ctx, ID) -> Optional[discord.Message]:
         return message
 
 
-class Template(commands.Cog):
+class Control(commands.Cog):
     """Commands that can be used to take control over the bot's actions."""
 
     def __init__(self, bot: commands.Bot):
@@ -225,4 +225,4 @@ class Template(commands.Cog):
 
 
 def setup(bot: commands.Bot):
-    bot.add_cog(Template(bot))
+    bot.add_cog(Control(bot))
