@@ -381,6 +381,8 @@ class Column:
                 builder.append("'%s'" % default)
             elif isinstance(default, bool):
                 builder.append(str(default).upper())
+            elif (isinstance(default, list) and not default) or default == '[]' or default == '{}':
+                builder.append("'{}'")
             else:
                 builder.append("(%s)" % default)
         elif self.unique:

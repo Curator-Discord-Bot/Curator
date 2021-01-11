@@ -8,7 +8,7 @@ config = get_config()
 
 run = asyncio.get_event_loop().run_until_complete
 try:
-    run(Table.create_pool(config['postgresql'], min_size=5, max_size=5))
+    run(Table.create_pool(config['postgresql'], command_timeout=60, min_size=config['poolsize'], max_size=config['poolsize']))
 except Exception as e:
     print(e)
     print('Could not set up PostgreSQL. Exiting.')
