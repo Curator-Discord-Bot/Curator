@@ -1,7 +1,5 @@
 discord.py==1.5.1
 numpy==1.19.3
-twisted==20.3.0
-quarry==1.6.2
 matplotlib==3.3.2
 requests==2.24.0
 emoji==0.6.0
