@@ -20,7 +20,7 @@ class Counts(db.Table):
     guild = db.Column(db.Integer(big=True))
     channel = db.Column(db.Integer(big=True))
 
-    started_by = db.Column(db.ForeignKey(table='profiles', column='discord_id', sql_type=db.Integer(big=True)))
+    started_by = db.Column(db.Integer(big=True))
     started_at = db.Column(db.Datetime, default="now() at time zone 'utc'")
 
     score = db.Column(db.Integer, default='0')
@@ -28,14 +28,13 @@ class Counts(db.Table):
 
     timed_out = db.Column(db.Boolean, default="FALSE")
     duration = db.Column(db.Interval)
-    ruined_by = db.Column(db.ForeignKey(table='profiles', column='discord_id', sql_type=db.Integer(big=True)))
+    ruined_by = db.Column(db.Integer(big=True))
 
     type = db.Column(db.String, default="normal")
 
 
 class Counters(db.Table):
-    user_id = db.Column(db.ForeignKey(table='profiles', column='discord_id', sql_type=db.Integer(big=True)),
-                        primary_key=True)
+    user_id = db.Column(db.Integer(big=True), primary_key=True)
     last_count = db.Column(db.ForeignKey(table='counts', column='id', sql_type=db.Integer()))
     best_count = db.Column(db.ForeignKey(table='counts', column='id', sql_type=db.Integer()))
     best_ruin = db.Column(db.ForeignKey(table='counts', column='id', sql_type=db.Integer()))
