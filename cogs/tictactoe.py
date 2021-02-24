@@ -1,9 +1,10 @@
 import discord
 from discord.ext import commands
+from bot import Curator
 from aio_timers import Timer
 from emoji import demojize
 
-from bot import is_bot_admin
+from .utils.checks import is_bot_admin
 
 running_games = {}
 
@@ -80,7 +81,7 @@ class TTTGame:
 class Tictactoe(commands.Cog):
     """A game of Tic Tac Toe."""
 
-    def __init__(self, bot: commands.bot):
+    def __init__(self, bot: Curator):
         self.bot = bot
 
     @commands.group(aliases=['noughts&crosses', 'ttt', 'ox'], invoke_without_command=True)
@@ -104,7 +105,7 @@ class Tictactoe(commands.Cog):
         prompt_text = f'{p2.mention if p2 not in ctx.message.mentions else p2.display_name}, ' \
                       f'do you accept this challenge of Tic Tac Toe? The invitation expires in 5 minutes. ' \
                       f'Be sure to pay attention to the reply, {p1.display_name}.'
-        confirm = await ctx.prompt(prompt_text, timeout=300.0, reacquire=False, author_id=p2.id)
+        confirm = await ctx.prompt(prompt_text, timeout=300, reacquire=False, author_id=p2.id)
         if not confirm:
             del (running_games[ctx.channel.id])
             return await ctx.send(
@@ -130,5 +131,5 @@ class Tictactoe(commands.Cog):
         await ctx.send('Check the Python printer output for your results.')
 
 
-def setup(bot: commands.Bot):
+def setup(bot: Curator):
     bot.add_cog(Tictactoe(bot))

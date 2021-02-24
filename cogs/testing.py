@@ -1,14 +1,16 @@
 import discord
 from discord.ext import commands
+from bot import Curator
 import time
 import asyncio
 from aio_timers import Timer
-from typing import Optional, Union
+from typing import Optional, Union, List
 import emoji
+from .utils.converter import GuildChanger
 
 
 class Testing(commands.Cog):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: Curator):
         self.bot = bot
 
     async def cog_check(self, ctx):
@@ -217,9 +219,24 @@ class Testing(commands.Cog):
 
     @commands.command()
     async def CAPITALS(self, ctx: commands.Context):
-        """Testing commands with a capitals"""
+        """Testing commands with capitals"""
         await ctx.send('Worked')
 
+    @commands.command()
+    async def guildtest(self, ctx: commands.Context, guild: Optional[GuildChanger]):
+        await ctx.send(f'Guild is **{ctx.guild}**')
 
-def setup(bot: commands.Bot):
+    @commands.command(aliases=['gchanneltest', 'gctest'])
+    async def guildchanneltest(self, ctx: commands.Context, guild: Optional[GuildChanger], channel: discord.TextChannel):
+        await ctx.send(f'Guild is **{ctx.guild}**')
+        await ctx.send(f'Channel is **{channel}**')
+
+    @commands.command()
+    async def listarg(self, ctx: commands.Context, arg1, arg_list: List[discord.Member], arg3):
+        await ctx.send(arg1)
+        await ctx.send(arg_list)
+        await ctx.send(arg3)
+
+
+def setup(bot: Curator):
     bot.add_cog(Testing(bot))

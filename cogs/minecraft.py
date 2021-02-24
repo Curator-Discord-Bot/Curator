@@ -5,6 +5,7 @@ from uuid import UUID
 
 import discord
 from discord.ext import commands
+from bot import Curator
 from json import dumps
 import requests
 import emoji
@@ -27,7 +28,7 @@ def get_uuid(username):
 
 class Minecraft(commands.Cog):
     """Commands related to Minecraft."""
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: Curator):
         self.bot = bot
 
     @commands.group(aliases=['mojang', 'mc'], invoke_without_command=True)
@@ -153,5 +154,5 @@ class Minecraft(commands.Cog):
         print(j)
 
 
-def setup(bot: commands.Bot):
+def setup(bot: Curator):
     bot.add_cog(Minecraft(bot))

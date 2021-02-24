@@ -31,12 +31,13 @@ INITIAL_EXTENSIONS = (
     'cogs.random',
     'cogs.admin',
     'cogs.control',
+    'cogs.sinfo',
     'cogs.moderation',
     'cogs.math',
     'cogs.fourinarow',
     'cogs.emojis',
     'cogs.support',
-    'cogs.roleselector'
+    #'cogs.roleselector'  # first gotta fix some issues
 )
 
 
@@ -121,12 +122,12 @@ class Curator(commands.Bot):
             self.dm_dump = self.get_channel(self.dm_dump)
             #if not self.dm_dump:
             #    owner = await self.fetch_user(self.owner_id)
-            #    await owner.dm_channel.send('I couldn\'t find the channel to forward DMs to.')
+            #    await owner.send('I couldn\'t find the channel to forward DMs to.')
 
         print(f'Logged in as {self.user.name}')
         print(f'At UTC: {datetime.datetime.utcnow()}')
         print(f'User-ID: {self.user.id}')
-        print(f'With admin{"s" if len(self.admins) > 1 else ""} {human_join([self.get_user(id) for id in self.admins], final="and")}')
+        print(f'With admin{"s" if len(self.admins) > 1 else ""} {human_join([str(self.get_user(id)) for id in self.admins], final="and")}')
         print(f'Command Prefix: {self.command_prefix}')
         print('-' * len(str(self.user.id)))
 
@@ -233,10 +234,10 @@ class Curator(commands.Bot):
             return await ctx.send(f'Failed converting {error.param} to all possible types.' +
                                   (f'\nThe converter{"s" if len(error.converters) > 1 else ""} I tried '
                                    f'{"were" if len(error.converters) > 1 else "was"} '
-                                   f'{human_join(error.converters, final="and")}.' if len(error.converters != 0) else "") +
+                                   f'{human_join(error.converters, final="and")}.' if len(error.converters) != 0 else "") +
                                   (f'\nThe error{"s" if len(error.errors) else ""} caught from the failing conversion '
                                    f'{"are" if len(error.errors) > 1 else "is"} '
-                                   f'{human_join([f"`{type(e)}: {e}`" for e in error.errors])}.' if len(error.errors != 0) else ""))
+                                   f'{human_join([f"`{type(e)}: {e}`" for e in error.errors])}.' if len(error.errors) != 0 else ""))
         if isinstance(error, commands.CommandOnCooldown):
             return await ctx.send(f'This command is on cooldown, try again in {error.retry_after} seconds.')
         if isinstance(error, commands.MissingPermissions):
@@ -275,24 +276,6 @@ class Curator(commands.Bot):
         # The ExtensionErrors are already caught in the corresponding Admin commands
         await ctx.send(f'`{type(error)}: {error}`')
         raise error
-
-
-def is_bot_admin():
-    """Decorator to check if someone is a bot admin."""
-    async def predicate(ctx: commands.Context):
-        return ctx.author.id in ctx.bot.admins
-
-    return commands.check(predicate)
-
-
-def owner_or_guild_permissions(**perms):
-    """Decorator to check if someone is a bot admin or has the necessary server permissions."""
-    original = commands.has_guild_permissions(**perms).predicate
-
-    async def extended_check(ctx: commands.Context):
-        return ctx.author.id in ctx.bot.admins or await original(ctx)
-
-    return commands.check(extended_check)
 
 
 def get_config():

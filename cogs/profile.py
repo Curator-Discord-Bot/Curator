@@ -5,6 +5,7 @@ from uuid import UUID
 import asyncpg
 import discord
 from discord.ext import commands
+from bot import Curator
 from .utils import db
 from .minecraft import get_uuid
 
@@ -62,7 +63,7 @@ async def fetch_user_record(discord_id, connection) -> asyncpg.Record:
 
 
 class Profile(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot: Curator):
         self.bot = bot
 
     @commands.group(invoke_without_command=True)
@@ -87,5 +88,5 @@ class Profile(commands.Cog):
             await ctx.send('That pin seems to be invalid.')
 
 
-def setup(bot: commands.Bot):
+def setup(bot: Curator):
     bot.add_cog(Profile(bot))

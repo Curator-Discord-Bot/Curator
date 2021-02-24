@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from bot import Curator
 
 
 class Kalaha():
@@ -7,7 +8,7 @@ class Kalaha():
 
 
 class Kalah(commands.Cog):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: Curator):
         self.bot = bot
 
     @commands.group(invoke_without_command=True, aliases=['kalaha', 'mancala'])
@@ -21,5 +22,5 @@ class Kalah(commands.Cog):
         await ctx.send(msg)
 
 
-def setup(bot: commands.Bot):
+def setup(bot: Curator):
     bot.add_cog(Kalah(bot))

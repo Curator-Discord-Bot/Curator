@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from bot import Curator
 import asyncpg
 from typing import List
 
@@ -15,7 +16,7 @@ async def set_roles(ctx: commands.Context, bot, name, roles: List[discord.Role])
     Roles: A list of the roles to set
     """
     roles = list(dict.fromkeys(roles))  # Remove duplicates
-    current_roles = bot.server_configs[ctx.guild.id].__getattr__(name)
+    current_roles = bot.server_configs[ctx.guild.id].__getattribute__(name)
 
     if current_roles:
         prompt_text = f'This will change the roles from {human_join([f"**{role}**" for role in current_roles], final="and")}' \
@@ -45,10 +46,10 @@ async def add_roles(ctx: commands.Context, bot, name, new_roles: List[discord.Ro
     New_roles: A list of the roles to add
     """
     new_roles = list(dict.fromkeys(new_roles))  # Remove duplicates
-    current_roles = bot.server_configs[ctx.guild.id].__getattr__(name)
+    current_roles = bot.server_configs[ctx.guild.id].__getattribute__(name)
     new_roles = [role for role in new_roles if role not in current_roles]
     if not new_roles:
-        return ctx.send('There are no roles on your list that aren\'t already selected.')
+        return await ctx.send('There are no roles on your list that aren\'t already selected.')
 
     try:
         connection: asyncpg.pool = bot.pool
@@ -57,7 +58,7 @@ async def add_roles(ctx: commands.Context, bot, name, new_roles: List[discord.Ro
     except Exception as e:
         await ctx.send(f'Failed, `{e}` while saving the new roles to the database.')
     else:
-        bot.server_configs[ctx.guild.id].__setattr__(name, (bot.server_configs[ctx.guild.id].__getattr__(name) + new_roles).sort(reverse=True))
+        bot.server_configs[ctx.guild.id].__setattr__(name, (bot.server_configs[ctx.guild.id].__getattribute__(name) + new_roles).sort(reverse=True))
         await ctx.send(f'Role{"s" if len(new_roles) > 1 else ""} '
                        f'{human_join([f"**{role}**" for role in new_roles], final="and")} successfully added.')
 
@@ -70,7 +71,7 @@ async def remove_roles(ctx: commands.Context, bot, name, roles: List[discord.Rol
     name: The name to use in the server_configs (and the name of the database table)
     Roles: A list of the roles to remove
     """
-    current_roles = bot.server_configs[ctx.guild.id].__getattr__(name)
+    current_roles = bot.server_configs[ctx.guild.id].__getattribute__(name)
     to_delete = []
     for role in roles:
         if role in current_roles and role not in to_delete:
@@ -99,7 +100,7 @@ async def clear_roles(ctx: commands.Context, bot, name):
     Bot: The bot
     name: The name to use in the server_configs (and the name of the database table)
     """
-    current_roles = bot.server_configs[ctx.guild.id].__getattr__(name).copy()
+    current_roles = bot.server_configs[ctx.guild.id].__getattribute__(name).copy()
     if not current_roles:
         return await ctx.send('There are no roles to delete.')
 

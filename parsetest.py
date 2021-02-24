@@ -35,7 +35,7 @@ number_aliases = {
     ':input_numbers:': ['1234']
 }
 
-PARSE_DICT = {v: number_aliases[k] for k, v in emoji.EMOJI_UNICODE.items() if k in number_aliases.keys()}
+PARSE_DICT = {v: number_aliases[k] for k, v in emoji.unicode_codes.EMOJI_UNICODE_ENGLISH.items() if k in number_aliases.keys()}
 
 
 def parsed(number: str):
@@ -43,7 +43,7 @@ def parsed(number: str):
     plist = [c for c in number]
     emojis = []
     for pos, c in enumerate(number):
-        if c in emoji.unicode_codes.UNICODE_EMOJI:
+        if c in emoji.unicode_codes.UNICODE_EMOJI['en']:
             emojis.append((pos, c))
         elif c in '1234567890' and pos < len(number) - 1 and number[pos + 1] == '':
             pass

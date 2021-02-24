@@ -1,12 +1,13 @@
 import discord
 from discord.ext import commands
+from bot import Curator
 
 from typing import Union
-from emoji import EMOJI_UNICODE
+from emoji.unicode_codes import EMOJI_UNICODE_ENGLISH
 
 
 class Emojis(commands.Cog):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: Curator):
         self.bot = bot
 
     @commands.group(invoke_without_command=True)
@@ -36,13 +37,12 @@ class Emojis(commands.Cog):
         elif t == discord.PartialEmoji:
             await ctx.send(f'{emoji}\nType: {t}\nName: {emoji.name}\nId: {emoji.id}\nAnimated: {emoji.animated}\nCustom Emoji: {emoji.is_custom_emoji()}\nUnicode Emoji: {emoji.is_unicode_emoji()}\nURL: {emoji.url}')
             return
-        elif emoji in EMOJI_UNICODE.values():
+        elif emoji in EMOJI_UNICODE_ENGLISH.values():
             await ctx.send(f'{emoji}\nType: {t}\nNot much else to say about it. Maybe you wanna lookup it\'s unicode?\nTry `{ctx.prefix}emoji unicode {emoji}`')
             return
         else:
             await ctx.send('This is not an emoji.')
 
 
-
-def setup(bot: commands.Bot):
+def setup(bot: Curator):
     bot.add_cog(Emojis(bot))

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import discord
 from discord.ext import commands
+from bot import Curator
 import asyncpg
 from typing import Optional, List, Union
 import asyncio
@@ -12,7 +13,7 @@ from .utils import db
 from .utils import selecting
 from.utils.formats import human_date, human_join
 
-from bot import is_bot_admin, owner_or_guild_permissions
+from .utils.checks import is_bot_admin, owner_or_guild_permissions
 
 
 class Rolemenus(db.Table):
@@ -77,39 +78,34 @@ class SelectionMenu:
             await self.message.remove_reaction(emoji, member)
             return
 
-        if not member.dm_channel:
-            await member.create_dm()
-
         if not self.status:
             self.ignore_next = True
             await self.message.remove_reaction(emoji, member)
-            return await member.dm_channel.send(f'**{self.message.guild}:** the menu you tried to use is currently out of service, sorry for the inconvenience.')
+            return await member.send(f'**{self.message.guild}:** the menu you tried to use is currently out of service, sorry for the inconvenience.')
 
         role = self.roles[self.emojis.index(emoji)]
         if role in member.roles:
-            return await member.dm_channel.send(f'**{self.message.guild}:** you already have the **{role}** role.')
+            return await member.send(f'**{self.message.guild}:** you already have the **{role}** role.')
         if not self.allow_multiple:
             for r in self.roles:
                 if r in member.roles:
                     self.ignore_next = True
                     await self.message.remove_reaction(emoji, member)
-                    return await member.dm_channel.send(f'**{self.message.guild}:** you already have a role from this'
+                    return await member.send(f'**{self.message.guild}:** you already have a role from this'
                                                         f' menu, you must first remove **{r}** if you want **{role}**.')
 
         try:
             await member.add_roles(role, reason=f'Selected role ({self.message.jump_url})')
-            await member.dm_channel.send(f'**{self.message.guild}:** gave you the **{role}** role.')
+            await member.send(f'**{self.message.guild}:** gave you the **{role}** role.')
         except discord.Forbidden:
             self.ignore_next = True
             await self.message.remove_reaction(emoji, member)
             guild_owner = self.message.guild.owner
-            if not guild_owner.dm_channel:
-                await guild_owner.create_dm()
-            await guild_owner.dm_channel.send(f'**{self.message.guild}:** I do not have the required permissions to give'
+            await guild_owner.send(f'**{self.message.guild}:** I do not have the required permissions to give'
                                               f' **{member}** the **{role}** role on your server. I need "Manage Roles"'
                                               f' permissions and my highest role needs to be higher than the roles you'
                                               f' want me to add/remove.')
-            await member.dm_channel.send(f'**{self.message.guild}:** I don\'t have permission to give you the **{role}**'
+            await member.send(f'**{self.message.guild}:** I don\'t have permission to give you the **{role}**'
                                          f' role. I have contacted the server owner about this.')
 
     async def reaction_removed(self, emoji: Union[discord.Emoji, discord.PartialEmoji, str], member: discord.Member):
@@ -117,34 +113,29 @@ class SelectionMenu:
             self.ignore_next = False
             return
 
-        if not member.dm_channel:
-            await member.create_dm()
-
         if not self.status:
             await self.message.remove_reaction(emoji, member)
-            return await member.dm_channel.send(f'**{self.message.guild}:** the menu you tried to use is currently out of service, sorry for the inconvenience.')
+            return await member.send(f'**{self.message.guild}:** the menu you tried to use is currently out of service, sorry for the inconvenience.')
 
         role = self.roles[self.emojis.index(emoji)]
         if role not in member.roles:
-            return await member.dm_channel.send(f'**{self.message.guild}:** you do not have the **{role}** role so I couldn\'t remove it.')
+            return await member.send(f'**{self.message.guild}:** you do not have the **{role}** role so I couldn\'t remove it.')
 
         try:
             await member.remove_roles(role, reason=f'Removed role ({self.message.jump_url})')
-            await member.dm_channel.send(f'**{self.message.guild}:** removed the **{role}** role.')
+            await member.send(f'**{self.message.guild}:** removed the **{role}** role.')
         except discord.Forbidden:
             guild_owner = self.message.guild.owner
-            if not guild_owner.dm_channel:
-                await guild_owner.create_dm()
-            await guild_owner.dm_channel.send(f'**{self.message.guild}:** I do not have the required permissions to'
+            await guild_owner.send(f'**{self.message.guild}:** I do not have the required permissions to'
                                               f' remove the **{role}** role from **{member}** on your server. I need'
                                               f' "Manage Roles" permissions and my highest role needs to be higher than'
                                               f' the roles you want me to add/remove.')
-            await member.dm_channel.send(f'**{self.message.guild}:** I don\'t have permission to remove the **{role}**'
+            await member.send(f'**{self.message.guild}:** I don\'t have permission to remove the **{role}**'
                                          f' role from you. I have contacted the server owner about this.')
 
 
 class RoleSelector(commands.Cog):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: Curator):
         self.bot = bot
         self._task = bot.loop.create_task(self.get_menus())
 
@@ -157,14 +148,16 @@ class RoleSelector(commands.Cog):
         if not ctx.invoked_subcommand:
             await ctx.send(f'Use `{ctx.prefix}help roleselector` for the possible commands.')
 
-    @role_selector.command(name='make', aliases=['create', 'new'])
+    @role_selector.group(name='make', aliases=['create', 'new'], invoke_without_command=True)
     @owner_or_guild_permissions(manage_roles=True)
     async def make_rsel(self, ctx: commands.Context, channel: discord.TextChannel,
-                        *roles_and_emojis: Union[discord.Role, discord.Emoji, discord.PartialEmoji, str]):
+                        *roles_and_emojis: Union[discord.Role, discord.Emoji, discord.PartialEmoji, str], allow_multiple=True):
         """Create a role selection menu!
 
         Provide the channel for the menu.
         More instructions coming soon.
+
+        Use "roleselector make unique" instead to restrict members to choosing only one role from the list.
         """
         if len(roles_and_emojis) % 2 == 1:
             return await ctx.send(f'Provide a valid list of arguments (`{ctx.prefix}help roleselector make` for info on'
@@ -184,8 +177,8 @@ class RoleSelector(commands.Cog):
                         roles.append(item)
                 else:
                     return await ctx.send(f'`{item}` is invalid.')
-            else:  # Item should be an emoji
-                if type(item) == discord.Emoji or type(item) == discord.PartialEmoji or item in amoji.EMOJI_UNICODE.values():
+            else:  # Item should be an emoji   TODO custom emoji must be from the ctx.guild
+                if type(item) == discord.Emoji or type(item) == discord.PartialEmoji or item in amoji.unicode_codes.EMOJI_UNICODE_ENGLISH.values():
                     #if item not in ctx.guild.
                     if item in emojis:
                         return await ctx.send('You can only use an emoji once.')
@@ -205,7 +198,7 @@ class RoleSelector(commands.Cog):
             return await ctx.send('Timed out')
         description = description.content
 
-        def check2(reaction2, user2):
+        """def check2(reaction2, user2):
             return user2 == ctx.author and reaction2.message == msg2 and (reaction2.emoji == '✅' or reaction2.emoji == '❌')
 
         msg2 = await ctx.send('Are people allowed to select multiple roles from the list? '
@@ -216,7 +209,7 @@ class RoleSelector(commands.Cog):
             r2, u2 = await self.bot.wait_for('reaction_add', check=check2, timeout=60)
         except asyncio.TimeoutError:
             return await ctx.send('Timed out')
-        allow_multiple = True if r2.emoji == '✅' else False
+        allow_multiple = True if r2.emoji == '✅' else False"""  # Obsoleted due to using a sub-command
 
         def check3_reply(message3):
             if message3.author == ctx.author and message3.channel == ctx.channel:
@@ -270,6 +263,13 @@ class RoleSelector(commands.Cog):
                                                                                           emojis, role_descs, allow_multiple,
                                                                                           ctx.author, created_at)
 
+    @make_rsel.command(name='unique', aliases=['singular', 'limited'])
+    @owner_or_guild_permissions(manage_roles=True)
+    async def make_rsel_unique(self, ctx: commands.Context, channel: discord.TextChannel,
+                               *roles_and_emojis: Union[discord.Role, discord.Emoji, discord.PartialEmoji, str]):
+        """Create a role selection menu from which only one role can be selected."""
+        await ctx.invoke(self.make_rsel, channel, *roles_and_emojis, allow_multiple=False)
+
     @role_selector.command()
     @owner_or_guild_permissions(manage_roles=True)
     async def enable(self, ctx: commands.Context, menu_url):
@@ -322,7 +322,7 @@ class RoleSelector(commands.Cog):
         if role >= ctx.author.top_role:
             return await ctx.send('This role is (higher than) your highest role so you cannot make it available.')
 
-        if type(emoji) == str and emoji not in amoji.EMOJI_UNICODE.values():
+        if type(emoji) == str and emoji not in amoji.unicode_codes.EMOJI_UNICODE_ENGLISH.values():
             return await ctx.send('Please give me a valid emoji.')
 
         menu.roles.append(role)
@@ -384,7 +384,7 @@ class RoleSelector(commands.Cog):
         if emoji in menu.emojis:
             return await ctx.send('This emoji is already used in this menu. You can only use an emoji once.')
 
-        if type(emoji) == str and emoji not in amoji.EMOJI_UNICODE.values():
+        if type(emoji) == str and emoji not in amoji.unicode_codes.EMOJI_UNICODE_ENGLISH.values():
             return await ctx.send(f'Please give me a valid emoji.')
 
         old_emoji = menu.emojis[menu.roles.index(role)]
@@ -562,9 +562,15 @@ class RoleSelector(commands.Cog):
         guild: discord.Guild = self.bot.get_guild(payload.guild_id)
         channel: discord.TextChannel = guild.get_channel(payload.channel_id)
         message: discord.Message = await channel.fetch_message(payload.message_id)
-        emoji = payload.emoji
+        emoji: discord.PartialEmoji = payload.emoji
         if emoji.is_custom_emoji():
-            emoji = await guild.fetch_emoji(emoji.id)
+            try:
+                emoji: discord.Emoji = await guild.fetch_emoji(emoji.id)  # TODO figure out why this is giving (NotFound) errors at seemingly random moments, might be linked to todo in line 180
+            except Exception as e:
+                print('Exception received from the emoji thing')
+                print(emoji, emoji)
+                raise e
+
         else:
             emoji = emoji.name
         member = guild.get_member(payload.user_id)
@@ -621,10 +627,10 @@ class RoleSelector(commands.Cog):
 
                 emojis = []
                 for emoji_id in menu['emojis']:
-                    if emoji_id in amoji.EMOJI_UNICODE.values():
+                    if emoji_id in amoji.unicode_codes.EMOJI_UNICODE_ENGLISH.values():
                         emojis.append(amoji.emojize(emoji_id))
                     else:
-                        emoji_id = str(emoji_id)
+                        emoji_id = int(emoji_id)
                         try:
                             emojis.append(await guild.fetch_emoji(emoji_id))
                         except:
@@ -650,7 +656,7 @@ class RoleSelector(commands.Cog):
             self._task.cancel()
             self._task = self.bot.loop.create_task(self.get_menus())
 
-    @commands.command(hidden=True)
+    @commands.command(aliases=['printrss', 'printrs'], hidden=True)
     @is_bot_admin()
     async def printmenus(self, ctx: commands.Context):
         """Print all role menus."""
@@ -758,5 +764,5 @@ class RoleSelector(commands.Cog):
         await selecting.clear_roles(ctx, self.bot, 'self_roles')
 
 
-def setup(bot: commands.Bot):
+def setup(bot: Curator):
     bot.add_cog(RoleSelector(bot))

@@ -3,6 +3,7 @@ from uuid import UUID
 
 from asyncpg import UniqueViolationError
 from discord.ext import commands
+from bot import Curator
 import asyncio
 import traceback
 import discord

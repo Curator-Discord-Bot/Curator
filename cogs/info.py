@@ -1,11 +1,12 @@
 import discord
 from discord.ext import commands
+from bot import Curator
 import asyncpg
 import matplotlib.pyplot as plt
 from io import BytesIO
 from typing import Optional
 
-from bot import owner_or_guild_permissions
+from .utils.checks import owner_or_guild_permissions
 from .utils.formats import human_join
 from .utils import selecting
 
@@ -14,7 +15,7 @@ idle_rpg_raid_id = 665938966452764682
 
 
 class Info(commands.Cog):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: Curator):
         self.bot = bot
 
     @commands.command()
@@ -149,5 +150,5 @@ class Info(commands.Cog):
             await message.add_reaction('<:diamond_sword:767112271704227850>')
 
 
-def setup(bot: commands.Bot):
+def setup(bot: Curator):
     bot.add_cog(Info(bot))

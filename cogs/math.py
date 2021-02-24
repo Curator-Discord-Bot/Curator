@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from bot import Curator
 import math
 from .utils.formats import human_join
 from typing import Optional
@@ -52,7 +53,7 @@ def pi(digits=10):
 
 
 class Math(commands.Cog):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: Curator):
         self.bot = bot
 
     @commands.group(invoke_without_command=True)
@@ -87,5 +88,5 @@ class Math(commands.Cog):
         await ctx.send(pi(digits))
 
 
-def setup(bot: commands.Bot):
+def setup(bot: Curator):
     bot.add_cog(Math(bot))

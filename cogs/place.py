@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from bot import Curator
 from PIL import Image, ImagePalette
 from cogs.utils import color
 from cogs.utils import formats
@@ -10,7 +11,7 @@ PLACE = Image.new('RGB', (size, size), color=(255, 255, 255))
 
 
 class Place(commands.Cog):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: Curator):
         self.bot = bot
 
     @commands.group(invoke_without_command=True, name='place')
@@ -46,7 +47,7 @@ class Place(commands.Cog):
             await ctx.send(file=discord.File(fp=buffer, filename='place.png'))
 
 
-def setup(bot: commands.Bot):
+def setup(bot: Curator):
     bot.add_cog(Place(bot))
 
 

@@ -6,6 +6,7 @@ import re
 import asyncpg
 import discord
 from discord.ext import commands
+from bot import Curator
 import emoji
 from random import choice
 

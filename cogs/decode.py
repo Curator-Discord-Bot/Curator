@@ -3,10 +3,11 @@ import re
 
 import discord
 from discord.ext import commands
+from bot import Curator
 
 
 class Decode(commands.Cog):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: Curator):
         self.bot = bot
 
     def formatted_result(self, r):
@@ -86,7 +87,7 @@ class Decode(commands.Cog):
         await ctx.send(message.replace('@', 'AT'))
 
 
-def setup(bot: commands.Bot):
+def setup(bot: Curator):
     bot.add_cog(Decode(bot))
 
 

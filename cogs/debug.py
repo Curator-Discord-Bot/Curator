@@ -1,12 +1,13 @@
 import discord
 from discord.ext import commands
+from bot import Curator
 
 import emoji
 
 
 class Debug(commands.Cog):
     """Admin-only debug commands."""
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: Curator):
         self.bot = bot
 
     async def cog_check(self, ctx: commands.Context):
@@ -72,5 +73,5 @@ class Debug(commands.Cog):
         await ctx.send('Also check the Python printer output for your results.')
 
 
-def setup(bot: commands.Bot):
+def setup(bot: Curator):
     bot.add_cog(Debug(bot))

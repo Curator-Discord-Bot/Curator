@@ -3,6 +3,7 @@ import string
 import discord
 from asyncio import sleep as slp
 from discord.ext import commands
+from bot import Curator
 from typing import Optional
 from random import choice, randint
 import requests
@@ -13,7 +14,7 @@ deleted_usernames = {}
 
 
 class Fun(commands.Cog):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: Curator):
         self.bot = bot
 
     @commands.command()
@@ -144,5 +145,5 @@ class Fun(commands.Cog):
         await ctx.send(files=[discord.File('media/catloop/cat1.gif'), discord.File('media/catloop/cat2.gif')])
 
 
-def setup(bot: commands.Bot):
+def setup(bot: Curator):
     bot.add_cog(Fun(bot))

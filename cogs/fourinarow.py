@@ -2,6 +2,7 @@ import asyncio
 from asyncio import sleep as slp
 import discord
 from discord.ext import commands
+from bot import Curator
 from typing import Optional, Union, List
 from random import randint
 
@@ -143,7 +144,7 @@ class FourInARow(commands.Cog):
     'empty_tile', 'blue_tile', 'red_tile', 'green_tile', 'orange_tile', 'pink_tile', 'purple_tile', 'aqua_tile',
     'color_tiles', 'column_reactions', 'inverse_column_reactions')
 
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: Curator):
         self.bot = bot
 
         self.empty_tile = None
@@ -332,7 +333,7 @@ class FourInARow(commands.Cog):
         self.init_tiles()
 
 
-def setup(bot: commands.Bot):
+def setup(bot: Curator):
     cog = FourInARow(bot)
     cog.init_tiles()
     bot.add_cog(cog)

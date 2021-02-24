@@ -1,10 +1,11 @@
 import discord
 from discord.ext import commands
+from bot import Curator
 from asyncio import sleep as slp
 
 
 class Template(commands.Cog):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: Curator):
         self.bot = bot
 
     async def cog_check(self, ctx):
@@ -23,7 +24,7 @@ class Template(commands.Cog):
         await ctx.send(msg)
 
 
-def setup(bot: commands.Bot):
+def setup(bot: Curator):
     bot.add_cog(Template(bot))
 
 

@@ -2,6 +2,7 @@ import copy
 
 from .utils import checks, db, time, formats
 from discord.ext import commands
+from bot import Curator
 import discord
 import asyncio
 import asyncpg
@@ -197,7 +198,7 @@ class Reminder(commands.Cog):
 
     async def check_idlerpg(self, message: discord.Message) -> bool:
         m = message.content.lower()
-        if not (m.startswith('$') and m.endswith('r')):
+        if not (m.startswith('$') and m.endswith(' r')):
             return False
         elif m.startswith('$steal '):
             await self.sudo(message, 'r 1h steal')

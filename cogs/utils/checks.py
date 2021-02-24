@@ -1,4 +1,5 @@
 from discord.ext import commands
+from bot import Curator
 
 # The permission system of the bot is based on a "just works" basis
 # You have permissions and the bot has permissions. If you meet the permissions
@@ -71,3 +72,21 @@ def is_in_guilds(*guild_ids):
 
 def is_lounge_cpp():
     return is_in_guilds(145079846832308224)
+
+
+def is_bot_admin():
+    """Decorator to check if someone is a bot admin."""
+    async def predicate(ctx: commands.Context):
+        return ctx.author.id in ctx.bot.admins
+
+    return commands.check(predicate)
+
+
+def owner_or_guild_permissions(**perms):
+    """Decorator to check if someone is a bot admin or has the necessary server permissions."""
+    original = commands.has_guild_permissions(**perms).predicate
+
+    async def extended_check(ctx: commands.Context):
+        return ctx.author.id in ctx.bot.admins or await original(ctx)
+
+    return commands.check(extended_check)

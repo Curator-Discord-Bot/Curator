@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from bot import Curator
 import asyncpg
 from typing import Optional
 from copy import copy
@@ -7,7 +8,7 @@ from datetime import datetime
 import emoji
 from .utils.formats import human_join
 
-from bot import is_bot_admin, owner_or_guild_permissions
+from .utils.checks import is_bot_admin, owner_or_guild_permissions
 
 open_tickets = {}
 closed_tickets = {}
@@ -52,7 +53,7 @@ class Ticket:
 
 
 class Support(commands.Cog):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: Curator):
         self.bot = bot
 
     @commands.group()
@@ -232,5 +233,5 @@ class Support(commands.Cog):
             await ctx.send('Support ticket category successfully removed.')
 
 
-def setup(bot: commands.Bot):
+def setup(bot: Curator):
     bot.add_cog(Support(bot))

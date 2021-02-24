@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from bot import Curator
 from numpy import random
 import matplotlib.pyplot as plt
 from io import BytesIO
@@ -7,7 +8,7 @@ from typing import Optional
 
 
 class RNG(commands.Cog):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: Curator):
         self.bot = bot
 
     @commands.group(invoke_without_command=True)
@@ -106,5 +107,5 @@ class RNG(commands.Cog):
         await ctx.send(file=discord.File(buf, 'bars.png'))
 
 
-def setup(bot: commands.Bot):
+def setup(bot: Curator):
     bot.add_cog(RNG(bot))
