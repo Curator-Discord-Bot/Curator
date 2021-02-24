@@ -16,6 +16,8 @@ However, we will work on having the bot run on several servers in the future.
 
 ### Install the Dependencies
 
+For ease of use, you can also run the bot with Docker. There is another repository for that.
+
 #### Windows:
 ```bat
 python -m venv venv
