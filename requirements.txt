@@ -7,4 +7,4 @@ asyncpg==0.21.0
 parsedatetime==2.6
 python-dateutil==2.8.1
 aio-timers==0.0.1
-Pillow==8.0.1
+Pillow==8.1.1
