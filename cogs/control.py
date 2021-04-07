@@ -50,11 +50,7 @@ class Control(commands.Cog):  # TODO add more exception catching, check prompts 
         self.bot = bot
 
     async def cog_check(self, ctx: commands.Context):
-        if ctx.author.id in self.bot.admins:
-            return True
-        if not ctx.command.name == 'help':
-            await ctx.send(f'This command is only for the bot admin{"" if len(self.bot.admins) == 1 else "s"}.')
-        return False
+        return ctx.author.id in self.bot.admins
 
     @commands.command(aliases=['sayhere'], hidden=True)
     async def echo(self, ctx: commands.Context, *, message):  # TODO: implement delete_after?
@@ -184,28 +180,60 @@ class Control(commands.Cog):  # TODO add more exception catching, check prompts 
                                    f' to message "{message.content}" by {message.author.name}'
                                    f' with emoji{"s" if len(successes) > 1 else ""} {successes}.')
 
-    @commands.command(hidden=True)
-    async def delete(self, ctx: commands.Context, message_link, delay: Optional[float]):
+    @commands.group(invoke_without_command=True, hidden=True)
+    async def delete(self, ctx: commands.Context, message: discord.Message, delay: Optional[float]):
         """Delete a message."""
-        IDs = message_link.split('/')[-2:]
-        channel = await get_channel_by_id(self.bot, ctx, int(IDs[0]))
-        if channel:
-            message = await get_message_by_id(channel, ctx, int(IDs[1]))
-            if message:
-                try:
-                    await message.delete(delay=delay)
-                except discord.Forbidden:
-                    await ctx.send('I don\'t have permission to delete this message:grimacing:')
-                except discord.NotFound:
-                    await ctx.send('This message was already deleted.')
-                except discord.HTTPException:
-                    await ctx.send('I failed in deleting the message:grimacing:')
-                except Exception as e:
-                    await ctx.send(f'There\'s been a problem while deleting the message that\'s not of type "Forbidden",'
-                                   f' "NotFound" or "HTTPException", but `{type(e)}: {e}`.')
-                else:
-                    await ctx.send(f'Message "{message.content}" by {message.author.name} deleted in server'
-                                   f' "{channel.guild.name}" in channel "{channel.mention}".')
+        #IDs = message_link.split('/')[-2:]
+        #channel = await get_channel_by_id(self.bot, ctx, int(IDs[0]))
+        #if channel:
+        #    message = await get_message_by_id(channel, ctx, int(IDs[1]))
+        #    if message:
+        try:
+            await message.delete(delay=delay)
+        except discord.Forbidden:
+            await ctx.send('I don\'t have permission to delete this message:grimacing:')
+        except discord.NotFound:
+            await ctx.send('This message was already deleted.')
+        except discord.HTTPException:
+            await ctx.send('I failed in deleting the message:grimacing:')
+        except Exception as e:
+            await ctx.send(f'There\'s been a problem while deleting the message that\'s not of type "Forbidden",'
+                           f' "NotFound" or "HTTPException", but `{type(e)}: {e}`.')
+        else:
+            await ctx.send(f'Message "{message.content}" by {message.author.name} deleted in server'
+                           f' "{message.guild.name}" in channel "{message.channel.mention}".')
+
+    @delete.command(name='discrete', aliases=['discretely', 'selfdestruct', 'selfdelete', 'noevidence', 'secretly'])
+    async def delete_discrete(self, ctx: commands.Context, message: discord.Message, delay: Optional[float]):
+        try:
+            await message.delete(delay=delay)
+        except discord.Forbidden:
+            await ctx.author.send('I don\'t have permission to delete this message:grimacing:')
+        except discord.NotFound:
+            await ctx.author.send('This message was already deleted.')
+        except discord.HTTPException:
+            await ctx.author.send('I failed in deleting the message:grimacing:')
+        except Exception as e:
+            await ctx.author.send(f'There\'s been a problem while deleting the message that\'s not of type "Forbidden",'
+                                  f' "NotFound" or "HTTPException", but `{type(e)}: {e}`.')
+        else:
+            await ctx.author.send(f'Message "{message.content}" by {message.author.name} deleted in server'
+                                  f' "{message.guild.name}" in channel "{message.channel.mention}".')
+
+        try:
+            await ctx.message.delete()
+        except discord.Forbidden:
+            await ctx.author.send('I don\'t have permission to delete your command:grimacing:')
+        except discord.NotFound:
+            await ctx.author.send('Your command message was already deleted.')
+        except discord.HTTPException:
+            await ctx.author.send('I failed in deleting your command:grimacing:')
+        except Exception as e:
+            await ctx.author.send(f'There\'s been a problem while deleting your command that\'s not of type "Forbidden"'
+                                  f', "NotFound" or "HTTPException", but `{type(e)}: {e}`.')
+        else:
+            await ctx.author.send(f'Successfully deleted your command "{ctx.message.content}" in server'
+                                  f' "{ctx.guild.name}" in channel "{ctx.channel.mention}".')
 
     @commands.command(hidden=True)
     async def pin(self, ctx: commands.Context, message_link, reason: Optional[str]):

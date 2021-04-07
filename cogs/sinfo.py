@@ -14,11 +14,7 @@ class Sinfo(commands.Cog):
         self.bot = bot
 
     async def cog_check(self, ctx: commands.Context):
-        if ctx.author.id in self.bot.admins:
-            return True
-        if not ctx.command.name == 'help':
-            await ctx.send(f'This command is only for the bot admin{"" if len(self.bot.admins) == 1 else "s"}.')
-        return False
+        return ctx.author.id in self.bot.admins
 
     @commands.command(hidden=True)
     async def channels(self, ctx: commands.Context, where: Optional[Union[GuildConverter, GlobalCategoryChannel]]):

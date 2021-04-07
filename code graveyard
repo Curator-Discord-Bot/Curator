@@ -1,4 +1,5 @@
-    # noinspection PyUnreachableCode
+-----Never implemented count restoration--------------------------------------------------------------------------------
+finished_counts = {}
     @count.command(aliases=['unfail', 'repair', 'revert'])
     async def restore(self, ctx: commands.Context):
         """Unfail a count.
@@ -36,7 +37,7 @@
             await ctx.send(
                 'You cannot use this command, ask someone with the right permissions to use this, if the count failed by a bug.')
 
-
+------------------------------------------------------------------------------------------------------------------------
 async def check_channel(channel: discord.TextChannel, message=False) -> bool:
     if not is_count_channel(channel):
         if message:
@@ -44,3 +45,105 @@ async def check_channel(channel: discord.TextChannel, message=False) -> bool:
                 'Count commands are intended for use only in channels that contain "count" in the name...')
         return False
     return True
+
+------------------------------------------------------------------------------------------------------------------------
+def parsed(number: str) -> list:
+    number = emoji.emojize(number)
+    plist = [c for c in number]
+    emojis = [(i['emoji'], i['location']) for i in emoji.emoji_lis(number)]
+    for e, i in emojis:
+        plist[i] = number_aliases[emoji.demojize(e)]
+
+    return [''.join(i) for i in itertools.product(*plist)]
+
+------------------------------------------------------------------------------------------------------------------------
+number_aliases = {
+    'keycap_0': ['0'],
+    'regional_indicator_symbol_letter_o': ['0'],
+    'O_button_(blood_type)': ['0'],
+    'heavy_large_circle': ['0'],
+    'keycap_1': ['1'],
+    'one_o’clock': ['1', '13'],
+    'regional_indicator_symbol_letter_i': ['1'],
+    '1st_place_medal': ['1'],
+    'keycap_2': ['2'],
+    'two_o’clock': ['2', '14'],
+    '2nd_place_medal': ['2'],
+    'keycap_3': ['3'],
+    'three_o’clock': ['3', '15'],
+    'alarm_clock': ['3', '15'],
+    '3rd_place_medal': ['3'],
+    'evergreen_tree': ['3'],
+    'deciduous_tree': ['3'],
+    'palm_tree': ['3'],
+    'Christmas_tree': ['3'],
+    'cactus': ['3'],
+    'shamrock': ['3'],
+    'keycap_4': ['4'],
+    'four_o’clock': ['4', '16'],
+    'four_leaf_clover': ['4'],
+    'keycap_5': ['5'],
+    'five_o’clock': ['5', '17'],
+    'white_medium_star': ['5'],
+    'keycap_6': ['6'],
+    'six_o’clock': ['6', '18'],
+    'dotted_six-pointed_star': ['6'],
+    'keycap_7': ['7'],
+    'seven_o’clock': ['7', '19'],
+    'keycap_8': ['8'],
+    'eight_o’clock': ['8', '20'],
+    'pool_8_ball': ['8'],
+    'sun': ['8'],
+    '\u267E': ['8'],
+    'keycap_9': ['9'],
+    'nine_o’clock': ['9', '21'],
+    'mantelpiece_clock': ['9', '21'],
+    'keycap_10': ['10'],
+    'ten_o’clock': ['10', '22'],
+    'eleven_o’clock': ['11', '23'],
+    'twelve_o’clock': ['12', '0', '24'],
+    'ringed_planet': ['42'],
+    'milky_way': ['42'],
+    'OK_hand': ['69'],
+    'Cancer': ['69'],
+    'hundred_points': ['100', '00'],
+    'input_numbers': ['1', '2', '3', '4'],
+    '\u3007': ['0'],
+    '\u96F6': ['0'],
+}
+
+------------------------------------------------------------------------------------------------------------------------
+def parsed(number: str) -> list:
+    results = ['']
+    numbers = filter(None, emoji.demojize(number).split(':'))
+    for digit in numbers:
+        if digit.isdigit():
+            results = add_parsed(results, [digit])
+        elif digit in number_aliases.keys():
+            results = add_parsed(results, number_aliases[digit])
+        else:
+            return []
+    return results
+
+------------------------------------------------------------------------------------------------------------------------
+count == target_s or count == write_roman(target) or count == bin(target)[2:] or count == '#' + hex(target)[2:].upper() or target_s in parsed(count)
+
+------------------------------------------------------------------------------------------------------------------------
+if number.startswith('#'):
+    hex_result = int(number[1:], 16) if hex_re.fullmatch(number[1:]) else None
+    if hex_result:
+        return await ctx.send(hex_result)
+    else:
+        return await ctx.send('Could not parse that.')
+parse = parsed(number)
+roman = from_roman(number) if roman_re.fullmatch(number) else None
+binary = int(number, 2) if binary_re.fullmatch(number) else None
+
+if roman:
+    parse.append(roman)
+
+if binary:
+    parse.append(binary)
+
+# if hex_result:
+#     parse.append(hex_result)

@@ -1,6 +1,6 @@
 import datetime
 from collections import OrderedDict
-from typing import Optional
+from typing import Optional, List
 import re
 
 import asyncpg
@@ -8,6 +8,7 @@ import discord
 from discord.ext import commands
 from bot import Curator
 import emoji
+import unicodedata
 from random import choice
 
 import bot
@@ -45,59 +46,151 @@ class Counters(db.Table):
     counts_started = db.Column(db.Integer, default=0)
 
 
-number_aliases = {
-    'keycap_0': ['0'],
-    'regional_indicator_symbol_letter_o': ['0'],
-    'O_button_(blood_type)': ['0'],
-    'heavy_large_circle': ['0'],
-    'keycap_1': ['1'],
-    'one_o’clock': ['1', '13'],
-    'regional_indicator_symbol_letter_i': ['1'],
-    '1st_place_medal': ['1'],
-    'keycap_2': ['2'],
-    'two_o’clock': ['2', '14'],
-    '2nd_place_medal': ['2'],
-    'keycap_3': ['3'],
-    'three_o’clock': ['3', '15'],
-    'alarm_clock': ['3', '15'],
-    '3rd_place_medal': ['3'],
-    'evergreen_tree': ['3'],
-    'deciduous_tree': ['3'],
-    'palm_tree': ['3'],
-    'Christmas_tree': ['3'],
-    'cactus': ['3'],
-    'shamrock': ['3'],
-    'keycap_4': ['4'],
-    'four_o’clock': ['4', '16'],
-    'four_leaf_clover': ['4'],
-    'keycap_5': ['5'],
-    'five_o’clock': ['5', '17'],
-    'white_medium_star': ['5'],
-    'keycap_6': ['6'],
-    'six_o’clock': ['6', '18'],
-    'dotted_six-pointed_star': ['6'],
-    'keycap_7': ['7'],
-    'seven_o’clock': ['7', '19'],
-    'keycap_8': ['8'],
-    'eight_o’clock': ['8', '20'],
-    'pool_8_ball': ['8'],
-    'sun': ['8'],
-    '\u267E': ['8'],
-    'keycap_9': ['9'],
-    'nine_o’clock': ['9', '21'],
-    'mantelpiece_clock': ['9', '21'],
-    'keycap_10': ['10'],
-    'ten_o’clock': ['10', '22'],
-    'eleven_o’clock': ['11', '23'],
-    'twelve_o’clock': ['12', '0', '24'],
-    'ringed_planet': ['42'],
-    'milky_way': ['42'],
-    'OK_hand': ['69'],
-    'Cancer': ['69'],
-    'hundred_points': ['100', '00'],
-    'input_numbers': ['1', '2', '3', '4'],
-    '\u3007': ['0'],
-    '\u96F6': ['0'],
+number_aliases = {  # Keycap numbers (except keycap_10) and infinity are handled separately; these names are the Unicode names of symbols, as retrieved by unicodedata.name()
+    'DEGREE SIGN': ['0'],
+    'WHITE CIRCLE': ['0'],
+    'REGIONAL INDICATOR SYMBOL LETTER O': ['0'],
+    'HEAVY LARGE CIRCLE': ['0'],
+    'NO ENTRY SIGN': ['0'],
+    'RADIO BUTTON': ['0'],
+    'LATIN SMALL LETTER O': ['0'],
+    'LATIN CAPITAL LETTER O': ['0'],
+    'ANTICLOCKWISE DOWNWARDS AND UPWARDS OPEN CIRCLE ARROWS': ['0'],
+    'CLOCKWISE DOWNWARDS AND UPWARDS OPEN CIRCLE ARROWS': ['0'],
+    'PERCENT SIGN': ['0', '00'],
+    'PER MILLE SIGN': ['0', '00', '000'],
+    'PER TEN THOUSAND SIGN': ['0', '000', '0000'],
+    'Z NOTATION TYPE COLON': ['00'],
+    'CLOCK FACE ONE OCLOCK': ['1', '13'],
+    'REGIONAL INDICATOR SYMBOL LETTER I': ['1', 'I'],
+    'FIRST PLACE MEDAL': ['1'],
+    'LATIN SMALL LETTER I': ['1'],
+    'LATIN CAPITAL LETTER I': ['1', 'I'],
+    'SUPERSCRIPT TWO': ['2'],
+    'CLOCK FACE TWO OCLOCK': ['2', '14'],
+    'SECOND PLACE MEDAL': ['2'],
+    'SUPERSCRIPT THREE': ['3'],
+    'CLOCK FACE THREE OCLOCK': ['3', '15'],
+    'ALARM CLOCK': ['3', '15'],
+    'THIRD PLACE MEDAL': ['3'],
+    'EVERGREEN TREE': ['3'],
+    'DECIDUOUS TREE': ['3'],
+    'PALM TREE': ['3'],
+    'CHRISTMAS TREE': ['3'],
+    'CACTUS': ['3'],
+    'SHAMROCK': ['3'],
+    'CLOCK FACE FOUR OCLOCK': ['4', '16'],
+    'FOUR LEAF CLOVER': ['4'],
+    'CLOCK FACE FIVE OCLOCK': ['5', '17'],
+    'WHITE MEDIUM STAR': ['5'],
+    'WHITE STAR': ['5'],
+    'CLOCK FACE SIX OCLOCK': ['6', '18'],
+    'SIX POINTED STAR WITH MIDDLE DOT': ['6'],
+    'CLOCK FACE SEVEN OCLOCK': ['7', '19'],
+    'CLOCK FACE EIGHT OCLOCK': ['8', '20'],
+    'BILLIARDS': ['8'],
+    'INFINITY': ['8'],
+    'CLOCK FACE NINE OCLOCK': ['9', '21'],
+    'MANTELPIECE CLOCK': ['9', '21'],
+    'KEYCAP TEN': ['10'],
+    'CLOCK FACE TEN OCLOCK': ['10', '22'],
+    'CLOCK FACE ELEVEN OCLOCK': ['11', '23'],
+    'CLOCK FACE TWELVE OCLOCK': ['12', '0', '24'],
+    #'RINGED PLANET': ['42'],  # unicodedata seems to not know this character
+    'MILKY WAY': ['42'],
+    'OK HAND SIGN': ['69'],
+    'CANCER': ['69'],
+    'HUNDRED POINTS SYMBOL': ['100', '00'],
+    'INPUT SYMBOL FOR NUMBERS': ['1', '2', '3', '4'],
+    'IDEOGRAPHIC NUMBER ZERO': ['0'],
+    'CJK UNIFIED IDEOGRAPH-96F6': ['0'],
+    'REGIONAL INDICATOR SYMBOL LETTER A': ['A'],
+    'NEGATIVE SQUARED AB': ['AB'],
+    'REGIONAL INDICATOR SYMBOL LETTER B': ['B'],
+    'REGIONAL INDICATOR SYMBOL LETTER C': ['C'],
+    'COPYRIGHT SIGN': ['C'],
+    'WATER WAVE': ['C'],
+    'REGIONAL INDICATOR SYMBOL LETTER D': ['D'],
+    'REGIONAL INDICATOR SYMBOL LETTER E': ['E'],
+    'REGIONAL INDICATOR SYMBOL LETTER F': ['F'],
+    'REGIONAL INDICATOR SYMBOL LETTER V': ['V'],
+    'REGIONAL INDICATOR SYMBOL LETTER X': ['X'],
+    'CROSS MARK': ['X'],
+    'MULTIPLICATION SIGN': ['X'],
+    'NEGATIVE SQUARED CROSS MARK': ['X'],
+    'REGIONAL INDICATOR SYMBOL LETTER L': ['L'],
+    'REGIONAL INDICATOR SYMBOL LETTER M': ['M'],
+    'CIRCLED LATIN CAPITAL LETTER M': ['M'],
+    'SQUARED CL': ['CL'],
+    'ROMAN NUMERAL ONE': ['I', '1'],
+    'ROMAN NUMERAL TWO': ['II', '11', '2'],
+    'ROMAN NUMERAL THREE': ['III', '111', '3'],
+    'ROMAN NUMERAL FOUR': ['IV', '4'],
+    'ROMAN NUMERAL FIVE': ['V', '5'],
+    'ROMAN NUMERAL SIX': ['VI', '6'],
+    'ROMAN NUMERAL SEVEN': ['VII', '7'],
+    'ROMAN NUMERAL EIGHT': ['VIII', '8'],
+    'ROMAN NUMERAL NINE': ['IX', '9'],
+    'ROMAN NUMERAL TEN': ['X', '10'],
+    'ROMAN NUMERAL ELEVEN': ['XI', '11'],
+    'ROMAN NUMERAL TWELVE': ['XII', '12'],
+    'ROMAN NUMERAL FIFTY': ['L', '50'],
+    'ROMAN NUMERAL ONE HUNDRED': ['C', '100'],
+    'ROMAN NUMERAL FIVE HUNDRED': ['D', '500'],
+    'ROMAN NUMERAL ONE THOUSAND': ['M', '1000'],
+    'SMALL ROMAN NUMERAL ONE': ['I', '1'],
+    'SMALL ROMAN NUMERAL TWO': ['II', '11', '2'],
+    'SMALL ROMAN NUMERAL THREE': ['III', '111', '3'],
+    'SMALL ROMAN NUMERAL FOUR': ['IV', '4'],
+    'SMALL ROMAN NUMERAL FIVE': ['V', '5'],
+    'SMALL ROMAN NUMERAL SIX': ['VI', '6'],
+    'SMALL ROMAN NUMERAL SEVEN': ['VII', '7'],
+    'SMALL ROMAN NUMERAL EIGHT': ['VIII', '8'],
+    'SMALL ROMAN NUMERAL NINE': ['IX', '9'],
+    'SMALL ROMAN NUMERAL TEN': ['X', '10'],
+    'SMALL ROMAN NUMERAL ELEVEN': ['XI', '11'],
+    'SMALL ROMAN NUMERAL TWELVE': ['XII', '12'],
+    'SMALL ROMAN NUMERAL FIFTY': ['L', '50'],
+    'SMALL ROMAN NUMERAL ONE HUNDRED': ['C', '100'],
+    'SMALL ROMAN NUMERAL FIVE HUNDRED': ['D', '500'],
+    'SMALL ROMAN NUMERAL ONE THOUSAND': ['M', '1000'],
+    'FRACTION NUMERATOR ONE': ['1'],
+    'VULGAR FRACTION ONE HALF': ['1', '2', '12'],
+    'VULGAR FRACTION ONE THIRD': ['1', '3', '13'],
+    'VULGAR FRACTION ONE QUARTER': ['1', '4', '14'],
+    'VULGAR FRACTION ONE FIFTH': ['1', '5', '15'],
+    'VULGAR FRACTION ONE SIXTH': ['1', '6', '16'],
+    'VULGAR FRACTION ONE SEVENTH': ['1', '7', '17'],
+    'VULGAR FRACTION ONE EIGHTH': ['1', '8', '18'],
+    'VULGAR FRACTION ONE NINTH': ['1', '9', '19'],
+    'VULGAR FRACTION ONE TENTH': ['1', '10', '110'],
+    'VULGAR FRACTION TWO FIFTHS': ['2', '5', '25'],
+    'VULGAR FRACTION TWO THIRDS': ['2', '3', '23'],
+    'VULGAR FRACTION THREE QUARTERS': ['3', '4', '34'],
+    'VULGAR FRACTION THREE FIFTHS': ['3', '5', '35'],
+    'VULGAR FRACTION THREE EIGHTHS': ['3', '8', '38'],
+    'VULGAR FRACTION FOUR FIFTHS': ['4', '5', '45'],
+    'VULGAR FRACTION FIVE SIXTHS': ['5', '6', '56'],
+    'VULGAR FRACTION FIVE EIGHTHS': ['5', '8', '58'],
+    'VULGAR FRACTION SEVEN EIGHTHS': ['7', '8', '78'],
+    'CARE OF': ['C', '0'],
+    'ADDRESSED TO THE SUBJECT': ['A'],
+    'AKTIESELSKAB': ['A']
+}
+
+special_aliases = {  # These are all followed by "VARIATION SELECTOR-16" (0xfe0f)
+    'NEGATIVE SQUARED LATIN CAPITAL LETTER O': ['0'],
+    'STAR OF DAVID': ['6'],
+    'WHEEL OF DHARMA': ['6'],
+    'BLACK SUN WITH RAYS': ['8'],
+    'PERMANENT PAPER SIGN': ['8'],
+    'EIGHT SPOKED ASTERISK': ['8'],
+    'SPARKLE': ['8'],
+    'NEGATIVE SQUARED LATIN CAPITAL LETTER A': ['A'],
+    'NEGATIVE SQUARED LATIN CAPITAL LETTER B': ['B'],
+    'COPYRIGHT SIGN': ['C'],
+    'SKULL AND CROSSBONES': ['X'],
+    'TWISTED RIGHTWARDS ARROWS': ['X']
 }
 
 roman_re = re.compile('^(?=[MDCLXVI])M*(C[MD]|D?C{0,3})(X[CL]|L?X{0,3})(I[XV]|V?I{0,3})$')
@@ -105,45 +198,57 @@ binary_re = re.compile('^[01]+$')
 hex_re = re.compile('^[\dA-F]+$')
 
 running_counts = {}
-# finished_counts = {}
-
-"""    Old parsing function
-def parsed(number: str) -> list:
-    number = emoji.emojize(number)
-    plist = [c for c in number]
-    emojis = [(i['emoji'], i['location']) for i in emoji.emoji_lis(number)]
-    for e, i in emojis:
-        plist[i] = number_aliases[emoji.demojize(e)]
-
-    return [''.join(i) for i in itertools.product(*plist)]
-"""
 
 
-def parsed(number: str) -> list:
+def parsed(number: str) -> List[int]:
+    if number.startswith('#'):
+        desymboled = parse_symbols(number[1:])
+        return [int(result, 16) for result in desymboled if hex_re.fullmatch(result.upper())]
+
+    desymboled = parse_symbols(number)
+    results = [int(result) for result in desymboled if result.isnumeric()]
+    results += [int(result, 2) for result in desymboled if binary_re.fullmatch(result)]
+    results += [from_roman(result) for result in desymboled if roman_re.fullmatch(result)]
+    return list(dict.fromkeys(results))  # Removes duplicates
+
+
+def parse_symbols(number: str) -> List[str]:
     results = ['']
-    numbers = filter(None, emoji.demojize(number).split(':'))
-    for digit in numbers:
+
+    def add_parsed(numbers: list):
+        nonlocal results
+        new_results = []
+        for n in numbers:
+            for result in results:
+                s = result + n
+                new_results.append(s)
+        results = new_results
+
+    i = 0
+    while i < len(number):
+        digit = number[i]
         if digit.isdigit():
-            results = add_parsed(results, [digit])
-        elif digit in number_aliases.keys():
-            results = add_parsed(results, number_aliases[digit])
+            add_parsed([digit])
+            if i < len(number) - 2 and number[i+2] == '\u20e3':  # ⃣ , used for keycap numbers, which are very weird
+                i += 2
+        elif unicodedata.name(digit) in special_aliases.keys() and i < len(number) - 1 and number[i + 1] == '\ufe0f':  # VARIATION SELECTOR-16
+            add_parsed(special_aliases[unicodedata.name(digit)])
+            i += 1
+        elif unicodedata.name(digit) in number_aliases.keys():
+            add_parsed(number_aliases[unicodedata.name(digit)])
+        elif False and digit == '*':  # Asterisk exception  # Disabled due to Discord handling asterisks in messages, this also applies to the keycap version
+            if i < len(number) - 2 and number[i + 2] == '\u20e3':  # Keycap asterisk
+                add_parsed(['6'])
+                i += 2
+            else:  # Normal asterisk
+                add_parsed(['5'])
         else:
-            return []
+            add_parsed([digit])
+        i += 1
     return results
 
 
-def add_parsed(old_results: list, numbers: list) -> list:
-    new_results = []
-    for number in numbers:
-        for result in old_results:
-            s = result + number
-            if len(s) > 0 and s[0] != '0':
-                new_results.append(s)
-    return new_results
-
-
-def write_roman(num):
-    # from https://stackoverflow.com/questions/28777219/basic-program-to-convert-integer-to-roman-numerals/28777781
+def write_roman(num):  # from https://stackoverflow.com/questions/28777219/basic-program-to-convert-integer-to-roman-numerals/28777781
     roman = OrderedDict()
     roman[1000] = "M"
     roman[900] = "CM"
@@ -170,8 +275,7 @@ def write_roman(num):
     return ''.join([i for i in roman_num(num)])
 
 
-def from_roman(num):
-    # from https://stackoverflow.com/questions/19308177/converting-roman-numerals-to-integers-in-python
+def from_roman(num):  # from https://stackoverflow.com/questions/19308177/converting-roman-numerals-to-integers-in-python
     roman_numerals = {'I': 1, 'V': 5, 'X': 10, 'L': 50, 'C': 100, 'D': 500, 'M': 1000}
     result = 0
     for i, c in enumerate(num):
@@ -277,8 +381,7 @@ class Counting:
     def attempt_count(self, counter: discord.User, count: str) -> bool:
         target = self.score + 1
         target_s = str(target)
-        if (counter.id != self.last_counter) and (
-                count == target_s or count == write_roman(target) or count == bin(target)[2:] or count == '#' + hex(target)[2:].upper() or target_s in parsed(count)):
+        if (counter.id != self.last_counter) and target in parsed(count):
             self.last_active_at = datetime.datetime.utcnow()
             self.last_counter = counter.id
             self.score += 1
@@ -392,7 +495,7 @@ class Count(commands.Cog):
         """Commands for the counting game."""
         await ctx.send(f'You need to supply a subcommand. Try `{ctx.prefix}help count`')
 
-    @count.command(aliases=['begin'])
+    @count.command(aliases=['begin', 'initiate', 'instantiate'])
     async def start(self, ctx: commands.Context):
         """Use this to start a counting game!"""
         if is_count_channel(self.bot.server_configs, ctx.channel):
@@ -471,17 +574,23 @@ class Count(commands.Cog):
         if not found:
             await ctx.send('No count is running on this server.')
 
-    @count.command()
+    @count.command(aliases=['alternatives', 'replacements'])
     async def aliases(self, ctx: commands.Context, number: Optional[str]):
         """Get a list of number aliases.
 
+        Number aliases can be used in place of digits in the counting game.
+        Some aliases can parse into multiple different digits and some can replace groups of digits instead of single ones.
         You can add a number as an argument to only get the aliases of that number.
         """
         try:
-            await ctx.send('\n'.join(f'{emoji.emojize(f":{key}:")}: {human_join(value)}'
-                                     for key, value in number_aliases.items() if not number or number in value))
-        except discord.HTTPException:
+            await ctx.send('\n'.join(x for x in [f'{i}️⃣: {i}' for i in range(10)] + list(f'{unicodedata.lookup(name)}: {human_join(value)}'
+                                     for name, value in number_aliases.items()) + list(f'{unicodedata.lookup(name)}\ufe0f: {human_join(value)}'
+                                     for name, value in special_aliases.items())# + [':asterisk:: 6', '*: 5']  # Asterisks disabled due to Discord handling asterisks in messages, this also applies to the keycap version
+                                     if not number or number in x))
+        except discord.HTTPException:  # Trying to send an empty string
             await ctx.send(f'{number} has no aliases.')
+        #except KeyError:
+        #    await ctx.send(f'There\'s a problem with my internal list of aliases, please contact RJTimmerman#9465 or Ruukas#9050 if this perists.')
 
     @count.command(aliases=['best', 'highscore', 'hiscore', 'top'])
     async def leaderboard(self, ctx: commands.Context):
@@ -538,7 +647,7 @@ class Count(commands.Cog):
 
             await ctx.send(embed=embed)
 
-    @count.command(aliases=['current', 'active', 'atm'])
+    @count.command(aliases=['current', 'active', 'atm', 'status'])
     async def running(self, ctx: commands.Context):
         """Get the data of all the currently running counts."""
         async with ctx.typing():
@@ -576,24 +685,7 @@ class Count(commands.Cog):
     @count.command(aliases=['try'])
     async def parse(self, ctx: commands.Context, number: str):
         """Check if a number alias is working."""
-        if number.startswith('#'):
-            hex_result = int(number[1:], 16) if hex_re.fullmatch(number[1:]) else None
-            if hex_result:
-                return await ctx.send(hex_result)
-            else:
-                return await ctx.send('Could not parse that.')
         parse = parsed(number)
-        roman = from_roman(number) if roman_re.fullmatch(number) else None
-        binary = int(number, 2) if binary_re.fullmatch(number) else None
-
-        if roman:
-            parse.append(roman)
-
-        if binary:
-            parse.append(binary)
-
-        # if hex_result:
-        #     parse.append(hex_result)
 
         if parse:
             await ctx.send(human_join([str(i) for i in sorted([int(i) for i in parse])]))
