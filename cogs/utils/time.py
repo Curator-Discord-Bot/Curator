@@ -3,7 +3,6 @@ import parsedatetime as pdt
 from dateutil.relativedelta import relativedelta
 from .formats import plural, human_join
 from discord.ext import commands
-from bot import Curator
 import re
 
 

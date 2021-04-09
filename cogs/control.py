@@ -397,8 +397,17 @@ class Control(commands.Cog):  # TODO add more exception catching, check prompts 
 
     @role.command(name='delete', aliases=['remove'], hidden=True)
     async def delete_role(self, ctx: commands.Context, guild: Optional[GuildChanger], role: discord.Role):
-        """Delete a DIscord role."""
+        """Delete a Discord role."""
         await role.delete()
+
+    @commands.command(aliases=['follow', 'forward'], hidden=True)
+    async def followchannel(self, ctx: commands.Context, channel: GlobalTextChannel, to: GlobalTextChannel):
+        """Follow a channel."""
+        async def forward_message(message: discord.Message):
+            if message.channel == channel:
+                await to.send(f'**{message.channel.mention}** ||{message.channel.id}||, **{message.author}** ||{message.author.id}|| [{message.created_at.strftime("%d-%m-%Y, %X")}]:\n{message.content}')
+        self.bot.add_listener(forward_message, name='on_message')  # The listener is tied to this cog, so re- or unloading cogs.control (and logging out) will remove it
+        await ctx.send(f'Messages in {channel.mention} ({channel.id}) will now go to {to.mention} ({to.id}).')
 
 
 #async def create_the_channel(ctx: commands.Context, where: Optional[Union[discord.Guild, discord.CategoryChannel]], name, position: Optional[int], roles_and_members=None):

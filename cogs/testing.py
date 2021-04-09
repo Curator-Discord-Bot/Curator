@@ -71,7 +71,7 @@ class Testing(commands.Cog):
         print(emoji)
 
     @commands.command()
-    async def role(self, ctx: commands.Context, role: discord.Role):
+    async def getrole(self, ctx: commands.Context, role: discord.Role):
         await ctx.send(role.name + ', ' + str(role.id))
         print(role.name, role.id)
 

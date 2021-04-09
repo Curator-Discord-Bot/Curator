@@ -39,11 +39,11 @@ class GlobalTextChannel(commands.Converter):  # Code by Rapptz AKA Danny (the cr
             try:
                 channel_id = int(argument, base=10)
             except ValueError:
-                raise commands.BadArgument(f'Could not find a channel by ID {argument!r}.')
+                raise commands.BadArgument(f'Could not find a text channel by ID {argument!r}.')
             else:
                 channel = ctx.bot.get_channel(channel_id)
                 if channel is None or type(channel) != discord.TextChannel:
-                    raise commands.BadArgument(f'Could not find a channel by ID {argument!r}.')
+                    raise commands.BadArgument(f'Could not find a text channel by ID {argument!r}.')
                 return channel
 
 

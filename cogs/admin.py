@@ -94,7 +94,12 @@ class Admin(commands.Cog):
     async def _reload(self, ctx, *, module):
         """Reloads a module."""
         try:
-            self.bot.reload_extension(module)
+            if module == 'cogs.count':
+                running_counts = self.bot.cogs['Count'].running_counts
+                self.bot.reload_extension(module)
+                self.bot.cogs['Count'].running_counts = running_counts
+            else:
+                self.bot.reload_extension(module)
         except commands.ExtensionError as e:
             await ctx.send(f'{e.__class__.__name__}: {e}')
         else:

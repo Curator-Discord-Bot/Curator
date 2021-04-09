@@ -1,6 +1,6 @@
 import datetime
 from collections import OrderedDict
-from typing import Optional, List
+from typing import Optional, List, Dict
 import re
 
 import asyncpg
@@ -197,8 +197,6 @@ roman_re = re.compile('^(?=[MDCLXVI])M*(C[MD]|D?C{0,3})(X[CL]|L?X{0,3})(I[XV]|V?
 binary_re = re.compile('^[01]+$')
 hex_re = re.compile('^[\dA-F]+$')
 
-running_counts = {}
-
 
 def parsed(number: str) -> List[int]:
     if number.startswith('#'):
@@ -380,7 +378,7 @@ class Counting:
 
     def attempt_count(self, counter: discord.User, count: str) -> bool:
         target = self.score + 1
-        target_s = str(target)
+        # target_s = str(target)
         if (counter.id != self.last_counter) and target in parsed(count):
             self.last_active_at = datetime.datetime.utcnow()
             self.last_counter = counter.id
@@ -453,24 +451,23 @@ class Count(commands.Cog):
 
     def __init__(self, curator: bot.Curator):
         self.bot = curator
+        self.running_counts: Dict[int, Counting] = {}
 
     async def check_count(self, message: discord.Message) -> bool:
         if is_count_channel(self.bot.server_configs, message.channel):
             if 'check' in message.content.lower():
                 await message.add_reaction(
-                    choice(('\u2705', '\u2611', '\u2714')) if message.channel.id in running_counts.keys()
+                    choice(('\u2705', '\u2611', '\u2714')) if message.channel.id in self.running_counts.keys()
                     else choice(('\u274c', '\u274e', '\u2716')))
-            if message.channel.id not in running_counts.keys():
+            if message.channel.id not in self.running_counts.keys():
                 return False
         else:
             return False
 
-        c: Counting = running_counts[message.channel.id]
+        c: Counting = self.running_counts[message.channel.id]
 
         if not c.attempt_count(message.author, message.content.split()[0]):
-            # finished_counts[message.channel.id] = {'count': running_counts[message.channel.id], 'last_counts': {},
-            #                                        'best_counts': {}}
-            del (running_counts[message.channel.id])
+            del (self.running_counts[message.channel.id])
             await message.channel.send(f'{message.author.mention} failed, and ruined the count for '
                                        f'{len(c.contributors.keys())} counters...\nThe count reached {c.score}.')
             await c.finish(self.bot, False, message.author)
@@ -501,7 +498,7 @@ class Count(commands.Cog):
         if is_count_channel(self.bot.server_configs, ctx.channel):
             query = 'SELECT score FROM counts WHERE guild = $1 ORDER BY score DESC LIMIT 3;'
             top = [count['score'] for count in await self.bot.pool.fetch(query, ctx.guild.id)]
-            running_counts[ctx.channel.id] = Counting.temporary(guild=ctx.guild.id, channel=ctx.channel.id,
+            self.running_counts[ctx.channel.id] = Counting.temporary(guild=ctx.guild.id, channel=ctx.channel.id,
                                                                 started_by=ctx.author.id,
                                                                 started_at=datetime.datetime.utcnow(),
                                                                 last_active_at=datetime.datetime.utcnow())
@@ -568,7 +565,7 @@ class Count(commands.Cog):
         found = False
         channels = ctx.guild.text_channels
         for channel in channels:
-            if channel.id in running_counts.keys():
+            if channel.id in self.running_counts.keys():
                 await ctx.send(f'A count is running in {channel.mention}.')
                 found = True
         if not found:
@@ -656,12 +653,12 @@ class Count(commands.Cog):
             guild_channels = ctx.guild.text_channels
             running_channels = []
             for guild_channel in guild_channels:
-                if guild_channel.id in running_counts.keys():
+                if guild_channel.id in self.running_counts.keys():
                     running_channels.append(self.bot.get_channel(guild_channel.id))
             if len(running_channels) == 0:
                 return await ctx.send('There are no counts running on this server.')
             for channel in running_channels:
-                c: Counting = running_counts[channel.id]
+                c: Counting = self.running_counts[channel.id]
 
                 users = {
                 }
@@ -693,16 +690,22 @@ class Count(commands.Cog):
             await ctx.send('Could not parse that.')
 
     @commands.Cog.listener()
-    async def on_message(self, message):
+    async def on_message(self, message: discord.Message):
         if not message.author.bot and message.channel.type == discord.ChannelType.text:
             await self.check_count(message)
 
     @commands.Cog.listener()
-    async def on_message_delete(self, message):
-        if message.channel.id in running_counts.keys():
-            if message.id == message.channel.last_message_id:
-                await message.channel.send(f'{running_counts[message.channel.id].score}, '
-                                           f'shame on {message.author.mention} for deleting their count!')
+    async def on_message_delete(self, message: discord.Message):
+        if message.channel.id in self.running_counts.keys() and message.id == message.channel.last_message_id:
+            await message.channel.send(f'**{self.running_counts[message.channel.id].score}**, '
+                                       f'shame on {message.author.mention} for deleting their count!')
+
+    @commands.Cog.listener()
+    async def on_message_edit(self, before: discord.Message, after: discord.Message):
+        if before.channel.id in self.running_counts.keys() and before.id == before.channel.last_message_id \
+                and self.running_counts[before.channel.id].score not in parsed(after.content.split()[0]):
+            await after.channel.send(f'**{self.running_counts[before.channel.id].score}**, '
+                              f'shame on {after.author.mention} for editing away their count!')
 
 
 def setup(curator: bot.Curator):
@@ -711,8 +714,8 @@ def setup(curator: bot.Curator):
 
 """def teardown(curator: bot.Curator):
     \"""Code being executed upon unloading of the cog.\"""
-    for channel_id in running_counts.keys():  # Let counters know the count is silently dying
-        counters = len(running_counts[channel_id]['contributors'])
+    for channel_id in self.running_counts.keys():  # Let counters know the count is silently dying
+        counters = len(self.running_counts[channel_id]['contributors'])
         s = 's' if counters > 1 else ''
         await curator.get_channel(channel_id).send(
             f'Sorry, {f"counter{s}, " if counters >= 1 else ""}due to this module being un-/reloaded, the count that '
