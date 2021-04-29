@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 from bot import Curator
+from typing import Union
 
 import emoji
 import unicodedata
@@ -21,11 +22,12 @@ class Debug(commands.Cog):
         await ctx.send('Check the Python printer output for your results.')
 
     @commands.command(aliases=['psc'])
-    async def printsendchars(self, ctx: commands.Context, *, text):
+    async def printsendchars(self, ctx: commands.Context, *, text: Union[discord.Message, str]):
         """Print every character in Python and send them in chat.
 
          This is useful for weird things like keycap numbers.
          """
+        text = text.content if type(text) == discord.Message else text
         for char in text:
             print(char, hex(ord(char)), unicodedata.name(char))
             await ctx.send((f'`{char}`' if char != ' ' else '`[space]`') + f' ({hex(ord(char))}, {unicodedata.name(char)})')

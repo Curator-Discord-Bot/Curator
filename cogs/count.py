@@ -78,7 +78,6 @@ number_aliases = {  # Keycap numbers (except keycap_10) and infinity are handled
     'PALM TREE': ['3'],
     'CHRISTMAS TREE': ['3'],
     'CACTUS': ['3'],
-    'SHAMROCK': ['3'],
     'CLOCK FACE FOUR OCLOCK': ['4', '16'],
     'FOUR LEAF CLOVER': ['4'],
     'CLOCK FACE FIVE OCLOCK': ['5', '17'],
@@ -96,7 +95,7 @@ number_aliases = {  # Keycap numbers (except keycap_10) and infinity are handled
     'CLOCK FACE TEN OCLOCK': ['10', '22'],
     'CLOCK FACE ELEVEN OCLOCK': ['11', '23'],
     'CLOCK FACE TWELVE OCLOCK': ['12', '0', '24'],
-    #'RINGED PLANET': ['42'],  # unicodedata seems to not know this character
+    #'RINGED PLANET': ['42'],  # unicodedata seems to somehow not know this character anymore
     'MILKY WAY': ['42'],
     'OK HAND SIGN': ['69'],
     'CANCER': ['69'],
@@ -118,6 +117,7 @@ number_aliases = {  # Keycap numbers (except keycap_10) and infinity are handled
     'CROSS MARK': ['X'],
     'MULTIPLICATION SIGN': ['X'],
     'NEGATIVE SQUARED CROSS MARK': ['X'],
+    'TWISTED RIGHTWARDS ARROWS': ['X'],
     'REGIONAL INDICATOR SYMBOL LETTER L': ['L'],
     'REGIONAL INDICATOR SYMBOL LETTER M': ['M'],
     'CIRCLED LATIN CAPITAL LETTER M': ['M'],
@@ -180,6 +180,7 @@ number_aliases = {  # Keycap numbers (except keycap_10) and infinity are handled
 
 special_aliases = {  # These are all followed by "VARIATION SELECTOR-16" (0xfe0f)
     'NEGATIVE SQUARED LATIN CAPITAL LETTER O': ['0'],
+    'SHAMROCK': ['3'],
     'STAR OF DAVID': ['6'],
     'WHEEL OF DHARMA': ['6'],
     'BLACK SUN WITH RAYS': ['8'],
@@ -189,8 +190,7 @@ special_aliases = {  # These are all followed by "VARIATION SELECTOR-16" (0xfe0f
     'NEGATIVE SQUARED LATIN CAPITAL LETTER A': ['A'],
     'NEGATIVE SQUARED LATIN CAPITAL LETTER B': ['B'],
     'COPYRIGHT SIGN': ['C'],
-    'SKULL AND CROSSBONES': ['X'],
-    'TWISTED RIGHTWARDS ARROWS': ['X']
+    'SKULL AND CROSSBONES': ['X']
 }
 
 roman_re = re.compile('^(?=[MDCLXVI])M*(C[MD]|D?C{0,3})(X[CL]|L?X{0,3})(I[XV]|V?I{0,3})$')
@@ -378,8 +378,7 @@ class Counting:
 
     def attempt_count(self, counter: discord.User, count: str) -> bool:
         target = self.score + 1
-        # target_s = str(target)
-        if (counter.id != self.last_counter) and target in parsed(count):
+        if counter.id != self.last_counter and (str(target) == count or target in parsed(count)):  # str(target) == count is added for performance; means it doesn't need to go through the parsing function when the count is just normal numbers
             self.last_active_at = datetime.datetime.utcnow()
             self.last_counter = counter.id
             self.score += 1
