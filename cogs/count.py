@@ -13,6 +13,7 @@ from random import choice
 
 import bot
 from .utils import db
+from .utils.checks import owner_or_guild_permissions
 from .utils.formats import human_join
 
 
@@ -517,6 +518,7 @@ class Count(commands.Cog):
                        f'{human_join([channel.mention for channel in ctx.guild.text_channels if is_count_channel(self.bot.server_configs, channel)], final="and")}.\n'
                        f'{f"You can create your own list with `{ctx.prefix}count channels add/remove`." if not self.bot.server_configs[ctx.guild.id].count_channels else f"You can remove channels with `{ctx.prefix}count channels remove`."}')
 
+    @owner_or_guild_permissions(manage_channels=True)
     @channels.command(name='add', aliases=['set', 'include'])
     async def add_channel(self, ctx: commands.Context, channel: discord.TextChannel):
         """Add or set a counting channel.
@@ -532,6 +534,7 @@ class Count(commands.Cog):
         self.bot.server_configs[ctx.guild.id].count_channels.append(channel)
         await ctx.send(f'Successfully added {channel.mention}.')
 
+    @owner_or_guild_permissions(manage_channels=True)
     @channels.command(name='remove', aliases=['delete'])
     async def remove_channel(self, ctx: commands.Context, channel: discord.TextChannel):
         """Remove a counting channel.
