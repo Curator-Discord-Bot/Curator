@@ -542,6 +542,13 @@ class Count(commands.Cog):
         Provide a channel mention, ID or name.
         If there are no counting channels left, every channel with "count" in the name will be available.
         """
+        if channel not in self.bot.server_configs[ctx.guild.id].count_channels:
+            return await ctx.send('The channel was not found in the list.')
+
+        query = 'UPDATE serverconfigs SET count_channels = array_remove(count_channels, $1) where guild = $2;'
+        await self.bot.pool.execute(query, channel.id, ctx.guild.id)
+        self.bot.server_configs[ctx.guild.id].count_channels.remove(channel)
+        await ctx.send(f'Successfully removed {channel.mention}.')
 
     @count.command()
     async def profile(self, ctx: commands.Context, *, user: Optional[discord.User]):
