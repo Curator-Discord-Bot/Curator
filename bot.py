@@ -37,7 +37,7 @@ INITIAL_EXTENSIONS = (
     'cogs.fourinarow',
     'cogs.emojis',
     'cogs.support',
-    #'cogs.roleselector'  # first gotta fix some issues
+    'cogs.roleselector'
 )
 
 

@@ -17,7 +17,7 @@ class Fun(commands.Cog):
     def __init__(self, bot: Curator):
         self.bot = bot
 
-    @commands.command()
+    @commands.command(aliases=['hi', 'greetings', 'g\'day', 'hey'])
     async def hello(self, ctx: commands.Context):
         await ctx.send(hello(ctx))
 

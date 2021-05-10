@@ -65,7 +65,6 @@ number_aliases = {  # Keycap numbers (except keycap_10) and infinity are handled
     'CLOCK FACE ONE OCLOCK': ['1', '13'],
     'REGIONAL INDICATOR SYMBOL LETTER I': ['1', 'I'],
     'FIRST PLACE MEDAL': ['1'],
-    'LATIN SMALL LETTER I': ['1'],
     'LATIN CAPITAL LETTER I': ['1', 'I'],
     'SUPERSCRIPT TWO': ['2'],
     'CLOCK FACE TWO OCLOCK': ['2', '14'],
@@ -226,7 +225,7 @@ def parse_symbols(number: str) -> List[str]:
     i = 0
     while i < len(number):
         digit = number[i]
-        if digit.isdigit():
+        if digit in range(10): #digit.isdigit():  # digit.isdigit() also returns True for characters like superscript numbers, but they do not get handled by int()
             add_parsed([digit])
             if i < len(number) - 2 and number[i+2] == '\u20e3':  # ⃣ , used for keycap numbers, which are very weird
                 i += 2

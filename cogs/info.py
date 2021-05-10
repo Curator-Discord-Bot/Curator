@@ -4,7 +4,7 @@ from bot import Curator
 import asyncpg
 import matplotlib.pyplot as plt
 from io import BytesIO
-from typing import Optional
+from typing import Optional, Union
 
 from .utils.checks import owner_or_guild_permissions
 from .utils.formats import human_join
@@ -25,19 +25,18 @@ class Info(commands.Cog):
                  role.name != '@everyone']
         await ctx.send('\n'.join(roles))
 
-    @commands.command()
-    async def pie(self, ctx: commands.context, *ignore_roles: Optional[str]):
+    @commands.group(aliases=['chart'], invoke_without_command=True)
+    async def pie(self, ctx: commands.context, *roles: Optional[discord.Role]):
         """Make a pie chart of the role distribution in this server.
 
         Server admins can set the roles that are used for this, by default it tales all roles on the server.
         You can provide roles (by name) to ignore while making the chart.
         """
-        roles = self.bot.server_configs[ctx.guild.id].chartroles.copy()
-        if len(roles) == 0:
-            roles = sorted([role for role in await ctx.guild.fetch_roles() if role.name != '@everyone'], reverse=True)
-        for role in roles.copy():
-            if role.name in ignore_roles:
-                roles.remove(role)
+        if not roles:
+            roles = self.bot.server_configs[ctx.guild.id].chartroles
+            if not roles:
+                return await ctx.invoke(self.pie_all)
+        roles = sorted(roles, reverse=True)
 
         labels = []
         sizes = []
@@ -62,6 +61,23 @@ class Info(commands.Cog):
         plt.close()
         await ctx.send(file=discord.File(buf, 'chart.png'))
 
+    @pie.command(name='ignore')
+    async def pie_ignore(self, ctx: commands.context, *ignore_roles: discord.Role):
+        if not self.bot.server_configs[ctx.guild.id].chartroles:
+            return await ctx.invoke(self.pie_all_ignore, *ignore_roles)
+        roles = [role for role in self.bot.server_configs[ctx.guild.id].chartroles if role not in ignore_roles]
+        await ctx.invoke(self.pie, *roles)
+
+    @pie.group(name='all', invoke_without_command=True)
+    async def pie_all(self, ctx: commands.Context):
+        roles = [role for role in ctx.guild.roles if role.name != '@everyone']
+        await ctx.invoke(self.pie, *roles)
+
+    @pie_all.command(name='ignore')
+    async def pie_all_ignore(self, ctx: commands.context, *ignore_roles: discord.Role):
+        roles = [role for role in ctx.guild.roles if role.name != '@everyone' and role not in ignore_roles]
+        await ctx.invoke(self.pie, *roles)
+
     @commands.command(aliases=['account'], hidden=True)
     async def lookup(self, ctx: commands.Context, user: discord.User):
         await ctx.send(f'{user}: this account was created at {user.created_at}.',
@@ -69,7 +85,7 @@ class Info(commands.Cog):
 
     @commands.command()
     async def roleid(self, ctx: commands.Context, role: discord.Role):
-        """Get the ID of a role"""
+        """Get the ID of a role."""
         await ctx.send(role.id)
 
     @commands.group(aliases=['croles', 'cr'], invoke_without_command=True)
@@ -143,6 +159,9 @@ class Info(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):  # todo To be changed
+        if type(message.channel) != discord.TextChannel:
+            return
+
         if message.guild.id == 468366604313559040 and message.author.id == idle_rpg_raid_id \
                 and message.content.endswith('join the raid!'):
             await message.channel.send(f'{message.guild.get_role(695770028397690911).mention}, '

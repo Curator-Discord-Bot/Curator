@@ -697,7 +697,7 @@ class Table(metaclass=TableMeta):
 
         table_data = cls.to_dict()
 
-        if not p.exists():
+        if not p.exists():  # Set this to True when it doesn't want to create tables while the database has literally no tables at all
             p.parent.mkdir(parents=True, exist_ok=True)
 
             # we're creating this table for the first time,

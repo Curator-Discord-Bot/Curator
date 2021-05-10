@@ -58,7 +58,7 @@ async def add_roles(ctx: commands.Context, bot, name, new_roles: List[discord.Ro
     except Exception as e:
         await ctx.send(f'Failed, `{e}` while saving the new roles to the database.')
     else:
-        bot.server_configs[ctx.guild.id].__setattr__(name, (bot.server_configs[ctx.guild.id].__getattribute__(name) + new_roles).sort(reverse=True))
+        bot.server_configs[ctx.guild.id].__setattr__(name, sorted(bot.server_configs[ctx.guild.id].__getattribute__(name) + new_roles, reverse=True))
         await ctx.send(f'Role{"s" if len(new_roles) > 1 else ""} '
                        f'{human_join([f"**{role}**" for role in new_roles], final="and")} successfully added.')
 

@@ -196,10 +196,14 @@ class Reminder(commands.Cog):
 
         return timer
 
-    async def check_idlerpg(self, message: discord.Message) -> bool:
+    async def check_r(self, message: discord.Message) -> bool:
         m = message.content.lower()
         if not (m.startswith('$') and m.endswith(' r')):
-            return False
+            if m == '!d bump r':
+                await self.sudo(message, 'r 2h bump')
+                return True
+            else:
+                return False
         elif m.startswith('$steal '):
             await self.sudo(message, 'r 1h steal')
         elif m.startswith('$pray '):
@@ -338,7 +342,7 @@ class Reminder(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message):
         if not message.author.bot and message.channel.type == discord.ChannelType.text:
-            await self.check_idlerpg(message)
+            await self.check_r(message)
 
     @commands.Cog.listener()
     async def on_reminder_timer_complete(self, timer):

@@ -158,7 +158,7 @@ class Moderation(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        if message.author.bot:
+        if message.author.bot or type(message.channel) != discord.TextChannel:
             return
 
         for word in self.bot.server_configs[message.guild.id].censor_words:
@@ -207,7 +207,7 @@ class Moderation(commands.Cog):
             return await ctx.send('You took too long to reply and the purge has been cancelled.')
 
         try:
-            await channel.purge(limit=limit, before=before, after=after, check=check)
+            await channel.purge(limit=limit+1, before=before, after=after, check=check)
         except discord.Forbidden:
             await ctx.send('I do not have permission to delete these messages:grimacing:')
         except discord.HTTPException:

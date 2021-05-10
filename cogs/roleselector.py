@@ -57,11 +57,12 @@ async def get_menu_from_link(ctx, url) -> Optional[SelectionMenu]:
 
 
 class SelectionMenu:
-    def __init__(self, message, description, roles, emojis, role_descs, allow_multiple, created_by, created_at, last_edited_by=None, last_edited_at=None, status=True, issues=None):
+    def __init__(self, bot, message, description, roles, emojis, role_descs, allow_multiple, created_by, created_at, last_edited_by=None, last_edited_at=None, status=True, issues=None):
+        self.bot: Curator = bot
         self.message: discord.Message = message
         self.description: str = description
         self.roles: List[discord.Role] = roles
-        self.emojis: List[Union[discord.Emoji, discord.PartialEmoji, str]] = emojis
+        self.emojis: List[Union[discord.Emoji, str]] = emojis
         self.role_descs: List[str] = role_descs  # description text per role
         self.allow_multiple: bool = allow_multiple
         self.created_by: discord.User = created_by
@@ -69,18 +70,18 @@ class SelectionMenu:
         self.last_edited_by: Optional[discord.User] = last_edited_by
         self.last_edited_at: Optional[datetime] = last_edited_at
         self.status: bool = status
-        self.issues: Optional[List[List[str, int]]] = issues
-        self.ignore_next = False  # Used to ignore a reaction being deleted when it is the bot that deletes it
+        self.issues: List[List[str, Optional[int]]] = issues or []
+        self.ignore_next_removal = False  # Used to ignore a reaction being deleted when it is the bot that deletes it
 
     async def reaction_received(self, emoji: Union[discord.Emoji, discord.PartialEmoji, str], member: discord.Member):
-        if emoji not in self.emojis:
-            self.ignore_next = True
+        if emoji not in self.emojis and emoji is not None:
+            self.ignore_next_removal = True
             await self.message.remove_reaction(emoji, member)
             return
 
         if not self.status:
-            self.ignore_next = True
-            await self.message.remove_reaction(emoji, member)
+            self.ignore_next_removal = True
+            if emoji:  await self.message.remove_reaction(emoji, member)
             return await member.send(f'**{self.message.guild}:** the menu you tried to use is currently out of service, sorry for the inconvenience.')
 
         role = self.roles[self.emojis.index(emoji)]
@@ -89,7 +90,7 @@ class SelectionMenu:
         if not self.allow_multiple:
             for r in self.roles:
                 if r in member.roles:
-                    self.ignore_next = True
+                    self.ignore_next_removal = True
                     await self.message.remove_reaction(emoji, member)
                     return await member.send(f'**{self.message.guild}:** you already have a role from this'
                                                         f' menu, you must first remove **{r}** if you want **{role}**.')
@@ -97,8 +98,11 @@ class SelectionMenu:
         try:
             await member.add_roles(role, reason=f'Selected role ({self.message.jump_url})')
             await member.send(f'**{self.message.guild}:** gave you the **{role}** role.')
+            logchannel = self.bot.server_configs[self.message.guild.id].logchannel
+            if logchannel:
+                await logchannel.send(f'{member} selected {role} in a menu')
         except discord.Forbidden:
-            self.ignore_next = True
+            self.ignore_next_removal = True
             await self.message.remove_reaction(emoji, member)
             guild_owner = self.message.guild.owner
             await guild_owner.send(f'**{self.message.guild}:** I do not have the required permissions to give'
@@ -109,9 +113,14 @@ class SelectionMenu:
                                          f' role. I have contacted the server owner about this.')
 
     async def reaction_removed(self, emoji: Union[discord.Emoji, discord.PartialEmoji, str], member: discord.Member):
-        if self.ignore_next:
-            self.ignore_next = False
+        if self.ignore_next_removal:
+            self.ignore_next_removal = False
             return
+
+        if emoji not in self.emojis or emoji is None:
+            self.issues.append(['emoji', emoji])
+            await self.disable()
+            return await member.send(f'**{self.message.guild}:** an issue was found with the role menu. It is likely that the reaction you just removed is not present on the server anymore. If this is the case, please contact the staff of the server and ask them to change the emoji.')
 
         if not self.status:
             await self.message.remove_reaction(emoji, member)
@@ -124,6 +133,9 @@ class SelectionMenu:
         try:
             await member.remove_roles(role, reason=f'Removed role ({self.message.jump_url})')
             await member.send(f'**{self.message.guild}:** removed the **{role}** role.')
+            logchannel = self.bot.server_configs[self.message.guild.id].logchannel
+            if logchannel:
+                await logchannel.send(f'{member} deselected {role} in a menu')
         except discord.Forbidden:
             guild_owner = self.message.guild.owner
             await guild_owner.send(f'**{self.message.guild}:** I do not have the required permissions to'
@@ -133,13 +145,22 @@ class SelectionMenu:
             await member.send(f'**{self.message.guild}:** I don\'t have permission to remove the **{role}**'
                                          f' role from you. I have contacted the server owner about this.')
 
+    async def disable(self):
+        self.status = False
+        query = 'UPDATE rolemenus SET enabled = False WHERE message = $1;'
+        await self.bot.pool.fetchval(query, [self.message.channel.id, self.message.id])
+        await self.message.edit(content='***This menu is currently out of service***\n\n' + self.message.content)
+
+    async def enable(self):
+        pass
+
 
 class RoleSelector(commands.Cog):
     def __init__(self, bot: Curator):
         self.bot = bot
         self._task = bot.loop.create_task(self.get_menus())
 
-    @commands.group(name='roleselector', aliases=['rselector', 'rolesel', 'rsel', 'rs', 'rolemenu', 'rmenu'])
+    @commands.group(name='roleselector', aliases=['rselector', 'rolesel', 'rsel', 'rs', 'rolemenu', 'rmenu', 'rm'])
     async def role_selector(self, ctx: commands.Context):
         """All commands revolving around the role selection menus."""
         if ctx.guild.id not in menus.keys():
@@ -151,7 +172,7 @@ class RoleSelector(commands.Cog):
     @role_selector.group(name='make', aliases=['create', 'new'], invoke_without_command=True)
     @owner_or_guild_permissions(manage_roles=True)
     async def make_rsel(self, ctx: commands.Context, channel: discord.TextChannel,
-                        *roles_and_emojis: Union[discord.Role, discord.Emoji, discord.PartialEmoji, str], allow_multiple=True):
+                        *roles_and_emojis: Union[discord.Role, discord.Emoji, str], allow_multiple=True):
         """Create a role selection menu!
 
         Provide the channel for the menu.
@@ -177,9 +198,10 @@ class RoleSelector(commands.Cog):
                         roles.append(item)
                 else:
                     return await ctx.send(f'`{item}` is invalid.')
-            else:  # Item should be an emoji   TODO custom emoji must be from the ctx.guild
-                if type(item) == discord.Emoji or type(item) == discord.PartialEmoji or item in amoji.unicode_codes.EMOJI_UNICODE_ENGLISH.values():
-                    #if item not in ctx.guild.
+            else:  # Item should be an emoji
+                if type(item) == discord.Emoji or item in amoji.unicode_codes.EMOJI_UNICODE_ENGLISH.values():
+                    if type(item) == discord.Emoji and item not in ctx.guild.emojis:
+                        return await ctx.send('You can only use custom emojis from this server.')
                     if item in emojis:
                         return await ctx.send('You can only use an emoji once.')
                     else:
@@ -259,9 +281,9 @@ class RoleSelector(commands.Cog):
                                      allow_multiple, ctx.author.id, created_at)
 
         await ctx.send(f'Here it is: {menu_message.jump_url}')
-        menus[channel.guild.id][str(channel.id)+','+str(menu_message.id)] = SelectionMenu(menu_message, description, roles,
-                                                                                          emojis, role_descs, allow_multiple,
-                                                                                          ctx.author, created_at)
+        menus[channel.guild.id][str(channel.id)+','+str(menu_message.id)] = SelectionMenu(self.bot, menu_message, description,
+                                                                                          roles, emojis, role_descs,
+                                                                                          allow_multiple, ctx.author, created_at)
 
     @make_rsel.command(name='unique', aliases=['singular', 'limited'])
     @owner_or_guild_permissions(manage_roles=True)
@@ -302,10 +324,7 @@ class RoleSelector(commands.Cog):
         if not menu.status:
             return await ctx.send('This menu is already inactive:thinking:')
 
-        menu.status = False
-        query = 'UPDATE rolemenus SET enabled = False WHERE message = $1;'
-        await self.bot.pool.fetchval(query, [menu.message.channel.id, menu.message.id])
-        await menu.message.edit(content='***This menu is currently out of service***\n\n'+menu.message.content)
+        await menu.disable()
         await ctx.send('Successfully disabled.')
 
     @role_selector.command()
@@ -565,14 +584,15 @@ class RoleSelector(commands.Cog):
         emoji: discord.PartialEmoji = payload.emoji
         if emoji.is_custom_emoji():
             try:
-                emoji: discord.Emoji = await guild.fetch_emoji(emoji.id)  # TODO figure out why this is giving (NotFound) errors at seemingly random moments, might be linked to todo in line 180
+                emoji: discord.Emoji = await guild.fetch_emoji(emoji.id)
             except Exception as e:
-                print('Exception received from the emoji thing')
-                print(emoji, emoji)
-                raise e
+                #print('Exception received from the emoji thing')
+                #print(emoji)
+                #raise e
+                emoji: None = None
 
         else:
-            emoji = emoji.name
+            emoji: str = emoji.name
         member = guild.get_member(payload.user_id)
         return emoji, message, member
 
@@ -649,7 +669,7 @@ class RoleSelector(commands.Cog):
                 if (not status) and (not menu_message.content.startswith('***This menu is currently out of service***\n\n')):
                     await menu_message.edit(content='***This menu is currently out of service***\n\n'+menu_message.content)
                 menus[guild.id][str(channel.id)+','+str(menu_message.id)] = \
-                    SelectionMenu(menu_message, menu['description'], roles, emojis, menu['role_descs'],
+                    SelectionMenu(self.bot, menu_message, menu['description'], roles, emojis, menu['role_descs'],
                                   menu['allow_multiple'], created_by, menu['created_at'], last_edited_by=last_edited_by,
                                   last_edited_at=menu['last_edited_at'], status=status, issues=issues)
         except (OSError, discord.ConnectionClosed, asyncpg.PostgresConnectionError):

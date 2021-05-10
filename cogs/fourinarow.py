@@ -5,6 +5,20 @@ from discord.ext import commands
 from bot import Curator
 from typing import Optional, Union, List
 from random import randint
+from dataclasses import dataclass
+
+
+# noinspection PyPep8Naming
+@dataclass
+class emoji_ids:
+    empty = 738068784211820612
+    blue = 738070670583398480
+    red = 738070670243790919
+    green = 738324385534050346
+    orange = 738324385626324997
+    pink = 738324385622130699
+    purple = 738324385856749568
+    aqua = 738324385865400361
 
 
 class TileType:
@@ -177,14 +191,14 @@ class FourInARow(commands.Cog):
         }
 
     def init_tiles(self):
-        self.empty_tile = TileType('Empty', self.bot.get_emoji(738068784211820612))
-        self.blue_tile = TileType('Blue', self.bot.get_emoji(738070670583398480))
-        self.red_tile = TileType('Red', self.bot.get_emoji(738070670243790919))
-        self.green_tile = TileType('Green', self.bot.get_emoji(738324385534050346))
-        self.orange_tile = TileType('Orange', self.bot.get_emoji(738324385626324997))
-        self.pink_tile = TileType('Pink', self.bot.get_emoji(738324385622130699))
-        self.purple_tile = TileType('Purple', self.bot.get_emoji(738324385856749568))
-        self.aqua_tile = TileType('Aqua', self.bot.get_emoji(738324385865400361))
+        self.empty_tile = TileType('Empty', self.bot.get_emoji(emoji_ids.empty))
+        self.blue_tile = TileType('Blue', self.bot.get_emoji(emoji_ids.blue))
+        self.red_tile = TileType('Red', self.bot.get_emoji(emoji_ids.red))
+        self.green_tile = TileType('Green', self.bot.get_emoji(emoji_ids.green))
+        self.orange_tile = TileType('Orange', self.bot.get_emoji(emoji_ids.orange))
+        self.pink_tile = TileType('Pink', self.bot.get_emoji(emoji_ids.pink))
+        self.purple_tile = TileType('Purple', self.bot.get_emoji(emoji_ids.purple))
+        self.aqua_tile = TileType('Aqua', self.bot.get_emoji(emoji_ids.aqua))
         self.color_tiles = [self.blue_tile, self.red_tile, self.green_tile, self.orange_tile, self.pink_tile,
                             self.purple_tile, self.aqua_tile]
 
