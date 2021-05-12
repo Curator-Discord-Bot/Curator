@@ -196,6 +196,7 @@ special_aliases = {  # These are all followed by "VARIATION SELECTOR-16" (0xfe0f
 roman_re = re.compile('^(?=[MDCLXVI])M*(C[MD]|D?C{0,3})(X[CL]|L?X{0,3})(I[XV]|V?I{0,3})$')
 binary_re = re.compile('^[01]+$')
 hex_re = re.compile('^[\dA-F]+$')
+digits = tuple(str(i) for i in range(10))
 
 
 def parsed(number: str) -> List[int]:
@@ -225,7 +226,7 @@ def parse_symbols(number: str) -> List[str]:
     i = 0
     while i < len(number):
         digit = number[i]
-        if digit in range(10): #digit.isdigit():  # digit.isdigit() also returns True for characters like superscript numbers, but they do not get handled by int()
+        if digit in digits: #digit.isdigit():  # digit.isdigit() also returns True for characters like superscript numbers, but they do not get handled by int()
             add_parsed([digit])
             if i < len(number) - 2 and number[i+2] == '\u20e3':  # ⃣ , used for keycap numbers, which are very weird
                 i += 2
