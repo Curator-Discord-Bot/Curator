@@ -28,7 +28,7 @@ INITIAL_EXTENSIONS = (
     'cogs.fun',
     'cogs.decode',
     'cogs.info',
-    'cogs.random',
+    'cogs.rng',
     'cogs.admin',
     'cogs.control',
     'cogs.sinfo',

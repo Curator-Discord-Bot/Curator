@@ -90,7 +90,6 @@ number_aliases = {  # Keycap numbers (except keycap_10) and infinity are handled
     'BILLIARDS': ['8'],
     'INFINITY': ['8'],
     'CLOCK FACE NINE OCLOCK': ['9', '21'],
-    'MANTELPIECE CLOCK': ['9', '21'],
     'KEYCAP TEN': ['10'],
     'CLOCK FACE TEN OCLOCK': ['10', '22'],
     'CLOCK FACE ELEVEN OCLOCK': ['11', '23'],
@@ -187,6 +186,7 @@ special_aliases = {  # These are all followed by "VARIATION SELECTOR-16" (0xfe0f
     'PERMANENT PAPER SIGN': ['8'],
     'EIGHT SPOKED ASTERISK': ['8'],
     'SPARKLE': ['8'],
+    'MANTELPIECE CLOCK': ['9', '21'],
     'NEGATIVE SQUARED LATIN CAPITAL LETTER A': ['A'],
     'NEGATIVE SQUARED LATIN CAPITAL LETTER B': ['B'],
     'COPYRIGHT SIGN': ['C'],
@@ -653,7 +653,7 @@ class Count(commands.Cog):
 
             await ctx.send(embed=embed)
 
-    @count.command(aliases=['current', 'active', 'atm', 'status'])
+    @count.command(aliases=['current', 'active', 'atm', 'status', 'info'])
     async def running(self, ctx: commands.Context):
         """Get the data of all the currently running counts."""
         async with ctx.typing():

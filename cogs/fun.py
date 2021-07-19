@@ -1,10 +1,11 @@
+import random
 import string
 
 import discord
 from asyncio import sleep as slp
 from discord.ext import commands
 from bot import Curator
-from typing import Optional
+from typing import Optional, List
 from random import choice, randint
 import requests
 from .utils.messages import hello, collect
@@ -56,8 +57,23 @@ class Fun(commands.Cog):
         if len(text) == 0:
             text = "There is no text."
         new_text = ''
+        streak: List[bool, int] = [False, 0]  # True means upper, False means lower; the number indicates the number of consecutive case choices, so it is limited to 3
         for letter in text:
-            new_text += choice([letter.lower(), letter.upper()])
+            if streak[1] >= 3:
+                choice = not streak[0]
+            else:
+                choice = bool(random.getrandbits(1))
+
+            if choice:
+                new_text += letter.upper()
+            else:
+                new_text += letter.lower()
+
+            if choice == streak[0]:
+                streak[1] += 1
+            else:
+                streak[0] = choice
+                streak[1] = 1
         await ctx.send(new_text.replace('@', 'AT'))
 
     @commands.command(aliases=('vaporize', 'vaporise'))
