@@ -54,6 +54,7 @@ class ServerConfigs:
         self.self_roles: List[discord.Role] = list(filter(None, [self.get_role(role_id) for role_id in row['self_roles']]))
         self.censor_words: List[str] = row['censor_words']
         self.censor_message: Optional[str] = row['censor_message']
+        self.welcome_message: Optional[str] = row['welcome_message']
 
     def get_guild(self, guild_id) -> discord.Guild:
         guild = self.bot.get_guild(guild_id)

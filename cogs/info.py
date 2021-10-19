@@ -168,6 +168,42 @@ class Info(commands.Cog):
                                        f'grab your weapons and head to battle, for there is a raid!')
             await message.add_reaction('<:diamond_sword:767112271704227850>')
 
+    @commands.command(name='joinedat', aliases=['joindate'])
+    async def joined_at(self, ctx: commands.Context, member: Optional[discord.Member]):
+        if not member:
+            member = ctx.author
+        await ctx.send(member.joined_at)
+
+    @owner_or_guild_permissions(manage_guild=True)
+    @commands.command(name='welcomemessage', aliases=['wmessage', 'welcomem'])
+    async def welcome_message(self, ctx: commands.Context, *, text: str):
+        """Set a message to send when a new member joins the server.
+
+        Use {mention} for the mention, {name} for the username, {full name} for the username with #numbers, and {id} for the id of the new member.
+
+        Set the message to "disable" if you wish to disable this feature.
+        """
+        if text == 'disable':
+            text = None
+        else:
+            text = text.replace('{mention}', '{u.mention}').replace('{name}', '{u.name}').replace('{full name}', '{u.name}#{u.discriminator}').replace('{id}', '{u.id}')
+
+        try:
+            connection: asyncpg.pool = self.bot.pool
+            query = 'UPDATE serverconfigs SET welcome_message = $1 WHERE guild = $2;'
+            await connection.fetchval(query, text, ctx.guild.id)
+        except Exception as e:
+            await ctx.send(f'Failed, {e} while saving the welcome message to the database.')
+        else:
+            self.bot.server_configs[ctx.guild.id].welcome_message = text
+            await ctx.send('Welcome message successfully set.')
+
+    @commands.Cog.listener()
+    async def on_member_join(self, member: discord.Member):
+        guild = member.guild
+        if self.bot.server_configs[guild.id].welcome_message:
+            await guild.system_channel.send(self.bot.server_configs[guild.id].welcome_message.format(u=member))
+
 
 def setup(bot: Curator):
     bot.add_cog(Info(bot))

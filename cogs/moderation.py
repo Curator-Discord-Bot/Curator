@@ -20,6 +20,7 @@ class Serverconfigs(db.Table):
     censor_words = db.Column(db.Array(sql_type=db.String), default='{}')
     censor_message = db.Column(db.String)
     raid_role = db.Column(db.Integer(big=True))
+    welcome_message = db.Column(db.String)
 
 
 class Moderation(commands.Cog):
