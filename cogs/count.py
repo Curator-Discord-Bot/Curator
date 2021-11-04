@@ -13,7 +13,7 @@ from random import choice
 
 import bot
 from .utils import db
-from .utils.checks import owner_or_guild_permissions
+from .utils.checks import owner_or_guild_permissions, is_bot_admin
 from .utils.formats import human_join
 
 
@@ -33,6 +33,18 @@ class Counts(db.Table):
     duration = db.Column(db.Interval)
     ruined_by = db.Column(db.Integer(big=True))
 
+    type = db.Column(db.String, default="normal")
+
+
+class ActiveCounts(db.Table):
+    guild = db.Column(db.Integer(big=True))
+    channel = db.Column(db.Integer(big=True), primary_key=True)
+    started_by = db.Column(db.Integer(big=True))
+    started_at = db.Column(db.Datetime, default="now() at time zone 'utc'")
+    score = db.Column(db.Integer, default=0)
+    contributors = db.Column(db.JSON, default="'{}'::jsonb")
+    last_active_at = db.Column(db.Datetime, default="now() at time zone 'utc'")
+    last_counter = db.Column(db.Integer(big=True))
     type = db.Column(db.String, default="normal")
 
 
@@ -200,13 +212,17 @@ digits = tuple(str(i) for i in range(10))
 
 
 def parsed(number: str) -> List[int]:
-    if number.startswith('#'):
-        desymboled = parse_symbols(number[1:])
+    if number.startswith('#') or number.startswith('0x'):
+        desymboled = parse_symbols(number[(1 if number.startswith('#') else 2):])
         return [int(result, 16) for result in desymboled if hex_re.fullmatch(result.upper())]
+
+    if number.startswith('0b'):
+        desymboled = parse_symbols(number[2:])
+        return [int(result, 2) for result in desymboled if binary_re.fullmatch(result)]
 
     desymboled = parse_symbols(number)
     results = [int(result) for result in desymboled if result.isnumeric()]
-    results += [int(result, 2) for result in desymboled if binary_re.fullmatch(result)]
+    # results += [int(result, 2) for result in desymboled if binary_re.fullmatch(result)]
     results += [from_roman(result) for result in desymboled if roman_re.fullmatch(result)]
     return list(dict.fromkeys(results))  # Removes duplicates
 
@@ -288,7 +304,7 @@ def from_roman(num):  # from https://stackoverflow.com/questions/19308177/conver
 async def fetch_counter_record(discord_id, connection) -> asyncpg.Record:
     return await connection.fetchrow(
         'INSERT INTO counters (user_id) VALUES ($1) ON CONFLICT (user_id) DO UPDATE SET user_id = counters.user_id RETURNING *',
-        discord_id)
+        int(discord_id))
 
 
 def is_count_channel(configs, channel: discord.TextChannel) -> bool:
@@ -346,7 +362,7 @@ class Counting:
                  'last_counter', 'timed_out', 'duration', 'ruined_by', 'mode')
 
     def __init__(self, *, record):
-        self.id = record['id']
+        self.id = record['id'] if 'id' in record else None
         self.guild = record['guild']
         self.channel = record['channel']
         self.started_by = record['started_by']
@@ -412,6 +428,7 @@ class Counting:
         self.id = await connection.fetchval(query, self.guild, self.channel, self.started_by, self.started_at,
                                             self.score, self.contributors, self.timed_out,
                                             datetime.datetime.utcnow() - self.started_at, self.ruined_by)
+        await connection.fetch('DELETE FROM activecounts WHERE channel = $1', self.channel)
 
         score_query = 'SELECT score FROM counts where id = $1'
 
@@ -605,8 +622,7 @@ class Count(commands.Cog):
             embed = discord.Embed(title='Count Leaderboard', description='Top 5 Highest Counts :slight_smile:')
             query = 'SELECT score, contributors FROM counts WHERE guild = $1 ORDER BY score DESC LIMIT 5;'
             rows = await self.bot.pool.fetch(query, ctx.guild.id)
-            users = {
-            }
+            users = {}
             i = 0
             for row in rows:
                 i += 1
@@ -634,8 +650,7 @@ class Count(commands.Cog):
             embed = discord.Embed(title='Last Count', description='Last count data')
             query = 'SELECT score, contributors FROM counts WHERE guild = $1 ORDER BY started_at + duration DESC;'
             row = await self.bot.pool.fetchrow(query, ctx.guild.id)
-            users = {
-            }
+            users = {}
             contributors = row[1]
             keys = contributors.keys()
             a = [f'**Score: {row[0]}**']
@@ -669,8 +684,7 @@ class Count(commands.Cog):
             for channel in running_channels:
                 c: Counting = self.running_counts[channel.id]
 
-                users = {
-                }
+                users = {}
                 contributors = c.contributors
                 keys = contributors.keys()
                 a = [f'**Score thus far: {c.score}**']
@@ -715,6 +729,42 @@ class Count(commands.Cog):
                 and self.running_counts[before.channel.id].score not in parsed(after.content.split()[0]):
             await after.channel.send(f'**{self.running_counts[before.channel.id].score}**, '
                               f'shame on {after.author.mention} for editing away their count!')
+
+    @count.command(aliases=['save'])
+    @is_bot_admin()
+    async def backup(self, ctx: commands.Context):
+        connection: asyncpg.pool = self.bot.pool
+        await connection.fetchval('DELETE FROM ActiveCounts')
+
+        query = """INSERT INTO activecounts VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $8, $9)"""
+        for c in self.running_counts.values():
+            await connection.fetchval(query, c.guild, c.channel, c.started_by,
+                                      c.started_at, c.score, c.contributors,
+                                      c.last_active_at, c.last_counter, c.mode)
+            await self.bot.get_channel(c.channel).send('This count just got'
+                                                       ' backed up, probably because I need'
+                                                       ' a restart, so further progress would'
+                                                       ' not be saved.\nI will tell you when'
+                                                       ' you can continue.\n Beware, if you'
+                                                       ' fail this count while I am still online,'
+                                                       ' it will actually die!')
+
+        await ctx.send('Done')
+
+    @count.command(name='loadbackup', aliases=['load', 'summon'])
+    @is_bot_admin()
+    async def load_backup(self, ctx: commands.Context):
+        self.running_counts = {}
+        connection: asyncpg.pool = self.bot.pool
+
+        rows = await connection.fetch('SELECT * FROM activecounts')
+        for record in rows:
+            channel = self.bot.get_channel(record['channel'])
+            self.running_counts[record['channel']] = Counting(record=record)
+            await channel.send('This count is now back up and running!\n'
+                               f'The current score is **{record["score"]}**.')
+
+        await ctx.send('Done')
 
 
 def setup(curator: bot.Curator):
