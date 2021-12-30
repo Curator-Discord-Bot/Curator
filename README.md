@@ -2,8 +2,7 @@
 
 Curator is a discord bot written by Ruukas and RJTimmerman.
 It is currently early in development, and we still have many ideas that we want 
-to implement. The bot is mainly developed for the Infinity Item Editor discord. 
-However, we will work on having the bot run on several servers in the future.
+to implement.
 
 ## Requirements
 
